@@ -105,72 +105,8 @@ def get_financial_ratios():
     print(len(not_downloaded), 'annual ratios not downloaded')
     print(not_downloaded)
 
-'''Gets news from the last year for each stock. 
-   Ensure that your dates are in yyyy-mm-dd format.'''
-def get_historical_news(start_date, end_date):
-    # Calculates number of days between start and end dates
-    ndays = (dt.strptime(end_date, "%Y-%m-%d") - dt.strptime(start_date, "%Y-%m-%d")).days
 
-    if ndays > 365:
-        return 'We can only obtain news from the last 1 year. Re-enter your start and end dates.'
-    elif ndays < 0:
-        return 'Your start date is older than your end date. Re-enter your start and end dates.'
-    else:
-        df = pd.read_csv('data/S&P500-Info.csv')
-        tickers = df['Symbol'].to_list()
-        max_calls = 60
-        nrequests = 0
-        date = start_date
-        date_obj = dt.strptime(start_date, "%Y-%m-%d")
-
-        for i, ticker in enumerate(tickers, start=1):
-            file = ticker + '.xlsx'
-
-            if file in os.listdir('data/news'):
-                print(i, ticker, 'already downloaded')
-            else:
-                print('\n')
-                data = []
-
-                for item in range(ndays + 1):
-                    try:
-                        nrequests += 1
-                        print(nrequests, ticker, date, 'downloading...')
-                        r = requests.get('https://finnhub.io/api/v1/company-news?symbol=' \
-                                         + ticker + '&from=' + date + '&to=' + date \
-                                         + '&token=' + st.secrets['FINNHUB_API_KEY'])
-                        data += r.json()
-                        date_obj = date_obj + timedelta(days=1)
-                        date  = date_obj.strftime("%Y-%m-%d")
-
-                        # Stops API calls for a minute after the max_calls per minute are reached
-                        if nrequests == max_calls:
-                            print('\nSleeping...')
-                            # Prints out the countdown while it sleeps
-                            for i in range(60, 0, -1):
-                                sys.stdout.write("\r")
-                                sys.stdout.write(f"{i:2d} seconds remaining")
-                                sys.stdout.flush()
-                                time.sleep(1)
-
-                            sys.stdout.write("\rSleeping done                  \n")
-                            print('\n')
-                    except Exception as e:
-                        print(ticker, date, e)
-                        pass
-
-                df = pd.DataFrame.from_dict(data)
-                df.to_excel(f'data/news/{ticker}.xlsx')
-                print('\n', i, ticker, 'done')
-                date = start_date
-                date_obj = dt.strptime(start_date, "%Y-%m-%d")
-                nrequests = 0
-
-end = dt.today().strftime("%Y-%m-%d")
-start = (dt.today() - timedelta(365)).strftime("%Y-%m-%d")
-                
 # get_SPY_companies()
 get_market_data()  
 # move_market_data()
 # get_financial_ratios()
-# get_historical_news(start, end)
