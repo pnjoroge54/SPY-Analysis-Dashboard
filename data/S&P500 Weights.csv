@@ -1,0 +1,603 @@
+﻿Company,Symbol,Weight,Price
+Apple Inc.,AAPL,6.754915,163.76
+Microsoft Corporation,MSFT,5.965655,300.68
+Amazon.com Inc.,AMZN,3.485495,2904.98
+Tesla Inc,TSLA,2.135094,958.24
+Alphabet Inc. Class A,GOOGL,2.112887,2651.56
+Meta Platforms Inc. Class A,FB,1.973389,308.58
+Alphabet Inc. Class C,GOOG,1.966869,2652.66
+NVIDIA Corporation,NVDA,1.590629,238.24
+Berkshire Hathaway Inc. Class B,BRK.B,1.500493,307.34
+JPMorgan Chase & Co.,JPM,1.149589,145.41
+UnitedHealth Group Incorporated,UNH,1.14886,464.26
+Johnson & Johnson,JNJ,1.146121,164.99
+Procter & Gamble Company,PG,1.03318,162.88
+Home Depot Inc.,HD,0.971938,351.18
+Visa Inc. Class A,V,0.946996,208.23
+Bank of America Corp,BAC,0.867952,45.1
+Mastercard Incorporated Class A,MA,0.833127,358.78
+Exxon Mobil Corporation,XOM,0.817216,72.37
+Pfizer Inc.,PFE,0.799258,52.75
+Walt Disney Company,DIS,0.706701,138.13
+Chevron Corporation,CVX,0.652953,127.54
+Cisco Systems Inc.,CSCO,0.645359,57.01
+Adobe Inc.,ADBE,0.639434,505.29
+PepsiCo Inc.,PEP,0.633605,175.15
+Coca-Cola Company,KO,0.622186,60.71
+AbbVie Inc.,ABBV,0.619596,132.17
+Thermo Fisher Scientific Inc.,TMO,0.610586,582.87
+Comcast Corporation Class A,CMCSA,0.604347,50.01
+Broadcom Inc.,AVGO,0.593965,541.26
+Netflix Inc.,NFLX,0.593113,398.86
+Verizon Communications Inc.,VZ,0.582456,53.31
+Abbott Laboratories,ABT,0.580871,125.57
+Wells Fargo & Company,WFC,0.577673,53.79
+salesforce.com inc.,CRM,0.575029,221.37
+Jan-13,,,
+,,,
+,,,
+S&P 500 Companies - S&P 500 Index Components by Market Cap,,,
+Company,Symbol,Weight,Price
+Accenture Plc Class A,ACN,0.570955,337.42
+Costco Wholesale Corporation,COST,0.562008,485.97
+Intel Corporation,INTC,0.557597,52.49
+Merck & Co. Inc.,MRK,0.53705,80.03
+PayPal Holdings Inc.,PYPL,0.536371,164.55
+Walmart Inc.,WMT,0.530245,140.89
+Eli Lilly and Company,LLY,0.508568,242.46
+AT&T Inc.,T,0.506878,26.67
+McDonald's Corporation,MCD,0.498327,255.77
+Qualcomm Inc,QCOM,0.491273,166.62
+NIKE Inc. Class B,NKE,0.479495,143.94
+Danaher Corporation,DHR,0.474097,281.37
+Linde plc,LIN,0.434362,317.34
+NextEra Energy Inc.,NEE,0.431691,82.92
+Texas Instruments Incorporated,TXN,0.422016,176.16
+Philip Morris International Inc.,PM,0.41776,102.98
+Union Pacific Corporation,UNP,0.409964,248.41
+Lowe's Companies Inc.,LOW,0.408463,226.2
+Intuit Inc.,INTU,0.405405,534.72
+United Parcel Service Inc. Class B,UPS,0.388603,202.28
+Advanced Micro Devices Inc.,AMD,0.388448,121.31
+Honeywell International Inc.,HON,0.37896,206.78
+Morgan Stanley,MS,0.377526,98.87
+Bristol-Myers Squibb Company,BMY,0.377036,63.69
+Medtronic Plc,MDT,0.376225,105.89
+Charles Schwab Corporation,SCHW,0.36213,89.51
+CVS Health Corporation,CVS,0.354985,101.76
+Oracle Corporation,ORCL,0.351461,82.69
+Raytheon Technologies Corporation,RTX,0.350052,87.72
+Amgen Inc.,AMGN,0.341498,228.63
+Citigroup Inc.,C,0.336941,63.35
+Applied Materials Inc.,AMAT,0.330994,137.27
+Goldman Sachs Group Inc.,GS,0.311314,346.16
+BlackRock Inc.,BLK,0.310538,805.6
+Boeing Company,BA,0.310356,207.75
+Caterpillar Inc.,CAT,0.308708,215.04
+International Business Machines,IBM,0.308384,130.27
+Corporation,,,
+Prologis Inc.,PLD,0.299384,155.64
+ConocoPhillips,COP,0.297528,83.26
+Starbucks Corporation,SBUX,0.296534,96.85
+American Tower Corporation,AMT,0.294101,245.49
+Anthem Inc.,ANTM,0.290289,444.09
+Target Corporation,TGT,0.285063,219.1
+General Electric Company,GE,0.283623,96.77
+Intuitive Surgical Inc.,ISRG,0.274272,271.69
+Deere & Company,DE,0.273992,365.07
+Feb-13,,,
+,,,
+,,,
+S&P 500 Companies - S&P 500 Index Components by Market Cap,,,
+Company,Symbol,Weight,Price
+ServiceNow Inc.,NOW,0.270007,513.56
+American Express Company,AXP,0.265953,159.54
+S&P Global Inc.,SPGI,0.264873,419.95
+3M Company,MMM,0.264153,173.61
+Booking Holdings Inc.,BKNG,0.262794,2381.7
+Micron Technology Inc.,MU,0.251873,82.62
+Zoetis Inc. Class A,ZTS,0.251735,201.76
+Mondelez International Inc. Class A,MDLZ,0.249101,68.75
+Automatic Data Processing Inc.,ADP,0.245131,218.5
+Altria Group Inc,MO,0.244094,50.33
+Lockheed Martin Corporation,LMT,0.243089,372.72
+PNC Financial Services Group Inc.,PNC,0.231231,201.36
+Lam Research Corporation,LRCX,0.229844,614.56
+Stryker Corporation,SYK,0.226865,255.73
+Analog Devices Inc.,ADI,0.224415,160.31
+Gilead Sciences Inc.,GILD,0.223607,68.42
+Ford Motor Company,F,0.223425,20.86
+Truist Financial Corporation,TFC,0.221588,61.75
+Chubb Limited,CB,0.219123,193.89
+CME Group Inc. Class A,CME,0.218382,227.49
+TJX Companies Inc,TJX,0.21364,67.85
+Marsh & McLennan Companies Inc.,MMC,0.210769,157.96
+Cigna Corporation,CI,0.209874,237.44
+General Motors Company,GM,0.208656,53.71
+Duke Energy Corporation,DUK,0.207003,103.54
+Crown Castle International Corp,CCI,0.206488,183.1
+CSX Corporation,CSX,0.205905,33.87
+U.S. Bancorp,USB,0.202048,55.77
+Becton Dickinson and Company,BDX,0.199404,264.97
+Edwards Lifesciences Corporation,EW,0.189446,113.08
+Southern Company,SO,0.189025,68.22
+Sherwin-Williams Company,SHW,0.188948,295.9
+Intercontinental Exchange Inc.,ICE,0.186787,126.51
+Charter Communications Inc. Class A,CHTR,0.186459,572.99
+Colgate-Palmolive Company,CL,0.184774,84
+Estee Lauder Companies Inc. Class A,EL,0.183607,298
+Fidelity National Information Services,FIS,0.181594,112.67
+Inc.,,,
+Illinois Tool Works Inc.,ITW,0.17915,237.79
+Norfolk Southern Corporation,NSC,0.178989,277.48
+Equinix Inc.,EQIX,0.172471,729.01
+Regeneron Pharmaceuticals Inc.,REGN,0.169864,617.88
+Eaton Corp. Plc,ETN,0.168845,161.49
+Capital One Financial Corporation,COF,0.168464,147.37
+Dominion Energy Inc,D,0.168166,79.69
+Activision Blizzard Inc.,ATVI,0.167227,81.3
+Air Products and Chemicals Inc.,APD,0.16708,283.51
+Mar-13,,,
+,,,
+,,,
+S&P 500 Companies - S&P 500 Index Components by Market Cap,,,
+Company,Symbol,Weight,Price
+Freeport-McMoRan Inc.,FCX,0.166806,41.31
+Fiserv Inc.,FISV,0.166623,105.99
+Progressive Corporation,PGR,0.164928,108.68
+Boston Scientific Corporation,BSX,0.162713,42.96
+FedEx Corporation,FDX,0.162312,245.9
+T-Mobile US Inc.,TMUS,0.160522,102.46
+EOG Resources Inc.,EOG,0.158935,101.01
+Northrop Grumman Corporation,NOC,0.157276,401.45
+Aon Plc Class A,AON,0.156857,268.52
+Illumina Inc.,ILMN,0.156696,371.05
+Waste Management Inc.,WM,0.156116,152.52
+Moderna Inc.,MRNA,0.155681,159.1
+KLA Corporation,KLAC,0.153975,377.43
+Vertex Pharmaceuticals Incorporated,VRTX,0.153122,228.86
+HCA Healthcare Inc,HCA,0.151885,239.32
+Emerson Electric Co.,EMR,0.147241,93.94
+Moody's Corporation,MCO,0.147046,343.37
+Exelon Corporation,EXC,0.146537,56.91
+Autodesk Inc.,ADSK,0.146045,241.8
+Public Storage,PSA,0.14125,355
+Ecolab Inc.,ECL,0.139541,196.58
+NXP Semiconductors NV,NXPI,0.139202,201.53
+Schlumberger NV,SLB,0.136269,36.54
+Johnson Controls International plc,JCI,0.136177,73.31
+Newmont Corporation,NEM,0.134172,62.73
+TE Connectivity Ltd.,TEL,0.132835,151.41
+Dollar General Corporation,DG,0.131768,212.35
+Humana Inc.,HUM,0.129418,377.02
+American International Group Inc.,AIG,0.128692,57.65
+Pioneer Natural Resources Company,PXD,0.128289,207.73
+Simon Property Group Inc.,SPG,0.127419,147.02
+MetLife Inc.,MET,0.127301,66.04
+General Dynamics Corporation,GD,0.126878,208.06
+Kimberly-Clark Corporation,KMB,0.125394,143.3
+Synopsys Inc.,SNPS,0.124402,306.71
+IHS Markit Ltd.,INFO,0.123656,118.44
+IQVIA Holdings Inc,IQV,0.123125,242.5
+Amphenol Corporation Class A,APH,0.12257,77.76
+Roper Technologies Inc.,ROP,0.12193,441.24
+Centene Corporation,CNC,0.12106,77.51
+Xilinx Inc.,XLNX,0.120867,189.95
+Bank of New York Mellon Corporation,BK,0.119913,57.4
+Cognizant Technology Solutions,CTSH,0.118448,85.15
+Corporation Class A,,,
+American Electric Power Company Inc.,AEP,0.118359,90.47
+Marathon Petroleum Corporation,MPC,0.116735,71.04
+L3Harris Technologies Inc,LHX,0.116022,222.54
+Apr-13,,,
+,,,
+,,,
+S&P 500 Companies - S&P 500 Index Components by Market Cap,,,
+Company,Symbol,Weight,Price
+Digital Realty Trust Inc.,DLR,0.115463,156.07
+O'Reilly Automotive Inc.,ORLY,0.115041,640.44
+IDEXX Laboratories Inc.,IDXX,0.114374,505.32
+Dow Inc.,DOW,0.11339,56.9
+Baxter International Inc.,BAX,0.113047,86.29
+Marriott International Inc. Class A,MAR,0.11275,159.74
+Sempra Energy,SRE,0.112686,136.11
+Prudential Financial Inc.,PRU,0.111951,110.69
+Global Payments Inc.,GPN,0.1119,142.55
+MSCI Inc. Class A,MSCI,0.111818,507.89
+Agilent Technologies Inc.,A,0.111311,138.69
+DexCom Inc.,DXCM,0.110577,424.02
+HP Inc.,HPQ,0.109622,35.13
+Carrier Global Corp.,CARR,0.109604,48.25
+Cadence Design Systems Inc.,CDNS,0.109397,150.14
+General Mills Inc.,GIS,0.10918,69.14
+DuPont de Nemours Inc.,DD,0.108922,77.69
+Fortinet Inc.,FTNT,0.108754,295.62
+Trane Technologies plc,TT,0.108556,175.42
+Travelers Companies Inc.,TRV,0.108353,163.36
+Microchip Technology Incorporated,MCHP,0.108136,74.2
+AutoZone Inc.,AZO,0.106712,1944.42
+Parker-Hannifin Corporation,PH,0.106664,313.97
+Motorola Solutions Inc.,MSI,0.106354,238.73
+Constellation Brands Inc. Class A,STZ,0.105321,241.36
+Sysco Corporation,SYY,0.104985,78.56
+Chipotle Mexican Grill Inc.,CMG,0.10486,1389.95
+Hilton Worldwide Holdings Inc,HLT,0.104257,144.64
+Electronic Arts Inc.,EA,0.103928,139.36
+McKesson Corporation,MCK,0.102417,246.5
+Paychex Inc.,PAYX,0.101906,119.83
+eBay Inc.,EBAY,0.101848,59.96
+Archer-Daniels-Midland Company,ADM,0.101344,69.12
+Aptiv PLC,APTV,0.101028,140.9
+Aflac Incorporated,AFL,0.100441,61.46
+Walgreens Boots Alliance Inc,WBA,0.100408,52.65
+Realty Income Corporation,O,0.100355,67.98
+SVB Financial Group,SIVB,0.099933,599.77
+PPG Industries Inc.,PPG,0.099688,156.03
+Welltower Inc.,WELL,0.098609,87.75
+Phillips 66,PSX,0.098475,83.97
+T. Rowe Price Group,TROW,0.098348,160.26
+Xcel Energy Inc.,XEL,0.09655,68.6
+Yum! Brands Inc.,YUM,0.096103,124.18
+Rockwell Automation Inc.,ROK,0.095735,315.38
+Align Technology Inc.,ALGN,0.094803,468.04
+International Flavors & Fragrances Inc.,IFF,0.09456,140.3
+May-13,,,
+,,,
+,,,
+S&P 500 Companies - S&P 500 Index Components by Market Cap,,,
+Company,Symbol,Weight,Price
+Ameriprise Financial Inc.,AMP,0.092534,302.06
+Otis Worldwide Corporation,OTIS,0.09227,82.81
+Discover Financial Services,DFS,0.09198,114.71
+Williams Companies Inc.,WMB,0.09193,28.74
+Ross Stores Inc.,ROST,0.091519,96.3
+SBA Communications Corp. Class A,SBAC,0.091267,314.79
+ResMed Inc.,RMD,0.091059,235.9
+State Street Corporation,STT,0.090597,91.47
+Allstate Corporation,ALL,0.090235,120.24
+Corteva Inc,CTVA,0.089864,45.79
+Mettler-Toledo International Inc.,MTD,0.089455,1470.99
+AvalonBay Communities Inc.,AVB,0.089365,243.54
+Kinder Morgan Inc Class P,KMI,0.089353,17.46
+Biogen Inc.,BIIB,0.088509,221.99
+Match Group Inc.,MTCH,0.088507,118.25
+CBRE Group Inc. Class A,CBRE,0.088042,101.63
+Valero Energy Corporation,VLO,0.087533,80.07
+Cintas Corporation,CTAS,0.087499,380.92
+Public Service Enterprise Group Inc,PEG,0.087216,65.81
+TransDigm Group Incorporated,TDG,0.086651,622.55
+Keysight Technologies Inc,KEYS,0.085988,174.7
+Cummins Inc.,CMI,0.085605,224.5
+Fastenal Company,FAST,0.084903,56.68
+Fifth Third Bancorp,FITB,0.084658,45.46
+Monster Beverage Corporation,MNST,0.084627,86.46
+Arthur J. Gallagher & Co.,AJG,0.084561,155.11
+Kroger Co.,KR,0.084524,47.07
+PACCAR Inc,PCAR,0.084278,92.26
+Verisk Analytics Inc,VRSK,0.084015,198.38
+AMETEK Inc.,AME,0.083073,136.83
+Occidental Petroleum Corporation,OXY,0.08154,34.04
+First Republic Bank,FRC,0.081229,168.08
+Devon Energy Corporation,DVN,0.080522,46.68
+WEC Energy Group Inc,WEC,0.080196,97.52
+Equity Residential,EQR,0.07918,88.64
+Eversource Energy,ES,0.078335,87.5
+Twitter Inc.,TWTR,0.078234,35.31
+Ball Corporation,BLL,0.077776,88.45
+American Water Works Company Inc.,AWK,0.077676,162.4
+Stanley Black & Decker Inc.,SWK,0.076687,176.41
+Consolidated Edison Inc.,ED,0.076459,82.88
+ANSYS Inc.,ANSS,0.076339,329.65
+Hershey Company,HSY,0.076164,200.84
+Dollar Tree Inc.,DLTR,0.075818,126.59
+D.R. Horton Inc.,DHI,0.075742,88.96
+Old Dominion Freight Line Inc.,ODFL,0.075712,301.55
+Nucor Corporation,NUE,0.075543,93.81
+Jun-13,,,
+,,,
+,,,
+S&P 500 Companies - S&P 500 Index Components by Market Cap,,,
+Company,Symbol,Weight,Price
+Weyerhaeuser Company,WY,0.075495,38.05
+Willis Towers Watson Public Limited,WTW,0.074915,227.09
+Company,,,
+Alexandria Real Estate Equities Inc.,ARE,0.073688,197.29
+Equifax Inc.,EFX,0.073251,230.2
+West Pharmaceutical Services Inc.,WST,0.072672,372.8
+EPAM Systems Inc.,EPAM,0.072633,471.56
+Copart Inc.,CPRT,0.072187,127.62
+Arista Networks Inc.,ANET,0.072065,119.81
+Cerner Corporation,CERN,0.071096,91.68
+Corning Inc,GLW,0.071015,35.25
+Republic Services Inc.,RSG,0.070923,128.81
+Zebra Technologies Corporation Class A,ZBRA,0.070398,500.49
+Tyson Foods Inc. Class A,TSN,0.070139,89.99
+ONEOK Inc.,OKE,0.069616,59.28
+Kraft Heinz Company,KHC,0.06914,37.27
+Lennar Corporation Class A,LEN,0.069068,96.39
+Southwest Airlines Co.,LUV,0.068993,43.65
+Laboratory Corporation of America,LH,0.068875,273.31
+Holdings,,,
+Extra Space Storage Inc.,EXR,0.068774,196.44
+CDW Corp.,CDW,0.06832,186.4
+Expedia Group Inc.,EXPE,0.068281,176.93
+Zimmer Biomet Holdings Inc.,ZBH,0.067565,122.54
+Fortive Corp.,FTV,0.067211,71.71
+Albemarle Corporation,ALB,0.066798,214.73
+Dover Corporation,DOV,0.066129,174.56
+Halliburton Company,HAL,0.065887,27.62
+Church & Dwight Co. Inc.,CHD,0.065833,103.49
+Northern Trust Corporation,NTRS,0.065774,114.37
+Vulcan Materials Company,VMC,0.065684,187.19
+LyondellBasell Industries NV,LYB,0.065658,94.86
+Delta Air Lines Inc.,DAL,0.065363,38.11
+Synchrony Financial,SYF,0.0651,44.64
+Hartford Financial Services Group Inc.,HIG,0.0649,70
+Huntington Bancshares Incorporated,HBAN,0.064762,15.25
+Hess Corporation,HES,0.064418,88.32
+Martin Marietta Materials Inc.,MLM,0.064247,385.36
+Edison International,EIX,0.063287,63.36
+KeyCorp,KEY,0.063202,24.97
+Tractor Supply Company,TSCO,0.063112,209.35
+Teradyne Inc.,TER,0.062473,144.44
+McCormick & Company Incorporated,MKC,0.062472,96.12
+Skyworks Solutions Inc.,SWKS,0.062105,141.85
+Mid-America Apartment Communities,MAA,0.061805,203.87
+Inc.,,,
+Baker Hughes Company Class A,BKR,0.061543,27.42
+Jul-13,,,
+,,,
+,,,
+S&P 500 Companies - S&P 500 Index Components by Market Cap,,,
+Company,Symbol,Weight,Price
+Ingersoll Rand Inc.,IR,0.061435,57.5
+Gartner Inc.,IT,0.061291,279.51
+DTE Energy Company,DTE,0.060318,119.22
+PPL Corporation,PPL,0.060127,29.75
+Ameren Corporation,AEE,0.059545,88.19
+FirstEnergy Corp.,FE,0.059274,41.65
+STERIS Plc,STE,0.058613,228.72
+United Rentals Inc.,URI,0.058433,300.22
+Citizens Financial Group Inc.,CFG,0.058432,50.86
+PerkinElmer Inc.,PKI,0.058255,174.3
+Entergy Corporation,ETR,0.058114,110.33
+Essex Property Trust Inc.,ESS,0.057416,335.38
+Hewlett Packard Enterprise Co.,HPE,0.057272,16.25
+Duke Realty Corporation,DRE,0.057229,57.98
+Clorox Company,CLX,0.056837,178.23
+V.F. Corporation,VFC,0.056699,68.4
+W.W. Grainger Inc.,GWW,0.056494,497.78
+M&T Bank Corporation,MTB,0.056314,159.89
+Regions Financial Corporation,RF,0.056283,22.23
+Best Buy Co. Inc.,BBY,0.05609,96.95
+VeriSign Inc.,VRSN,0.055407,218.82
+Nasdaq Inc.,NDAQ,0.055013,178.03
+Diamondback Energy Inc.,FANG,0.054568,119.1
+Signature Bank,SBNY,0.054552,328.91
+Ventas Inc.,VTR,0.053995,52.67
+ViacomCBS Inc. Class B,VIAC,0.053743,31.51
+Etsy Inc.,ETSY,0.053207,152.23
+Seagate Technology Holdings PLC,STX,0.053088,96.71
+Expeditors International of Washington,EXPD,0.052286,117.07
+Inc.,,,
+AmerisourceBergen Corporation,ABC,0.051914,131.36
+NetApp Inc.,NTAP,0.051775,84.95
+Ulta Beauty Inc,ULTA,0.051711,351.19
+Teledyne Technologies Incorporated,TDY,0.051366,415.64
+Waters Corporation,WAT,0.051063,320.89
+Cooper Companies Inc.,COO,0.050961,390.54
+FLEETCOR Technologies Inc.,FLT,0.05071,229.36
+Xylem Inc.,XYL,0.050477,107.2
+Pool Corporation,POOL,0.050282,473.41
+Take-Two Interactive Software Inc.,TTWO,0.05019,166.53
+Raymond James Financial Inc.,RJF,0.049571,98.75
+Healthpeak Properties Inc.,PEAK,0.049533,35.23
+Genuine Parts Company,GPC,0.049529,131.2
+International Paper Company,IP,0.049509,47.36
+Tyler Technologies Inc.,TYL,0.049328,457.11
+Amcor PLC,AMCR,0.04918,11.97
+Garmin Ltd.,GRMN,0.048823,122.62
+Aug-13,,,
+,,,
+,,,
+S&P 500 Companies - S&P 500 Index Components by Market Cap,,,
+Company,Symbol,Weight,Price
+Broadridge Financial Solutions Inc.,BR,0.048801,158.18
+CMS Energy Corporation,CMS,0.048545,64.04
+Akamai Technologies Inc.,AKAM,0.048514,113.42
+Principal Financial Group Inc.,PFG,0.048336,72.17
+Western Digital Corporation,WDC,0.048281,58.19
+Celanese Corporation,CE,0.048208,161.91
+Trimble Inc.,TRMB,0.048071,71.53
+Enphase Energy Inc.,ENPH,0.047687,127.48
+Generac Holdings Inc.,GNRC,0.047149,272.88
+Royal Caribbean Group,RCL,0.047122,80.1
+Hologic Inc.,HOLX,0.046724,71.06
+Darden Restaurants Inc.,DRI,0.046618,135.89
+Viatris Inc.,VTRS,0.046547,14.59
+NVR Inc.,NVR,0.046066,5200.54
+Catalent Inc,CTLT,0.045706,102.37
+Westinghouse Air Brake Technologies,WAB,0.045679,90.54
+Corporation,,,
+Cincinnati Financial Corporation,CINF,0.04564,115.47
+Monolithic Power Systems Inc.,MPWR,0.04545,404.67
+CarMax Inc.,KMX,0.045439,108.94
+CenterPoint Energy Inc.,CNP,0.045092,27.57
+Conagra Brands Inc.,CAG,0.044778,35.35
+J.B. Hunt Transport Services Inc.,JBHT,0.044323,201.89
+Avery Dennison Corporation,AVY,0.044274,201.59
+Kellogg Company,K,0.044182,66.66
+Quest Diagnostics Incorporated,DGX,0.044068,137.83
+Charles River Laboratories International,CRL,0.043893,327.64
+Inc.,,,
+MGM Resorts International,MGM,0.043852,41.38
+Domino's Pizza Inc.,DPZ,0.043842,439.07
+Carnival Corporation,CCL,0.043681,20.25
+Eastman Chemical Company,EMN,0.043619,120.94
+Boston Properties Inc.,BXP,0.043572,115.01
+UDR Inc.,UDR,0.043414,56.8
+Jacobs Engineering Group Inc.,J,0.043344,128.56
+IDEX Corporation,IEX,0.043193,219.44
+Textron Inc.,TXT,0.043179,72.24
+Coterra Energy Inc.,CTRA,0.042789,19.47
+Omnicom Group Inc,OMC,0.042598,75.59
+Caesars Entertainment Inc,CZR,0.042507,73.74
+Masco Corporation,MAS,0.042491,64.65
+FactSet Research Systems Inc.,FDS,0.04239,422.7
+Paycom Software Inc.,PAYC,0.041481,314.75
+AES Corporation,AES,0.040991,23.03
+J.M. Smucker Company,SJM,0.040226,143.52
+Qorvo Inc.,QRVO,0.040216,135.51
+NortonLifeLock Inc.,NLOK,0.04017,26.16
+Sep-13,,,
+,,,
+,,,
+S&P 500 Companies - S&P 500 Index Components by Market Cap,,,
+Company,Symbol,Weight,Price
+Teleflex Incorporated,TFX,0.039947,323.62
+Mosaic Company,MOS,0.039552,39.55
+Brown & Brown Inc.,BRO,0.039489,63.71
+Advance Auto Parts Inc.,AAP,0.039441,226.74
+Cardinal Health Inc.,CAH,0.039372,50.54
+Alliant Energy Corp,LNT,0.039302,60.03
+Live Nation Entertainment Inc.,LYV,0.038958,111.26
+Marathon Oil Corporation,MRO,0.038721,18.21
+Evergy Inc.,EVRG,0.038671,64.51
+Bio-Techne Corporation,TECH,0.038598,369.4
+LKQ Corporation,LKQ,0.038185,54
+Las Vegas Sands Corp.,LVS,0.037999,44.13
+Kimco Realty Corporation,KIM,0.037725,23.77
+Interpublic Group of Companies Inc.,IPG,0.037291,35.51
+FMC Corporation,FMC,0.037005,109.39
+Incyte Corporation,INCY,0.037,74.99
+Bath & Body Works Inc.,BBWI,0.036976,53.67
+MarketAxess Holdings Inc.,MKTX,0.03688,365.22
+Quanta Services Inc.,PWR,0.036674,99.26
+CF Industries Holdings Inc.,CF,0.036447,66.27
+Hormel Foods Corporation,HRL,0.036403,49.19
+C.H. Robinson Worldwide Inc.,CHRW,0.03638,105.84
+United Airlines Holdings Inc.,UAL,0.036224,41.92
+ABIOMED Inc.,ABMD,0.036141,302.75
+Atmos Energy Corporation,ATO,0.036118,105.61
+F5 Inc.,FFIV,0.035834,222.78
+PulteGroup Inc.,PHM,0.035741,52.01
+Fortune Brands Home & Security Inc.,FBHS,0.03501,95.84
+Leidos Holdings Inc.,LDOS,0.034406,92.16
+Howmet Aerospace Inc.,HWM,0.034094,32.77
+Packaging Corporation of America,PKG,0.033777,134.5
+Cboe Global Markets Inc,CBOE,0.033755,119.74
+Citrix Systems Inc.,CTXS,0.03339,101.51
+Bio-Rad Laboratories Inc. Class A,BIO,0.033229,586.52
+Hasbro Inc.,HAS,0.033216,96.69
+Whirlpool Corporation,WHR,0.033207,203.39
+Comerica Incorporated,CMA,0.032949,90.04
+Lincoln National Corporation,LNC,0.032766,68.6
+Iron Mountain Inc.,IRM,0.032538,43.68
+Fox Corporation Class A,FOXA,0.032483,37.65
+Host Hotels & Resorts Inc.,HST,0.032317,17.18
+PTC Inc.,PTC,0.032239,116.71
+SolarEdge Technologies Inc.,SEDG,0.032145,223.02
+Robert Half International Inc.,RHI,0.032067,109.06
+Jack Henry & Associates Inc.,JKHY,0.031861,164.58
+Brown-Forman Corporation Class B,BF.B,0.031843,66.47
+Loews Corporation,L,0.031736,58.5
+Oct-13,,,
+,,,
+,,,
+S&P 500 Companies - S&P 500 Index Components by Market Cap,,,
+Company,Symbol,Weight,Price
+WestRock Company,WRK,0.031601,44.08
+APA Corp.,APA,0.031271,30.5
+W. R. Berkley Corporation,WRB,0.030711,83.09
+DENTSPLY SIRONA Inc.,XRAY,0.030636,52.94
+Everest Re Group Ltd.,RE,0.03008,285.81
+Snap-on Incorporated,SNA,0.029778,206.7
+Lumen Technologies Inc.,LUMN,0.029244,12.06
+NiSource Inc,NI,0.028519,27.68
+American Airlines Group Inc.,AAL,0.028504,16.35
+Allegion PLC,ALLE,0.02849,121.54
+Juniper Networks Inc.,JNPR,0.028486,32.79
+Regency Centers Corporation,REG,0.028376,70.23
+BorgWarner Inc.,BWA,0.028161,44.03
+Pentair plc,PNR,0.02811,64.31
+Ceridian HCM Holding Inc.,CDAY,0.027955,77.11
+A. O. Smith Corporation,AOS,0.027395,77.17
+Zions Bancorporation N.A.,ZION,0.027375,62.2
+Henry Schein Inc.,HSIC,0.027235,73.81
+Tapestry Inc.,TPR,0.027059,37.02
+Sealed Air Corporation,SEE,0.026846,67.1
+Universal Health Services Inc. Class B,UHS,0.025547,128.9
+Globe Life Inc.,GL,0.025429,101.92
+NRG Energy Inc.,NRG,0.024969,39.2
+Lamb Weston Holdings Inc.,LW,0.024929,65.08
+Molson Coors Beverage Company Class,TAP,0.024619,48.86
+B,,,
+Wynn Resorts Limited,WYNN,0.024277,85.65
+Campbell Soup Company,CPB,0.024093,45.28
+Mohawk Industries Inc.,MHK,0.023725,157.86
+Franklin Resources Inc.,BEN,0.023664,32.11
+Newell Brands Inc,NWL,0.023094,23.13
+Assurant Inc.,AIZ,0.023072,148.13
+Federal Realty Investment Trust,FRT,0.02274,123.24
+News Corporation Class A,NWSA,0.022532,21.47
+DISH Network Corporation Class A,DISH,0.021788,32.11
+People's United Financial Inc.,PBCT,0.021757,18.57
+Organon & Co.,OGN,0.021318,30.84
+DXC Technology Co.,DXC,0.021221,30.98
+Pinnacle West Capital Corporation,PNW,0.021182,70.83
+Discovery Inc. Class C,DISCK,0.020612,25.36
+Invesco Ltd.,IVZ,0.020329,22.13
+Norwegian Cruise Line Holdings Ltd.,NCLH,0.020268,20.34
+Huntington Ingalls Industries Inc.,HII,0.020236,193.1
+DaVita Inc.,DVA,0.019363,109.91
+Rollins Inc.,ROL,0.018572,31.59
+PVH Corp.,PVH,0.018412,97.33
+Penn National Gaming Inc.,PENN,0.018351,41.44
+Nov-13,,,
+,,,
+,,,
+S&P 500 Companies - S&P 500 Index Components by Market Cap,,,
+Company,Symbol,Weight,Price
+Nielsen Holdings Plc,NLSN,0.01817,19
+Vornado Realty Trust,VNO,0.017851,41.99
+Alaska Air Group Inc.,ALK,0.017703,52.55
+IPG Photonics Corporation,IPGP,0.014279,149.23
+Ralph Lauren Corporation Class A,RL,0.014046,109.27
+Fox Corporation Class B,FOX,0.013755,34.81
+Discovery Inc. Class A,DISCA,0.011811,26.09
+Under Armour Inc. Class A,UAA,0.009266,18.9
+Gap Inc.,GPS,0.008765,16.01
+Under Armour Inc. Class C,UA,0.008322,16.19
+News Corporation Class B,NWS,0.007116,21.7
+,Market Indexes,,
+4433.41,,-49.32,(-1.10%)
+14606.26,,-240.2,(-1.62%)
+34491.18,,-224.21,(-0.65%)
+13924.97,,-229.05,(-1.62%)
+Data Details,,,
+,,,
+,,,
+,,,
+,,,
+,,,
+,,,
+,,,
+,,,
+Stock Market Indexes,,,
+,,,
+,,,
+,,,
+,,,
+Dec-13,,,
+,,,
+,,,
+S&P 500 Companies - S&P 500 Index Components by Market Cap,,,
+,,,
+,,,
+,,,
+,,,
+,,,
+,,,
+,Target Indexes,,
+New,,,
+13/13,,,
