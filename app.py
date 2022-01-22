@@ -1842,8 +1842,8 @@ if option == 'Social Media':
         api = tweepy.API(auth)
 
         for username in config.TWITTER_USERNAMES:
-            user = api.get_user(username)
-            tweets = api.user_timeline(username)
+            user = api.get_user(screen_name=username)
+            tweets = api.user_timeline(screen_name=username)
             st.subheader(username)
             st.image(user.profile_image_url)      
             for tweet in tweets:
