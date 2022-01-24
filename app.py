@@ -184,7 +184,7 @@ def calculate_beta(df, ticker, start_date, end_date):
 # Assign weights by sectors & sub-industries
 @st.cache
 def get_weights():
-    df = pd.read_csv('data\S&P500 Weights.csv')
+    df = pd.read_csv(r'data/S&P500 Weights.csv')
     
     for i in df.index:
         df.loc[i, 'Symbol'] = df.loc[i, 'Symbol'].replace('.', '-')
