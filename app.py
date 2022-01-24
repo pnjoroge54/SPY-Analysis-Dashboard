@@ -1,4 +1,5 @@
 import os
+from os.path import join
 import math
 from math import sqrt
 import numpy as np
@@ -19,8 +20,6 @@ import tweepy
 from newspaper import Article
 import FundamentalAnalysis as fa
 import pandas_datareader as pdr
-from urllib.request import Request, urlopen
-from html_table_parser.parser import HTMLTableParser 
 
 import config
 from functions import getIndexOfTuple
@@ -116,43 +115,42 @@ def get_all_current_ratios():
 
         file = cdate.strftime('%d-%m-%Y') + '.pickle'
 
-    f = r'data/financial_ratios/Current/'
+    f = r'data/financial_ratios/Current'
     
     if file in os.listdir(f):
-        with open(f + file, 'rb') as f1:
+        with open(join(f, file), 'rb') as f1:
             d = pickle.load(f1)
 
         s = "The data reported is today's."
     else:
-        try:
-            d = {}
+        def get_TTM_ratios(i, n, d):
+            if i >= 505:
+                return d
+            else:
+                try:
+                    for ticker in ticker_list[i: i + 250]:
+                        ratios = fa.financial_ratios(
+                                        ticker, st.secrets[f'FUNDAMENTAL_ANALYSIS_API_KEY{n}'],
+                                        period='annual', TTM=True
+                                        )
+                        d[ticker] = ratios.to_dict()
+                        i += 1
+                except:
+                    if n <= 3:
+                        n += 1
+                        get_TTM_ratios(i, n, d)
+                        
+                return d
 
-            for ticker in ticker_list[:250]:
-                ratios = fa.financial_ratios(
-                                ticker, st.secrets['FUNDAMENTAL_ANALYSIS_API_KEY1'],
-                                period='annual', TTM=True
-                                )
-                d[ticker] = ratios.to_dict()
+        i, n, d = 0, 1, {}
+        d = get_TTM_ratios(i, n, d)
 
-            for ticker in ticker_list[250:500]:
-                ratios = fa.financial_ratios(
-                                ticker, st.secrets['FUNDAMENTAL_ANALYSIS_API_KEY2'],
-                                period='annual', TTM=True
-                                )
-                d[ticker] = ratios.to_dict()
-
-            for ticker in ticker_list[500:]:
-                ratios = fa.financial_ratios(
-                                ticker, st.secrets['FUNDAMENTAL_ANALYSIS_API_KEY3'],
-                                period='annual', TTM=True
-                                )
-                d[ticker] = ratios.to_dict()
-               
+        if len(d) == 505:      
             s = "The data reported is today's."
 
-            with open(f + file, 'wb') as f1:
+            with open(join(f, file), 'wb') as f1:
                 pickle.dump(d, f1)
-        except:
+        else:
             dates = []
 
             for file in os.listdir(f):
@@ -165,7 +163,7 @@ def get_all_current_ratios():
             fname = dt.strftime(dates[-1], '%d-%m-%Y') + '.pickle'
             s = f'The data reported is from {date}.'
 
-            with open(f + fname, 'rb') as f1:
+            with open(join(f, fname), 'rb') as f1:
                 d = pickle.load(f1)
 
     return d, s
@@ -183,34 +181,10 @@ def calculate_beta(df, ticker, start_date, end_date):
     
     return beta
 
-# Gets market cap weights for stocks, sectors and sub-industries
-# from https://www.slickcharts.com/sp500
-@st.cache
-def download_weights():
-    def url_get_contents(url):
-        # Opens a website and read its binary contents (HTTP Response Body)
-        # making request to the website
-        req = Request(url=url, headers={'User-Agent': 'Mozilla/5.0'})
-        f = urlopen(req)
-    
-        return f.read() # reading contents of the website
- 
-    url = 'https://www.slickcharts.com/sp500'
-    xhtml = url_get_contents(url).decode('utf-8')
-    p = HTMLTableParser() # Defining the HTMLTableParser object
-    p.feed(xhtml) # feeding the html contents in the HTMLTableParser object  
-    df = pd.DataFrame(p.tables[0])
-    new_header = df.iloc[0] # grab the first row for the header
-    df = df[1:] # take the data less the header row
-    df.columns = new_header # set the header row as the df header
-    df.drop(['#', 'Price', 'Chg', '% Chg'], axis=1, inplace=True)
-    df['Weight'] = pd.to_numeric(df['Weight'])
-    return df
-
 # Assign weights by sectors & sub-industries
 @st.cache
 def get_weights():
-    df = download_weights()
+    df = pd.read_csv('data\S&P500 Weights.csv')
     
     for i in df.index:
         df.loc[i, 'Symbol'] = df.loc[i, 'Symbol'].replace('.', '-')
@@ -254,6 +228,7 @@ def get_weights():
 SPY_mktCap, sector_mktCaps, subIndustry_mktCaps, ticker_mktCaps = get_weights()
 
 
+# Dashboards
 st.title('S&P 500 Dashboards')
 options = ('S&P 500 Information', 'Stock Information',
            'Stock Comparisons By Sector', 'Technical Analysis',

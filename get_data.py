@@ -10,6 +10,8 @@ from datetime import timedelta
 import yfinance as yf
 import yahoo_fin.stock_info as si
 import FundamentalAnalysis as fa
+from urllib.request import Request, urlopen
+from html_table_parser.parser import HTMLTableParser 
 import streamlit as st
 
 '''Get a list of the companies comprising the S&P500'''
@@ -105,8 +107,31 @@ def get_financial_ratios():
     print(len(not_downloaded), 'annual ratios not downloaded')
     print(not_downloaded)
 
+'''Gets market cap weights for stocks, sectors and sub-industries
+   from https://www.slickcharts.com/sp500'''
+def download_SPY_weights():
+    def url_get_contents(url):
+        # Opens a website and read its binary contents (HTTP Response Body)
+        # making request to the website
+        req = Request(url=url, headers={'User-Agent': 'Mozilla/5.0'})
+        f = urlopen(req)
+    
+        return f.read() # reading contents of the website
+ 
+    url = 'https://www.slickcharts.com/sp500'
+    xhtml = url_get_contents(url).decode('utf-8')
+    p = HTMLTableParser() # Defining the HTMLTableParser object
+    p.feed(xhtml) # feeding the html contents in the HTMLTableParser object  
+    df = pd.DataFrame(p.tables[0])
+    new_header = df.iloc[0] # grab the first row for the header
+    df = df[1:] # take the data less the header row
+    df.columns = new_header # set the header row as the df header
+    df.drop(['#', 'Price', 'Chg', '% Chg'], axis=1, inplace=True)
+    df['Weight'] = pd.to_numeric(df['Weight'])
+    df.to_csv('data\S&P500 Weights.csv')
 
 # get_SPY_companies()
-get_market_data()  
+# get_market_data()
 # move_market_data()
 # get_financial_ratios()
+# download_SPY_weights()
