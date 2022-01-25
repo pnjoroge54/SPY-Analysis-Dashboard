@@ -118,53 +118,25 @@ def get_all_current_ratios():
     f = r'data/financial_ratios/Current'
     
     if file in os.listdir(f):
+        s = "The data reported is today's."
+
         with open(join(f, file), 'rb') as f1:
             d = pickle.load(f1)
-
-        s = "The data reported is today's."
     else:
-        def get_TTM_ratios(i, n, d):
-            if i >= 505:
-                return d
-            else:
-                try:
-                    for ticker in ticker_list[i: i + 250]:
-                        ratios = fa.financial_ratios(
-                                        ticker, st.secrets[f'FUNDAMENTAL_ANALYSIS_API_KEY{n}'],
-                                        period='annual', TTM=True
-                                        )
-                        d[ticker] = ratios.to_dict()
-                        i += 1
-                except:
-                    if n <= 3:
-                        n += 1
-                        get_TTM_ratios(i, n, d)
-                        
-                return d
+        dates = []
 
-        i, n, d = 0, 1, {}
-        d = get_TTM_ratios(i, n, d)
+        for file in os.listdir(f):
+            date = file.replace('.pickle', '')
+            date = dt.strptime(date, '%d-%m-%Y')
+            dates.append(date)
 
-        if len(d) == 505:      
-            s = "The data reported is today's."
+        dates = sorted(dates)
+        date = dt.strftime(dates[-1], '%B %d, %Y')
+        fname = dt.strftime(dates[-1], '%d-%m-%Y') + '.pickle'
+        s = f'The data reported is from {date}.'
 
-            with open(join(f, file), 'wb') as f1:
-                pickle.dump(d, f1)
-        else:
-            dates = []
-
-            for file in os.listdir(f):
-                date = file.replace('.pickle', '')
-                date = dt.strptime(date, '%d-%m-%Y')
-                dates.append(date)
-
-            dates = sorted(dates)
-            date = dt.strftime(dates[-1], '%B %d, %Y')
-            fname = dt.strftime(dates[-1], '%d-%m-%Y') + '.pickle'
-            s = f'The data reported is from {date}.'
-
-            with open(join(f, fname), 'rb') as f1:
-                d = pickle.load(f1)
+        with open(join(f, fname), 'rb') as f1:
+            d = pickle.load(f1)
 
     return d, s
 
@@ -560,9 +532,11 @@ if option == 'Stock Comparisons By Sector':
         s, s1, s2 = '', '', ''
         
         if start_date < first_dates[0][1]:
-            s += f"**The first date for which there is data is {first_dates[0][1].strftime('%B %d, %Y')}**"
+            s += f"**The first date for which there is data is \
+                  {first_dates[0][1].strftime('%B %d, %Y')}**"
         if end_date > last_date:
-            s1 += f"**The last date for which there is data is {last_date.strftime('%B %d, %Y')}**"
+            s1 += f"**The last date for which there is data is \
+                   {last_date.strftime('%B %d, %Y')}**"
         
         missing = list(filter(lambda x: x[1] > start_date, first_dates))
         missing = [x[0] for x in missing]
@@ -1294,16 +1268,21 @@ if option == 'Stock Comparisons By Sector':
                       annotation_text=f'S&P 500 Returns Volatility ({SPY_vol:,.2f}%)',
                       annotation_position=pos, annotation_bgcolor='#FF7F7F',
                       annotation_bordercolor='red')
-        fig.add_hline(y=sector_vol, line_color='purple', line_width=0.75, annotation_text=f'{sector} Returns Volatility ({sector_vol:,.2f}%)',
-                      annotation_position=pos1, annotation_bgcolor='#CBC3E3', annotation_bordercolor='purple')
-        fig.add_hline(y=subIndustry_vol, line_color='green', line_width=0.75, annotation_text=f'{subIndustry} Returns Volatility ({subIndustry_vol:,.2f}%)',
-                      annotation_position=pos2, annotation_bgcolor='#90ee90', annotation_bordercolor='green')
+        fig.add_hline(y=sector_vol, line_color='purple', line_width=0.75,
+                      annotation_text=f'{sector} Returns Volatility ({sector_vol:,.2f}%)',
+                      annotation_position=pos1, annotation_bgcolor='#CBC3E3',
+                      annotation_bordercolor='purple')
+        fig.add_hline(y=subIndustry_vol, line_color='green', line_width=0.75,
+                      annotation_text=f'{subIndustry} Returns Volatility ({subIndustry_vol:,.2f}%)',
+                      annotation_position=pos2, annotation_bgcolor='#90ee90',
+                      annotation_bordercolor='green')
         fig.update_layout(title=f'{subIndustry} Company Returns Volatility', xaxis_title='')
         st.plotly_chart(fig)
 
         # Dataframe of stocks ranked by returns volatility
         st.subheader('Stocks Ranked By Returns Volatility')
-        st.markdown('For top *n* volatile returns enter a positive integer, and for bottom *n* volatile returns enter a negative integer')
+        st.markdown('For top *n* volatile returns enter a positive integer, \
+                    and for bottom *n* volatile returns enter a negative integer')
         n = st.text_input(label='Number Of Stocks To Show', value='25')
         n = int(n)
 
@@ -1346,13 +1325,20 @@ if option == 'Stock Comparisons By Sector':
             pos2 = 'top right'
 
         # Charts of ticker returns
-        fig = px.bar(ticker_sharpes_df, x=ticker_sharpes_df.index, y='Sharpe Ratio', opacity=0.65, hover_name=ticker_names)
-        fig.add_hline(y=SPY_sharpe, line_color='red', line_width=0.75, annotation_text=f'S&P 500 Sharpe Ratio ({SPY_sharpe:.4f})',
-                      annotation_position=pos, annotation_bgcolor='#FF7F7F', annotation_bordercolor='red')
-        fig.add_hline(y=sector_sharpe, line_color='purple', line_width=0.75, annotation_text=f'{sector} Sharpe Ratio ({sector_sharpe:.4f})',
-                      annotation_position=pos1, annotation_bgcolor='#CBC3E3', annotation_bordercolor='purple')
-        fig.add_hline(y=subIndustry_sharpe, line_color='green', line_width=0.75, annotation_text=f'{subIndustry} Sharpe Ratio ({subIndustry_sharpe:.4f})',
-                      annotation_position=pos2, annotation_bgcolor='#90ee90', annotation_bordercolor='green')
+        fig = px.bar(ticker_sharpes_df, x=ticker_sharpes_df.index, y='Sharpe Ratio',
+                     opacity=0.65, hover_name=ticker_names)
+        fig.add_hline(y=SPY_sharpe, line_color='red', line_width=0.75,
+                      annotation_text=f'S&P 500 Sharpe Ratio ({SPY_sharpe:.4f})',
+                      annotation_position=pos, annotation_bgcolor='#FF7F7F',
+                      annotation_bordercolor='red')
+        fig.add_hline(y=sector_sharpe, line_color='purple', line_width=0.75,
+                      annotation_text=f'{sector} Sharpe Ratio ({sector_sharpe:.4f})',
+                      annotation_position=pos1, annotation_bgcolor='#CBC3E3',
+                      annotation_bordercolor='purple')
+        fig.add_hline(y=subIndustry_sharpe, line_color='green', line_width=0.75,
+                      annotation_text=f'{subIndustry} Sharpe Ratio ({subIndustry_sharpe:.4f})',
+                      annotation_position=pos2, annotation_bgcolor='#90ee90',
+                      annotation_bordercolor='green')
         fig.update_layout(title=f'{subIndustry} Company Sharpe Ratio', xaxis_title='')
         st.plotly_chart(fig)
 
@@ -1405,9 +1391,11 @@ if option == 'Stock Comparisons By Sector':
         fig = px.bar(ticker_betas_df, x=ticker_betas_df.index, y='Beta', opacity=0.65, hover_name=ticker_names)
         fig.add_hline(y=1, line_color='red', line_width=0.75, annotation_text=f'S&P 500 Beta (1.00)',
                       annotation_position=pos, annotation_bgcolor='#FF7F7F', annotation_bordercolor='red')
-        fig.add_hline(y=sector_beta, line_color='green', line_width=0.75, annotation_text=f'{sector} Beta ({sector_beta:,.2f})',
+        fig.add_hline(y=sector_beta, line_color='green', line_width=0.75,
+                      annotation_text=f'{sector} Beta ({sector_beta:,.2f})',
                       annotation_position=pos1, annotation_bgcolor='#90ee90', annotation_bordercolor='green')
-        fig.add_hline(y=subIndustry_beta, line_color='purple', line_width=0.75, annotation_text=f'{subIndustry} Beta ({subIndustry_beta:,.2f})',
+        fig.add_hline(y=subIndustry_beta, line_color='purple', line_width=0.75,
+                      annotation_text=f'{subIndustry} Beta ({subIndustry_beta:,.2f})',
                       annotation_position=pos2, annotation_bgcolor='#CBC3E3', annotation_bordercolor='purple')
         fig.update_layout(title=f'{subIndustry} Company Betas', xaxis_title='')
         st.plotly_chart(fig)
@@ -1559,13 +1547,15 @@ if option == 'Technical Analysis':
                 cs.decreasing.fillcolor = '#BEBEBE'
                 cs.decreasing.line.color = '#808080'
                 fig.update_layout(title=title, yaxis_title='Price')
-                fig.add_annotation(x=item[1], y=df.loc[item[1], 'upper_keltner'], text=f'Breaks out on {date}', showarrow=True, arrowhead=1)
+                fig.add_annotation(x=item[1], y=df.loc[item[1], 'upper_keltner'],
+                                   text=f'Breaks out on {date}', showarrow=True, arrowhead=1)
                 fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='#BEBEBE')              
                 fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='#BEBEBE')
                 fig.layout.xaxis.rangeslider.visible = False
                 st.plotly_chart(fig)
                 
-        st.write('For more details on the TTM Squeeze visit https://school.stockcharts.com/doku.php?id=technical_indicators:ttm_squeeze')
+        st.write('For more details on the TTM Squeeze visit \
+                  https://school.stockcharts.com/doku.php?id=technical_indicators:ttm_squeeze')
 
         if dt.now() == last_date:
             date = 'today'
@@ -1684,7 +1674,8 @@ if option == 'Technical Analysis':
                 make_crossover_charts(crossover, death, n)
 
     if indicator == 'Fibonacci Retracement Levels':
-        st.write('For more details on Fibonacci Retracement Levels visit https://www.investopedia.com/terms/f/fibonacciretracement.asp')
+        st.write('For more details on Fibonacci Retracement Levels visit \
+                  https://www.investopedia.com/terms/f/fibonacciretracement.asp')
 
         with st.form(key='my_form'):
             ticker = st.selectbox('Stock Ticker', ticker_list)
@@ -1733,7 +1724,10 @@ if option == 'Technical Analysis':
             name = SPY_info_df[SPY_info_df['Symbol'] == ticker]['Security'].item()
             title = f'{name} ({ticker})'
 
-            candlesticks = go.Candlestick(x=df['date'], open=df['open'], high=df['high'], low=df['low'], close=df['close'], name=ticker)
+            candlesticks = go.Candlestick(x=df['date'],
+                                          open=df['open'], high=df['high'],
+                                          low=df['low'], close=df['close'],
+                                          name=ticker)
             frl = go.Scatter(x=df.date, y=sy[0], name='0%', line={'color': colors[0], 'width': 0.75})
             frl1 = go.Scatter(x=df.date, y=sy[1], name='23.6%', line={'color': colors[1], 'width': 0.75})
             frl2 = go.Scatter(x=df.date, y=sy[2], name='38.2%', line={'color': colors[2], 'width': 0.75})
@@ -1749,6 +1743,8 @@ if option == 'Technical Analysis':
             cs.decreasing.fillcolor = '#BEBEBE'
             cs.decreasing.line.color = '#808080'
             fig.update_layout(title=title, yaxis_title='Price')
+            fig.update_xaxes(showgrid=False)
+            fig.update_yaxes(showgrid=False)
             fig.layout.xaxis.rangeslider.visible = False
             st.plotly_chart(fig)
 
