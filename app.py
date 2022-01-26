@@ -21,7 +21,7 @@ from newspaper import Article
 import FundamentalAnalysis as fa
 import pandas_datareader as pdr
 
-import config
+from config import TWITTER_USERNAMES
 from functions import getIndexOfTuple
 from SPY import INFO
 
@@ -412,8 +412,10 @@ if option == 'Stock Information':
     # Period returns
     t = len(ticker_df) / 252
     t1 = len(SPY_df) / 252
-    ticker_return = ((ticker_df.iloc[-1]['close'] / ticker_df.iloc[0]['open'])**(1 / t) - 1) * 100
-    SPY_return = ((SPY_df.iloc[-1]['Close'] / SPY_df.iloc[0]['Open'])**(1 / t1) - 1) * 100    
+    ticker_return = ((ticker_df.iloc[-1]['close'] \
+                      / ticker_df.iloc[0]['open'])**(1 / t) - 1) * 100
+    SPY_return = ((SPY_df.iloc[-1]['Close'] \
+                   / SPY_df.iloc[0]['Open'])**(1 / t1) - 1) * 100    
     
     # Sector returns
     sector_tickers = SPY_info_df[SPY_info_df['GICS Sector'] == sector]['Symbol'].to_list()
@@ -436,7 +438,8 @@ if option == 'Stock Information':
     nsector = len(sector_tickers)
     
     # Sub-Industry returns
-    subIndustry_tickers = SPY_info_df[SPY_info_df['GICS Sub-Industry'] == subIndustry]['Symbol'].to_list()
+    subIndustry_tickers = SPY_info_df[SPY_info_df['GICS Sub-Industry'] == subIndustry] \
+                          ['Symbol'].to_list()
     subIndustry_returns = []
 
     for ticker in subIndustry_tickers:
@@ -1752,11 +1755,9 @@ if option == 'Technical Analysis':
 
 
 if option == 'News':
-    with st.form(key='my_form1'):        
-        ticker = st.selectbox('Stock Ticker', ticker_list)
-        date = st.date_input('Date', dt.now())
-        submit_button = st.form_submit_button(label='Submit')
-
+    col1, col2 = st.columns(2)
+    ticker = col1.selectbox('Stock Ticker', ticker_list)
+    date = col2.date_input('Date', dt.now())
     date = date.strftime('%Y-%m-%d')
     
     try:
@@ -1784,7 +1785,8 @@ if option == 'News':
         headline = story['headline']
         source = story['source']
         url = story['url']
-        published = dt.fromtimestamp(story['datetime']).strftime('%X')
+        # Convert timestamp to datetime and get string of hours & min
+        published = dt.fromtimestamp(story['datetime']).strftime('%d %b, %Y %I:%M%p')
         
         # Get a summary of the article
         try:
@@ -1799,8 +1801,8 @@ if option == 'News':
         except:
             summary = story['summary']
     
-        st.info(f'**Headline:**  \n{headline}  \n\n**Source:** {source}  \n**Published:** {published}  \
-                \n**URL:** {url}  \n\n**Summary:**  \n{summary}')
+        st.info(f'**{headline}**  \n_**Source:** {source}_  \n_**Published:** {published}_ \
+                  \n\n**Summary:**  \n{summary} \n\n_**URL:** {url}_')
         
 
 if option == 'Social Media':
@@ -1812,7 +1814,7 @@ if option == 'Social Media':
         auth.set_access_token(st.secrets['TWITTER_ACCESS_TOKEN'], st.secrets['TWITTER_ACCESS_TOKEN_SECRET'])
         api = tweepy.API(auth)
 
-        for username in config.TWITTER_USERNAMES:
+        for username in TWITTER_USERNAMES:
             user = api.get_user(screen_name=username)
             tweets = api.user_timeline(screen_name=username)
             st.subheader(username)
