@@ -4,6 +4,7 @@ import math
 from math import sqrt
 import numpy as np
 import pandas as pd
+from pyparsing import col
 import requests
 import pickle
 from datetime import datetime as dt
@@ -47,7 +48,7 @@ def get_SPY_data():
 
 SPY_df = get_SPY_data()
 ticker_list = SPY_info_df['Symbol'].to_list()
-last_date = SPY_df.iloc[-1].name
+last_date = SPY_df.iloc[-1].name.date()
 yr_ago = last_date - timedelta(days=365)
 f = r'data/market_data/'
 
@@ -238,14 +239,15 @@ if option == 'S&P 500 Information':
     st.plotly_chart(fig)
     st.info(f'{s2}  \n{s3}  \n{s4}')
 
-if option == 'Stock Information':  
+if option == 'Stock Information':
+    tickerSymbol = st.selectbox('Stock Ticker', ticker_list)
+
     with st.form(key='my_form'):
-        tickerSymbol = st.selectbox('Stock Ticker', ticker_list)
         start_date = st.date_input('Start Date', yr_ago,
                                     min_value=first_dates[0][1])
         end_date = st.date_input('End Date', last_date)
         submit_button = st.form_submit_button(label='Submit')
-    
+        
     @st.cache
     def get_ticker_data():
         ticker_df = pd.read_csv(f + f'{tickerSymbol}.csv',
@@ -255,7 +257,7 @@ if option == 'Stock Information':
         return ticker_df
 
     ticker_df = get_ticker_data()
-    first_date = ticker_df.iloc[0].name  
+    first_date = ticker_df.iloc[0].name.date()
     ticker_df = ticker_df[start_date: end_date]
     ticker_df.rename(columns={'volume': 'Volume'}, inplace=True)
     
@@ -268,7 +270,7 @@ if option == 'Stock Information':
         st.error(f"Market data after {last_date.strftime('%B %d, %Y')} \
                     is unavailable.")
     
-    st.info(f"{tickerSymbol} market data is available from \
+    st.info(f"**{tickerSymbol}** market data is available from \
         {first_date.strftime('%B %d, %Y')} to {last_date.strftime('%B %d, %Y')}.")
 
     tickerData = yf.Ticker(tickerSymbol)
@@ -479,49 +481,48 @@ if option == 'Stock Information':
     st.plotly_chart(fig)
 
     if ticker_return > SPY_return:
-        s = f'{tickerSymbol} outperforms the S&P 500 by {(ticker_return - SPY_return):,.2f}% \
-            between {start_date.strftime("%B %d, %Y")} and {end_date.strftime("%B %d, %Y")}.'
+        s = f'{tickerSymbol} outperforms the S&P 500 by {(ticker_return - SPY_return):,.2f}%'
     elif ticker_return < SPY_return:
-        s = f'{tickerSymbol} underperforms the S&P 500 by {(SPY_return - ticker_return):,.2f}% \
-            between {start_date.strftime("%B %d, %Y")} and {end_date.strftime("%B %d, %Y")}.'
+        s = f'{tickerSymbol} underperforms the S&P 500 by {(SPY_return - ticker_return):,.2f}%'
     else:
-        s = f'{tickerSymbol} and the S&P 500 have comparable performance between \
-            {start_date.strftime("%B %d, %Y")} and {end_date.strftime("%B %d, %Y")}.'
+        s = f'{tickerSymbol} and the S&P 500 have comparable performance'
     
     if ticker_return > sector_return:
-        s1 = f'{tickerSymbol} outperforms the sector by {(ticker_return - sector_return):,.2f}% \
-            between {start_date.strftime("%B %d, %Y")} and {end_date.strftime("%B %d, %Y")}'
+        s1 = f'{tickerSymbol} outperforms the sector by {(ticker_return - sector_return):,.2f}%'
     elif ticker_return < sector_return:
-        s1 = f'{tickerSymbol} underperforms the sector by {(sector_return - ticker_return):,.2f}% \
-            between {start_date.strftime("%B %d, %Y")} and {end_date.strftime("%B %d, %Y")}'
+        s1 = f'{tickerSymbol} underperforms the sector by {(sector_return - ticker_return):,.2f}%'
     else:
-        s1 = f'{tickerSymbol} and the sector have comparable performance between \
-            {start_date.strftime("%B %d, %Y")} and {end_date.strftime("%B %d, %Y")}'
+        s1 = f'{tickerSymbol} and the sector have comparable performance.'
 
     if ticker_return > subIndustry_return:
-        s2 = f'{tickerSymbol} outperforms the sub-industry by {(ticker_return - subIndustry_return):,.2f}% \
-            between {start_date.strftime("%B %d, %Y")} and {end_date.strftime("%B %d, %Y")}'
+        s2 = f'{tickerSymbol} outperforms the sub-industry by \
+            {(ticker_return - subIndustry_return):,.2f}%'
     elif ticker_return < subIndustry_return:
-        s2 = f'{tickerSymbol} underperforms the sub-industry by {(subIndustry_return - ticker_return):,.2f}% \
-            between {start_date.strftime("%B %d, %Y")} and {end_date.strftime("%B %d, %Y")}'
+        s2 = f'{tickerSymbol} underperforms the sub-industry by \
+            {(subIndustry_return - ticker_return):,.2f}%'
     else:
-        s2 = f'{tickerSymbol} and the sub-industry have comparable performance between \
-            {start_date.strftime("%B %d, %Y")} and {end_date.strftime("%B %d, %Y")}'    
+        s2 = f'{tickerSymbol} and the sub-industry have comparable performance'    
     
     if nsubIndustry == 1:
-        s3 = f'{tickerSymbol} is the only stock in the {subIndustry} sub-industry.'
+        s3 = f'{tickerSymbol} is the only stock in the {subIndustry} sub-industry'
     else:
-        s3 = f"The capitalisation-weighted average CAGR for the {nsubIndustry} \
-             stocks in the {subIndustry} sub-industry is {subIndustry_return:,.2f}%. \
-             \n{s2}.  \n{tickerSymbol}'s performance is ranked \
-             {ticker_rank1}/{nsubIndustry} in the sub-industry."
+        s3 = f"- The capitalisation-weighted average CAGR for the {nsubIndustry} \
+             stocks in the {subIndustry} sub-industry is {subIndustry_return:,.2f}% \
+             \n- {s2} \
+             \n- {tickerSymbol}'s performance is ranked {ticker_rank1}/{nsubIndustry} \
+             in the sub-industry"
 
-    st.info(f"The {tickerSymbol} CAGR is {ticker_return:,.2f}%. \
-            \nThe period S&P 500 CAGR is {SPY_return:,.2f}%.  \n{s}  \
-            \n\nThe capitalisation-weighted average CAGR for the {nsector}\
-            stocks in the {sector} sector is {sector_return:,.2f}%.  \
-            \n{s1}.  \n{tickerSymbol}'s performance is ranked {ticker_rank}/{nsector} \
-            in the sector.  \n\n{s3}")
+    st.write(f"Period: {start_date.strftime('%d/%m/%y')} - \
+             {end_date.strftime('%d/%m/%y')}")
+    st.info(f"- The {tickerSymbol} CAGR is {ticker_return:,.2f}% \
+            \n- The S&P 500 CAGR is {SPY_return:,.2f}%  \
+            \n- {s}")
+    st.info(f"- The capitalisation-weighted average CAGR for the {nsector}\
+            stocks in the {sector} sector is {sector_return:,.2f}% \
+            \n- {s1} \
+            \n- {tickerSymbol}'s performance is ranked {ticker_rank}/{nsector} \
+            in the sector")
+    st.info(f"{s3}")
 
 if option == 'Stock Comparisons By Sector':
     # List of sectors
@@ -788,7 +789,7 @@ if option == 'Stock Comparisons By Sector':
 
     # Metrics to display graph of
     metrics = ['Returns', 'Returns Volatility', 'Sharpe Ratios', 'Betas', 'Financial Ratios']
-    metric = st.selectbox('Display Graphs Of', metrics)
+    metric = st.selectbox('Display Graphs of', metrics)
 
     # Additional info about metrics
     if metric == 'Returns Volatility':
@@ -886,7 +887,7 @@ if option == 'Stock Comparisons By Sector':
         fig.add_hline(y=1,
                       line_color='red',
                       line_width=0.75,
-                      annotation_text=f'S&P 500 Beta (1.00)', 
+                      annotation_text='S&P 500 Beta (1.00)', 
                       annotation_position='bottom right',
                       annotation_bgcolor='#FF7F7F',
                       annotation_bordercolor='red')
@@ -978,7 +979,7 @@ if option == 'Stock Comparisons By Sector':
             }
 
         ratio = st.selectbox('Ratio', list(ratios.keys()))
-
+        
         sector_ratios_df, subIndustry_ratios_dict, \
             ticker_ratios_dict = get_current_ratios()
             
@@ -993,6 +994,7 @@ if option == 'Stock Comparisons By Sector':
     # Show how many stocks in the sector are missing data
     if metric != 'Financial Ratios':
         sector_tickers = SPY_info_df[SPY_info_df['GICS Sector'] == sector]['Symbol'].to_list()
+        
         try:
             missing = missing_mkt_data[sector]
             i = 0
@@ -1165,6 +1167,7 @@ if option == 'Stock Comparisons By Sector':
         try:
             missing = missing_mkt_data[sector][subIndustry]
             i = 0
+            
             for stock in missing:
                 i += 1
         except:
@@ -1185,9 +1188,9 @@ if option == 'Stock Comparisons By Sector':
             d[ticker] = ticker_cols_dict[ticker]
 
         ticker_cols_df = pd.DataFrame.from_dict(d, orient='index', columns=['Return (%)'])
-        
-        # Set positions of annotation texts
         returns = [SPY_return, sector_return, subIndustry_return]
+
+        # Set positions of annotation texts
         if SPY_return == min(returns):
             pos = 'bottom left'
         else:
@@ -1224,7 +1227,6 @@ if option == 'Stock Comparisons By Sector':
                     and for bottom *n* returns enter a negative integer')
         n = st.text_input(label='Number Of Stocks To Show', value='25')
         n = int(n)
-
         all_returns_df = pd.DataFrame.from_dict(ticker_cols_dict, orient='index')
         all_returns_df.sort_values('Return (%)', ascending=False, inplace=True)
         all_returns_df.reset_index(inplace=True)
@@ -1249,9 +1251,9 @@ if option == 'Stock Comparisons By Sector':
         
         ticker_vols_df = pd.DataFrame.from_dict(d, orient='index', 
                                                 columns=['Returns Volatility (%)'])
-        
-        # Set positions of annotation texts
         vols = [SPY_vol, sector_vol, subIndustry_vol]
+
+        # Set positions of annotation texts
         if SPY_vol == min(vols):
             pos = 'bottom left'
         else:
@@ -1288,7 +1290,6 @@ if option == 'Stock Comparisons By Sector':
                     and for bottom *n* volatile returns enter a negative integer')
         n = st.text_input(label='Number Of Stocks To Show', value='25')
         n = int(n)
-
         all_vols_df = pd.DataFrame.from_dict(ticker_cols_dict, orient='index')
         all_vols_df.sort_values('Returns Volatility (%)', ascending=False, inplace=True)
         all_vols_df.reset_index(inplace=True)
@@ -1305,16 +1306,16 @@ if option == 'Stock Comparisons By Sector':
 
     if metric == 'Sharpe Ratio':
         subIndustry_sharpe = subIndustry_sharpes_df.loc[subIndustry].item()
+        
         d = {}
-
         # Make dataframe of tickers
         for ticker in tickers:
             d[ticker] = ticker_cols_dict[ticker]
         
         ticker_sharpes_df = pd.DataFrame.from_dict(d, orient='index', columns=['Sharpe Ratio'])
-        # Set positions of annotation texts
         sharpes = [SPY_sharpe, sector_sharpe, subIndustry_sharpe]
         
+        # Set positions of annotation texts
         if SPY_sharpe == min(sharpes):
             pos = 'bottom left'
         else:
@@ -1350,7 +1351,6 @@ if option == 'Stock Comparisons By Sector':
         st.markdown('For top *n* Sharpe Ratio enter a positive integer, and for bottom *n* Sharpe Ratio enter a negative integer')
         n = st.text_input(label='Number Of Stocks To Show', value='25', key='A1')
         n = int(n)
-
         # all_vols_df['Return/Volatility'] = all_vols_df['Return (%)'] / all_vols_df['Returns Volatility (%)']
         all_sharpes_df = pd.DataFrame.from_dict(ticker_cols_dict, orient='index')
         all_sharpes_df.sort_values('Sharpe Ratio', ascending=False, inplace=True)
@@ -1375,9 +1375,9 @@ if option == 'Stock Comparisons By Sector':
             d[ticker] = ticker_betas_dict[ticker]
         
         ticker_betas_df = pd.DataFrame.from_dict(d, orient='index', columns=['Beta'])
-        
-        # Set positions of annotation texts
         betas = [sector_beta, subIndustry_beta]
+
+        # Set positions of annotation texts
         if min(betas) > 1:
             pos = 'bottom left'
         else:
@@ -1530,10 +1530,8 @@ if option == 'Technical Analysis':
                 df['ATR'] = df['TR'].rolling(window=20).mean()
                 df['lower_keltner'] = df['20sma'] - (df['ATR'] * 1.5)
                 df['upper_keltner'] = df['20sma'] + (df['ATR'] * 1.5)
-
                 name = SPY_info_df[SPY_info_df['Symbol'] == ticker]['Security'].item()
                 title = f'{name} ({ticker})'
-                
                 candlestick = go.Candlestick(x=df.index, open=df['open'], high=df['high'], low=df['low'], close=df['close'], name=ticker)
                 upper_band = go.Scatter(x=df.index, y=df['upper_band'], name='Upper Bollinger Band', line={'color': 'blue', 'width': 0.75})
                 lower_band = go.Scatter(x=df.index, y=df['lower_band'], name='Lower Bollinger Band', line={'color': 'blue', 'width': 0.75})
@@ -1575,8 +1573,8 @@ if option == 'Technical Analysis':
             dates = sorted(dates, reverse=True)
             dates = [date.strftime('%B %d, %Y') for date in dates]
             b_date = st.selectbox('Breakout Date', dates)
-
             lst = []
+
             for item in comingOut:
                 if item[1] == dt.strptime(b_date, '%B %d, %Y'):
                     lst.append(item)
@@ -1644,20 +1642,23 @@ if option == 'Technical Analysis':
                 st.plotly_chart(fig)
         
         golden, death = find_SMA_crossovers(crossover)
-    
         signal = st.selectbox('Signal', ('Bullish', 'Bearish'))
         
         if signal == 'Bullish':
             st.info(f'{len(golden)} stocks had a *Golden Cross* in the last 5 days.')
+            
             if len(golden) > 0:
                 with st.expander('Golden Cross Stocks'):
                     st.write(golden)
+                
                 rng = [x for x in range(0, len(golden), 10)]
+                
                 if len(rng) > 1:
-                    st.write('Graphs Of Stocks[*n: n+10*]')
+                    st.write('Graphs of Stocks[*n: n+10*]')
                     n = st.selectbox('Select n', rng)
                 else:
                     n = 0
+                
                 make_crossover_charts(crossover, golden, n)
         else:
             st.info(f'{len(death)} stocks had a *Death Cross* in the last 5 days.')
@@ -1669,7 +1670,7 @@ if option == 'Technical Analysis':
                 rng = [x for x in range(0, len(death), 10)]
                 
                 if len(rng) > 1:
-                    st.write('Graphs Of Stocks[*n: n+10*]')
+                    st.write('Graphs of Stocks[*n: n+10*]')
                     n = st.selectbox('Select n', rng)
                 else:
                     n = 0
@@ -1726,7 +1727,6 @@ if option == 'Technical Analysis':
             
             name = SPY_info_df[SPY_info_df['Symbol'] == ticker]['Security'].item()
             title = f'{name} ({ticker})'
-
             candlesticks = go.Candlestick(x=df['date'],
                                           open=df['open'], high=df['high'],
                                           low=df['low'], close=df['close'],

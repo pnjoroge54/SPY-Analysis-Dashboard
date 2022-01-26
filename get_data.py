@@ -20,11 +20,17 @@ import streamlit as st
 def get_SPY_companies():
     table = pd.read_html('https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')
     df = table[0]
+    c_df = pd.read_csv('data/S&P500-Info.csv', index_col='Unnamed: 0')
+
     # Change '.' to '-' in ticker before df is written
     for row in df.index:
         df.loc[row, 'Symbol'] = df.loc[row, 'Symbol'].replace('.', '-')
-    
-    df.to_csv('data/S&P500-Info.csv')
+
+    if c_df.equals(df):
+        print('S&P 500 info is up to date')
+    else: 
+        df.to_csv('data/S&P500-Info.csv')
+        print('S&P 500 info updated')
 
 def get_tickers():
     df = pd.read_csv('data/S&P500-Info.csv')
@@ -123,7 +129,6 @@ def get_SPY_weights():
         # making request to the website
         req = Request(url=url, headers={'User-Agent': 'Mozilla/5.0'})
         f = urlopen(req)
-    
         return f.read() # reading contents of the website
  
     url = 'https://www.slickcharts.com/sp500'
@@ -207,12 +212,11 @@ def save_TTM_financial_ratios():
         with open(join(f, file), 'wb') as f1:
             pickle.dump(d, f1)
     else:
-        print(f'Not all ratios ({len(d)}/505) downloaded\n')
+        print(f'{505 - len(d)}/505 ratios not downloaded\n')
 
            
-# get_SPY_companies()
+get_SPY_companies()
+# get_SPY_weights()
 # get_market_data()
 # move_market_data()
-# get_financial_ratios()
-# get_SPY_weights()
 save_TTM_financial_ratios()
