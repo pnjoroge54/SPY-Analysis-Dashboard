@@ -818,7 +818,7 @@ if option == 'Stock Comparisons By Sector':
         if missing_rpt1 != '':
             st.error(missing_rpt1)
         if missing_rpt2 != '':
-            st.error(missing_rpt1)
+            st.error(missing_rpt2)
         if missing_rpt3 != '':
             st.warning(missing_rpt3)
 
@@ -1796,6 +1796,7 @@ if option == 'News':
             article.nlp()
             summary = article.summary
             err = 'Javascript is DisabledYour current browser configurationis not compatible with this site.'
+            
             if summary == err:
                 summary = story['summary']
         except:
