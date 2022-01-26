@@ -240,14 +240,14 @@ if option == 'S&P 500 Information':
     st.info(f'{s2}  \n{s3}  \n{s4}')
 
 if option == 'Stock Information':
-    tickerSymbol = st.selectbox('Stock Ticker', ticker_list)
-
     with st.form(key='my_form'):
         start_date = st.date_input('Start Date', yr_ago,
                                     min_value=first_dates[0][1])
         end_date = st.date_input('End Date', last_date)
         submit_button = st.form_submit_button(label='Submit')
-        
+
+    tickerSymbol = st.selectbox('Stock Ticker', ticker_list)
+    
     @st.cache
     def get_ticker_data():
         ticker_df = pd.read_csv(f + f'{tickerSymbol}.csv',
