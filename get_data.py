@@ -32,105 +32,25 @@ def get_SPY_companies():
         df.to_csv('data/S&P500-Info.csv')
         print('S&P 500 info updated')
 
+
 def get_tickers():
     df = pd.read_csv('data/S&P500-Info.csv')
     tickers = df['Symbol'].to_list()
 
     return tickers
 
-'''Get historical price & volume data for each stock in the S&P500,
-   as well as S&P500 data'''
-def get_market_data():  
-    i = 0
-    n = 505
-    tickers = get_tickers()
 
-    for ticker in tickers:
-        i += 1
-        # tickerData = yf.Ticker(symbol)
-        # data = tickerData.history(period='max')
-        data = si.get_data(ticker)
-        data.to_csv(f'data/market_data/{ticker}.csv')
-        sys.stdout.write("\r")
-        sys.stdout.write(f"{i}/{n} ({i/n * 100:.2f}%) of S&P 500 market data downloaded")
-        sys.stdout.flush()
+def url_get_contents(url):
+    # Opens a website and read its binary contents (HTTP Response Body)
+    # making request to the website
+    req = Request(url=url, headers={'User-Agent': 'Mozilla/5.0'})
+    f = urlopen(req)
+    
+    return f.read() # reading contents of the website
 
-    SPY = yf.Ticker('^GSPC').history(period='max')
-    SPY.to_csv('data/SPY.csv')
 
-'''Move tickers that have been removed from the S&P500 to their own folder'''
-def move_market_data():
-    tickers = get_tickers()
-
-    for file in os.listdir('data/market_data'):
-        ticker = file.replace('.csv', '')
-
-        if ticker not in tickers:
-            shutil.move(f'data/market_data/{file}', f'data/removed_from_index/{file}')
-            print(f'{ticker} is no longer in the S&P 500.')
-
-'''Download annual financial ratios'''
-def get_financial_ratios():
-    tickers = get_tickers()
-    not_current = []
-    no_data = []
-    not_downloaded = []
-    f = 'data/financial_ratios/Annual'
-    i = 0
-
-    for ticker in tickers:
-        file = ticker + '.csv'
-        df = pd.read_csv(join(f, file))
-
-        if not df.empty:
-            if str(dt.now().year - 1) != df.columns[1]:
-                not_current.append(ticker)
-        else:
-            no_data.append(ticker)
-
-    print(len(not_current, 'not_current'))
-    print('no_data:', no_data)
-    # for i, ticker in enumerate(tickers[250:500], start=251):
-    #     file = ticker + '.csv'
-        
-    #     if file in os.listdir(f):
-    #         pass
-    #     else:
-    #         try:
-    #             fr = fa.financial_ratios(ticker, st.secrets['FUNDAMENTAL_ANALYSIS_API_KEY2'], period='annual')
-    #             fr.to_csv(f'{f}/{ticker}.csv')
-    #             print(i, ticker, 'downloaded')
-    #         except ValueError as e:
-    #             print(e)
-    #             not_downloaded.append(ticker)
-
-    # for i, ticker in enumerate(tickers[500:], start=501):
-    #     file = ticker + '.csv'
-
-    #     if file in os.listdir(f):
-    #         pass
-    #     else:
-    #         try:
-    #             fr = fa.financial_ratios(ticker, st.secrets['FUNDAMENTAL_ANALYSIS_API_KEY3'], period='annual')
-    #             fr.to_csv(f'{f}/{ticker}.csv')
-    #             print(i, ticker, 'downloaded')
-    #         except ValueError as e:
-    #             print(e)
-    #             not_downloaded.append(ticker)
-
-    # print(len(not_downloaded), 'annual ratios not downloaded')
-    # print(not_downloaded)
-
-'''Gets market cap weights for stocks, sectors and sub-industries
-   from https://www.slickcharts.com/sp500'''
+'''Gets market cap weights for stocks, sectors and sub-industries'''
 def get_SPY_weights():
-    def url_get_contents(url):
-        # Opens a website and read its binary contents (HTTP Response Body)
-        # making request to the website
-        req = Request(url=url, headers={'User-Agent': 'Mozilla/5.0'})
-        f = urlopen(req)
-        return f.read() # reading contents of the website
- 
     url = 'https://www.slickcharts.com/sp500'
     xhtml = url_get_contents(url).decode('utf-8')
     p = HTMLTableParser() # Defining the HTMLTableParser object
@@ -141,13 +61,104 @@ def get_SPY_weights():
     df.columns = new_header # set the header row as the df header
     df.drop(['#', 'Price', 'Chg', '% Chg'], axis=1, inplace=True)
     df['Weight'] = pd.to_numeric(df['Weight'])
+    
+    for i in df.index:
+        df.loc[i, 'Symbol'] = df.loc[i, 'Symbol'].replace('.', '-')
+    
+    df.set_index('Symbol', inplace=True)
     df.to_csv('data\S&P500 Weights.csv')
-    print('S&P 500 weights are up to date!')
+    print('S&P 500 weights are up to date!\n')
+
+
+'''Get historical price & volume data for each stock in the S&P500,
+   as well as S&P500 data'''
+def get_market_data():  
+    i = 0
+    n = 505
+    tickers = get_tickers()
+
+    for ticker in tickers:
+        i += 1
+        data = si.get_data(ticker)
+        data.to_csv(f'data/market_data/{ticker}.csv')
+        sys.stdout.write("\r")
+        sys.stdout.write(f"{i}/{n} ({i/n * 100:.2f}%) of S&P 500 market data downloaded")
+        sys.stdout.flush()
+
+    SPY = yf.Ticker('^GSPC').history(period='max')
+    SPY.to_csv('data/SPY.csv')
+
+
+'''Move tickers that have been removed from the S&P500 to their own folder'''
+def move_market_data():
+    tickers = get_tickers()
+
+    for file in os.listdir('data/market_data'):
+        ticker = file.replace('.csv', '')
+
+        if ticker not in tickers:
+            shutil.move(f'data/market_data/{file}', f'data/removed_from_index/{file}')
+            print(f'{ticker} is no longer in the S&P 500.\n')
+
+
+def ratios_to_update():
+    tickers = get_tickers()
+    not_current = []
+    no_data = []
+    not_downloaded = []
+    f = 'data/financial_ratios/Annual'
+
+    for ticker in tickers:
+        file = ticker + '.csv'
+        
+        if file in os.listdir(f):
+            df = pd.read_csv(join(f, file))
+
+            if not df.empty:
+                if str(dt.now().year - 1) != df.columns[1]:
+                    not_current.append(ticker)
+            else:
+                no_data.append(ticker)
+        else:
+            not_downloaded.append(ticker)
+
+    to_update = not_current + no_data + not_downloaded
+    
+    return to_update
+
+to_update = ratios_to_update()
+
+'''Download annual financial ratios'''
+def get_financial_ratios(i, n):
+    f = 'data/financial_ratios/Annual'
+
+    if i < len(to_update):
+        try:
+            for ticker in to_update[i: i + 250]:
+                ratios = fa.financial_ratios(ticker, st.secrets[f'FUNDAMENTAL_ANALYSIS_API_KEY{n}'],
+                                             period='annual')
+                ratios.to_csv(f'{f}/{ticker}.csv')
+                i += 1
+                sys.stdout.write("\r")
+                sys.stdout.write(f"{i}/{len(to_update)} outdated financial ratios downloaded")
+                sys.stdout.flush()
+        except:
+            print(f'\nAPI Key {n} has maxed out its requests \
+                    \n{i} financial ratios downloaded\n')
+            # Use recursion to continue looping through tickers when API calls
+            # for a key reach the limit (250 requests/day)
+            if n < 4:
+                n += 1
+        
+        return get_financial_ratios(i, n)
+    else:
+        print('\nAnnual financial ratios are up to date!\n')        
+
 
 def get_TTM_financial_ratios(i, n, d):
     tickers = get_tickers()
 
-    if i < 505:
+    if i < len(tickers):
         try:
             for ticker in tickers[i: i + 250]:
                 ratios = fa.financial_ratios(
@@ -162,23 +173,22 @@ def get_TTM_financial_ratios(i, n, d):
         except:
             sys.stdout.write("\033[F") # back to previous line 
             sys.stdout.write("\033[K") # clear line 
-            
+            print(f'API Key {n} has maxed out its requests \
+                    \n{i} financial ratios downloaded\n')
             # Use recursion to continue building the dict of current ratios when API calls
             # for a key reach the limit (250 requests/day)
             if n < 4:
-                print(f'API Key {n} has maxed out its requests \
-                        \n{i} financial ratios downloaded\n')
                 n += 1
-                get_TTM_financial_ratios(i, n, d)
-            else:
-                print(f'API Key {n} has maxed out its requests \
-                        \n{i} financial ratios downloaded\n')
         
-        return d
+        return get_TTM_financial_ratios(i, n, d)
     else:
-        print('Current ratios are up to date!')
+        sys.stdout.write("\033[F")
+        sys.stdout.write("\033[K")
+        print('Current ratios are up to date!\n')
+
         return d        
 
+'''Save ratios as pickle file'''
 def save_TTM_financial_ratios():
     # Set datetime object to EST timezone
     tz = timezone('EST')
@@ -188,35 +198,40 @@ def save_TTM_financial_ratios():
     # Sets the file name to today's date only after the US stock market
     # has closed, otherwise uses the previous day's date. Also sets
     # weekends to Friday's date.
-    if cdate.weekday() != 5 & cdate.weekday() != 6 & cdate.weekday() != 0:
-        if hour >= 16:
-            file = cdate.strftime('%d-%m-%Y') + '.pickle'
-        else:
-            cdate = cdate - timedelta(days=1)
-            file = cdate.strftime('%d-%m-%Y') + '.pickle'
+    if cdate.weekday() != 5 and cdate.weekday() != 6 and cdate.weekday() != 0:
+        if hour < 16:
+            cdate -= timedelta(days=1)
     else:
         if cdate.weekday() == 5:
-            cdate = cdate - timedelta(days=1)
-        if cdate.weekday() == 6:
-            cdate = cdate - timedelta(days=2)
-        if cdate.weekday() == 0:
+            days = 1
+        elif cdate.weekday() == 6:
+            days = 2
+        elif cdate.weekday() == 0:
+            days = 0
+            
             if hour < 16:
-                cdate = cdate - timedelta(days=3)
+                days = 3
+        
+        cdate -= timedelta(days=days)
 
         file = cdate.strftime('%d-%m-%Y') + '.pickle'
 
     f = r'data/financial_ratios/Current'
     d = get_TTM_financial_ratios(0, 1, {})
+    tickers = get_tickers()
 
-    if len(d) == 505:
+    if len(d) == len(tickers):
         with open(join(f, file), 'wb') as f1:
             pickle.dump(d, f1)
+        
+        print(file, 'saved\n')
     else:
-        print(f'{505 - len(d)}/505 ratios not downloaded\n')
+        print(f'{len(tickers) - len(d)}/{len(tickers)} ratios not downloaded\n')
 
            
-get_SPY_companies()
-# get_SPY_weights()
+# get_SPY_companies()
+get_SPY_weights()
 # get_market_data()
 # move_market_data()
-save_TTM_financial_ratios()
+# get_financial_ratios(0, 1)
+# save_TTM_financial_ratios()
