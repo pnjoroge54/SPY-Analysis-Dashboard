@@ -4,7 +4,6 @@ import math
 from math import sqrt
 import numpy as np
 import pandas as pd
-from pyparsing import col
 import requests
 import pickle
 from datetime import datetime as dt
@@ -19,12 +18,13 @@ import yfinance as yf
 import streamlit as st
 import tweepy
 from newspaper import Article
-import FundamentalAnalysis as fa
 import pandas_datareader as pdr
 
 from config import TWITTER_USERNAMES
 from functions import getIndexOfTuple
 from SPY import INFO
+from financial_ratios import FORMULAS, MEANINGS
+
 
 nltk.download([
      "names",
@@ -34,27 +34,28 @@ nltk.download([
      "punkt"
       ])
 
-# Make dataframe of info about S&P500 companies
 @st.cache
 def get_SPY_info():
-    return pd.read_csv(r'data/S&P500-Info.csv')
+    # Make dataframe of info about S&P500 companies
+    return pd.read_csv('data/S&P500-Info.csv')
 
 SPY_info_df = get_SPY_info()
 
-# Make dataframe of S&P500 market data
 @st.cache
 def get_SPY_data():
-    return pd.read_csv(r'data/SPY.csv', index_col='Date', parse_dates=True)
+    # Make dataframe of S&P500 market data
+    return pd.read_csv('data/SPY.csv', index_col='Date', parse_dates=True)
 
 SPY_df = get_SPY_data()
 ticker_list = SPY_info_df['Symbol'].to_list()
 last_date = SPY_df.iloc[-1].name.date()
 yr_ago = last_date - timedelta(days=365)
-f = r'data/market_data/'
+f = 'data/market_data/'
 
-# Get the earliest date for which market data is available for each company
 @st.cache
 def get_first_dates():
+    # Get the earliest date for which market data is available for each company
+
     first_dates = []
 
     for file in os.listdir(f):
@@ -68,9 +69,10 @@ def get_first_dates():
     
 first_dates = get_first_dates()
 
-# Make dataframe of returns for all S&P500 stocks, as well as S&P500
 @st.cache
 def make_combined_returns_df():
+    # Make dataframe of returns for all S&P500 stocks, as well as S&P500 index
+
     combined_returns = SPY_df.copy(deep=True)
     combined_returns['Return'] = combined_returns['Close'].pct_change() * 100
     combined_returns.drop(
@@ -82,7 +84,7 @@ def make_combined_returns_df():
     for file in os.listdir(f):
         ticker = file.replace('.csv', '')
         df = pd.read_csv(f + file, index_col='Unnamed: 0', parse_dates=True)
-        df['Return'] = df['close'].pct_change() * 100
+        df['Return'] = df['adjclose'].pct_change() * 100
         combined_returns = combined_returns.join(df['Return'], how='left')
         combined_returns.rename(columns={'Return': ticker}, inplace=True)
 
@@ -99,30 +101,26 @@ def get_all_current_ratios():
     # Sets the file name to today's date only after the US stock market
     # has closed, otherwise uses the previous day's date. Also sets
     # weekends to Friday's date.
-    if cdate.weekday() != 5 & cdate.weekday() != 6 & cdate.weekday() != 0:
-        if hour >= 16:
-            file = cdate.strftime('%d-%m-%Y') + '.pickle'
-        else:
-            cdate = cdate - timedelta(days=1)
-            file = cdate.strftime('%d-%m-%Y') + '.pickle'
+    if cdate.weekday() != 5 and cdate.weekday() != 6 and cdate.weekday() != 0:
+        if hour < 16:
+            cdate -= timedelta(days=1)
     else:
+        days = 0
         if cdate.weekday() == 5:
-            cdate = cdate - timedelta(days=1)
-        if cdate.weekday() == 6:
-            cdate = cdate - timedelta(days=2)
-        if cdate.weekday() == 0:
+            days = 1
+        elif cdate.weekday() == 6:
+            days = 2
+        elif cdate.weekday() == 0:
             if hour < 16:
-                cdate = cdate - timedelta(days=3)
-
-        file = cdate.strftime('%d-%m-%Y') + '.pickle'
-
-    f = r'data/financial_ratios/Current'
+                days = 3
+                
+        cdate -= timedelta(days=days)
+    
+    file = cdate.strftime('%d-%m-%Y') + '.pickle'
+    f = 'data/financial_ratios/Current'
     
     if file in os.listdir(f):
         s = "The data reported is today's."
-
-        with open(join(f, file), 'rb') as f1:
-            d = pickle.load(f1)
     else:
         dates = []
 
@@ -133,11 +131,11 @@ def get_all_current_ratios():
 
         dates = sorted(dates)
         date = dt.strftime(dates[-1], '%B %d, %Y')
-        fname = dt.strftime(dates[-1], '%d-%m-%Y') + '.pickle'
+        file = dt.strftime(dates[-1], '%d-%m-%Y') + '.pickle'
         s = f'The data reported is from {date}.'
 
-        with open(join(f, fname), 'rb') as f1:
-            d = pickle.load(f1)
+    with open(join(f, file), 'rb') as f1:
+        d = pickle.load(f1)
 
     return d, s
 
@@ -154,51 +152,37 @@ def calculate_beta(df, ticker, start_date, end_date):
     
     return beta
 
-# Assign weights by sectors & sub-industries
 @st.cache
 def get_weights():
-    df = pd.read_csv(r'data/S&P500 Weights.csv')
+    # Assign weights by sectors & sub-industries
     
-    for i in df.index:
-        df.loc[i, 'Symbol'] = df.loc[i, 'Symbol'].replace('.', '-')
-    
-    df.set_index('Symbol', inplace=True)
-    sector_mktCaps = {}
-    subIndustry_mktCaps = {}
-    ticker_mktCaps = {}
-    SPY_mktCap = []
-    sector_dict = SPY_info_df['GICS Sector'].value_counts().to_dict()    
-    sector_list = list(sector_dict.keys())
+    weights_df = pd.read_csv('data/S&P500 Weights.csv', index_col='Symbol')
+    sector_weights = {}
+    subIndustry_weights = {}
+    ticker_weights = {}
+    sector_list = SPY_info_df['GICS Sector'].unique()
 
     for sector in sector_list:
-        subIndustry_dict = SPY_info_df[SPY_info_df['GICS Sector'] == sector] \
-                            ['GICS Sub-Industry'].value_counts().to_dict()
-        subIndustry_list = list(subIndustry_dict.keys())
+        subIndustry_list = SPY_info_df[SPY_info_df['GICS Sector'] == sector] \
+                            ['GICS Sub-Industry'].unique()
+        sector_weight = 0
         for subIndustry in subIndustry_list:
-            subIndustry_mktCaps[subIndustry] = []
-    
-    for sector in sector_list:
-        sector_tickers = SPY_info_df[SPY_info_df['GICS Sector'] == sector] \
-                            ['Symbol'].to_list()
-        sector_mktCaps[sector] = []
-        for ticker in sector_tickers:
-            t_subIndustry = SPY_info_df[SPY_info_df['Symbol'] == ticker] \
-                            ['GICS Sub-Industry'].item()
-            weight = df.loc[ticker, 'Weight']                                                              
-            sector_mktCaps[sector].append(weight)
-            subIndustry_mktCaps[t_subIndustry].append(weight)
-            ticker_mktCaps[ticker] = weight
-            SPY_mktCap.append(weight)
-        sector_mktCaps[sector] = sum(sector_mktCaps[sector])
-    
-    for subIndustry in subIndustry_mktCaps.keys():
-        subIndustry_mktCaps[subIndustry] = sum(subIndustry_mktCaps[subIndustry])
+            tickers = SPY_info_df[SPY_info_df['GICS Sub-Industry'] == subIndustry] \
+                        ['Symbol'].unique()
+            subIndustry_weight = 0
+            for ticker in tickers:
+                weight = weights_df.loc[ticker, 'Weight']
+                ticker_weights[ticker] = weight
+                subIndustry_weight += weight
 
-    SPY_mktCap = sum(SPY_mktCap) 
+            subIndustry_weights[subIndustry] = subIndustry_weight
+            sector_weight += subIndustry_weight
             
-    return SPY_mktCap, sector_mktCaps, subIndustry_mktCaps, ticker_mktCaps
+        sector_weights[sector] = sector_weight
+       
+    return sector_weights, subIndustry_weights, ticker_weights
 
-SPY_mktCap, sector_mktCaps, subIndustry_mktCaps, ticker_mktCaps = get_weights()
+sector_weights, subIndustry_weights, ticker_weights = get_weights()
 
 
 # Dashboards
@@ -349,7 +333,7 @@ if option == 'Stock Information':
     st.plotly_chart(fig)
 
     # Histogram of daily returns
-    ticker_df['Daily Return'] = ticker_df['close'].pct_change() * 100
+    ticker_df['Daily Return'] = ticker_df['adjclose'].pct_change() * 100
     gt0 = (len(ticker_df[ticker_df['Daily Return'] >= 0]) / (len(ticker_df) - 1)) * 100
     lt0 = (len(ticker_df[ticker_df['Daily Return'] < 0]) / (len(ticker_df) - 1)) * 100
     
@@ -414,7 +398,7 @@ if option == 'Stock Information':
     # Period returns
     t = len(ticker_df) / 252
     t1 = len(SPY_df) / 252
-    ticker_return = ((ticker_df.iloc[-1]['close'] \
+    ticker_return = ((ticker_df.iloc[-1]['adjclose'] \
                       / ticker_df.iloc[0]['open'])**(1 / t) - 1) * 100
     SPY_return = ((SPY_df.iloc[-1]['Close'] \
                    / SPY_df.iloc[0]['Open'])**(1 / t1) - 1) * 100    
@@ -428,10 +412,10 @@ if option == 'Stock Information':
     for ticker in sector_tickers:
         df = pd.read_csv(f + ticker + '.csv', index_col='Unnamed: 0', parse_dates=True)
         df = df[start_date: end_date]
-        df['Daily Return'] = df['close'].pct_change() * 100
+        df['Daily Return'] = df['adjclose'].pct_change() * 100
         df_return = ((1 + df['Daily Return'].mean() / 100)**(len(df) - 1) - 1) * 100
         sector_returns.append((ticker, df_return))
-        sector_ticker_weights.append(ticker_mktCaps[ticker] / sector_mktCaps[sector])
+        sector_ticker_weights.append(ticker_weights[ticker] / sector_weights[sector])
 
     sReturns = [x[1] for x in sector_returns]
     sector_return = sum(np.multiply(sReturns, sector_ticker_weights))
@@ -448,10 +432,10 @@ if option == 'Stock Information':
         df = pd.read_csv(f + ticker + '.csv', index_col='Unnamed: 0', parse_dates=True)
         df = df[start_date: end_date]
         t = len(df) / 252
-        df['Daily Return'] = df['close'].pct_change() * 100
+        df['Daily Return'] = df['adjclose'].pct_change() * 100
         df_return = ((df.iloc[-1]['close'] / df.iloc[0]['open'])**(1 / t) - 1) * 100
         subIndustry_returns.append((ticker, df_return))
-        subIndustry_ticker_weights.append(ticker_mktCaps[ticker] / subIndustry_mktCaps[subIndustry])
+        subIndustry_ticker_weights.append(ticker_weights[ticker] / subIndustry_weights[subIndustry])
 
     siReturns = [x[1] for x in subIndustry_returns]
     subIndustry_return = sum(np.multiply(siReturns, subIndustry_ticker_weights))
@@ -525,9 +509,8 @@ if option == 'Stock Information':
     st.info(f"{s3}")
 
 if option == 'Stock Comparisons By Sector':
-    # List of sectors
-    sector_dict = SPY_info_df['GICS Sector'].value_counts().to_dict()    
-    sector_list = list(sector_dict.keys())
+    # List of sectors 
+    sector_list = SPY_info_df['GICS Sector'].unique()
 
     @st.cache
     def find_stocks_missing_data(start_date, end_date):
@@ -603,19 +586,21 @@ if option == 'Stock Comparisons By Sector':
                 df.ffill(inplace=True)
                 t = len(df) / 252
                 df['Daily T-Bill Rate'] = (1 + df['DTB3'] / 100)**(1 / 365) - 1
-                df['Daily Return'] = df['close'].pct_change()
+                df['Daily Return'] = df['adjclose'].pct_change()
                 df['Excess Return'] = df['Daily Return'] - (df['Daily T-Bill Rate'] / 100)
-                df_return = ((df.iloc[-1]['close'] / df.iloc[0]['open'])**(1 / t) - 1) * 100
+                df_return = ((df.iloc[-1]['adjclose'] / df.iloc[0]['open'])**(1 / t) - 1) * 100
                 df_ereturn = ((df.iloc[-1]['Excess Return'] / (df.iloc[0]['open'] \
                                - df.iloc[0]['Daily T-Bill Rate']))**(1 / t) - 1) * 100
                 df_std = df['Daily Return'].std() * 252**0.5 * 100
                 df_estd = df['Excess Return'].std() * 252**0.5 * 100
                 # Needs fixing
+                print(df_ereturn)
+                print(df_estd)
                 df_sharpe = df_ereturn / df_estd
                 # Get weight to use in weighted average calculation
-                mktCap = ticker_mktCaps[ticker]
-                ticker_sector_weight = mktCap / sector_mktCaps[sector]
-                ticker_subIndustry_weight = mktCap / subIndustry_mktCaps[t_subIndustry]
+                mktCap = ticker_weights[ticker]
+                ticker_sector_weight = mktCap / sector_weights[sector]
+                ticker_subIndustry_weight = mktCap / subIndustry_weights[t_subIndustry]
                 # Append result to its sector list
                 sector_return.append(df_return * ticker_sector_weight)
                 sector_vol.append(df_std * ticker_sector_weight)
@@ -668,6 +653,8 @@ if option == 'Stock Comparisons By Sector':
         df3_evol = df3['Excess Return'].std() * 252**0.5 * 100
         df3_sharpe = df3_ereturn / df3_evol
 
+        print('df2\n', df2.head())
+
         return df, subIndustry_returns, ticker_cols, df1, subIndustry_vols, \
                df2, subIndustry_sharpes, df3_return, df3_vol, df3_sharpe
 
@@ -696,9 +683,9 @@ if option == 'Stock Comparisons By Sector':
                 # Get beta for each ticker
                 beta = calculate_beta(combined_returns_df, ticker, start_date, end_date)
                 # Get weight to use in weighted average calculation
-                mktCap = ticker_mktCaps[ticker]
-                ticker_sector_weight = mktCap / sector_mktCaps[sector]
-                ticker_subIndustry_weight = mktCap / subIndustry_mktCaps[t_subIndustry]
+                mktCap = ticker_weights[ticker]
+                ticker_sector_weight = mktCap / sector_weights[sector]
+                ticker_subIndustry_weight = mktCap / subIndustry_weights[t_subIndustry]
                 # Append beta to its sector list
                 sector_beta.append(beta * ticker_sector_weight)  
                 # Append beta to its sub-industry list
@@ -750,9 +737,9 @@ if option == 'Stock Comparisons By Sector':
                 t_subIndustry = SPY_info_df[SPY_info_df['Symbol'] == ticker] \
                                 ['GICS Sub-Industry'].item()
                 # Get weight to use in weighted average calculation
-                mktCap = ticker_mktCaps[ticker]
-                ticker_sector_weight = mktCap / sector_mktCaps[sector]
-                ticker_subIndustry_weight = mktCap / subIndustry_mktCaps[t_subIndustry]
+                mktCap = ticker_weights[ticker]
+                ticker_sector_weight = mktCap / sector_weights[sector]
+                ticker_subIndustry_weight = mktCap / subIndustry_weights[t_subIndustry]
                 # Ratio result
                 res = current_ratios[ticker][r]
 
@@ -795,7 +782,7 @@ if option == 'Stock Comparisons By Sector':
     if metric == 'Returns Volatility':
         st.info('**Returns Volatility** is calculated as the standard deviation of returns.')
     
-    if metric == 'Sharpe Ratio':
+    if metric == 'Sharpe Ratios':
         st.info('**Sharpe Ratio** can be thought of as the *excess return per \
                 unit of risk*, where risk is the standard deviation of excess \
                 returns.')
@@ -810,7 +797,7 @@ if option == 'Stock Comparisons By Sector':
 
         # Show date range of ticker data and raise error messages
         if start_date > end_date:
-            st.error('Start Date must be before End Date')
+            st.error('*Start Date* must be before *End Date*')
 
         missing_mkt_data, missing_rpt1, missing_rpt2, missing_rpt3 = \
             find_stocks_missing_data(start_date, end_date)
@@ -824,7 +811,7 @@ if option == 'Stock Comparisons By Sector':
             st.warning(missing_rpt3)
 
         if len(missing_mkt_data) > 0:
-            with st.expander("Stocks Missing Data By Sector & Sub-Industry"):
+            with st.expander("Stocks Missing Data by Sector & Sub-Industry"):
                 st.write(missing_mkt_data)
 
         sector_returns_df, subIndustry_returns_dict, ticker_cols_dict, \
@@ -861,7 +848,7 @@ if option == 'Stock Comparisons By Sector':
         fig.update_layout(title='Sector Returns Volatility', xaxis_title='')
         st.plotly_chart(fig)
 
-    if metric == 'Sharpe Ratio':        
+    if metric == 'Sharpe Ratios':        
         # Charts of sector Sharpe Ratio
         fig = px.bar(sector_sharpes_df,
                      x=sector_sharpes_df.index,
@@ -873,7 +860,7 @@ if option == 'Stock Comparisons By Sector':
                       annotation_text=f'S&P 500 Sharpe Ratio ({SPY_sharpe:.4f})', 
                       annotation_bgcolor='#FF7F7F',
                       annotation_bordercolor='red')
-        fig.update_layout(title='Sector Sharpe Ratio', xaxis_title='')
+        fig.update_layout(title='Sector Sharpe Ratios', xaxis_title='')
         st.plotly_chart(fig)
 
     if metric == 'Beta':
@@ -895,9 +882,6 @@ if option == 'Stock Comparisons By Sector':
         st.plotly_chart(fig)
 
     if metric == 'Financial Ratios':
-        st.write('For more information on the calculation of financial ratios \
-            visit https://financialmodelingprep.com/financial-ratios/')
-        
         if ratios_data_report != "The data reported is today's.":
             st.info(ratios_data_report)
             
@@ -907,7 +891,8 @@ if option == 'Stock Comparisons By Sector':
                       'Debt Ratios',
                       'Operating Performance Ratios',
                       'Cash Flow Indicator Ratios']
-        category = st.selectbox('Ratio Categories', categories)
+        col1, col2 = st.columns(2)
+        category = col1.selectbox('Ratio Categories', categories)
 
         if category == 'Investment Valuation Ratios':
             ratios = {
@@ -934,7 +919,7 @@ if option == 'Stock Comparisons By Sector':
 
         if category == 'Liquidity Measurement Ratios':
             ratios = {
-                'Current Ratio': 'currentRatio',
+                'Current Ratio': 'currentRatioTTM',
                 'Quick Ratio': 'quickRatioTTM',
                 'Cash Ratio': 'cashRatioTTM',
                 'Days Of Sales Outstanding': 'daysOfSalesOutstandingTTM',
@@ -978,14 +963,17 @@ if option == 'Stock Comparisons By Sector':
                 'Dividend Payout Ratio': 'payoutRatioTTM'
             }
 
-        ratio = st.selectbox('Ratio', list(ratios.keys()))
-        
-        sector_ratios_df, subIndustry_ratios_dict, \
-            ticker_ratios_dict = get_current_ratios()
+        ratio = col2.selectbox('Ratio', list(ratios.keys()))
+        formula = FORMULAS[category][ratio]
+        meaning = MEANINGS[category][ratio]
+        st.write('\n')
+        text = st.markdown(f'       {formula}\n{meaning}')
+    
+        sector_ratios_df, subIndustry_ratios_dict, ticker_ratios_dict = get_current_ratios()
             
         # Charts of sector ratios
         fig = px.bar(sector_ratios_df, x=sector_ratios_df.index, y=ratio, opacity=0.65)
-        fig.update_layout(title=f'Sector {ratio}', xaxis_title='')
+        fig.update_layout(title=f'Sector {ratio}s', xaxis_title='')
         st.plotly_chart(fig)
 
     # Get GICS sectors
@@ -1106,7 +1094,7 @@ if option == 'Stock Comparisons By Sector':
                       annotation_text=f'{sector} Sharpe Ratio ({sector_sharpe:.4f})',
                       annotation_position=pos1, annotation_bgcolor='#90ee90',
                       annotation_bordercolor='green')
-        fig.update_layout(title=f'{sector} Sub-Industry Sharpe Ratio', xaxis_title='')
+        fig.update_layout(title=f'{sector} Sub-Industry Sharpe Ratios', xaxis_title='')
         st.plotly_chart(fig)
 
     if metric == 'Beta':
@@ -1152,7 +1140,7 @@ if option == 'Stock Comparisons By Sector':
         fig.add_hline(y=sector_ratio, line_color='red', line_width=0.75,
                       annotation_text=f'{sector} {ratio} ({sector_ratio:.4f})', 
                       annotation_bgcolor='#FF7F7F', annotation_bordercolor='red')
-        fig.update_layout(title=f'{sector} Sub-Industry {ratio}', xaxis_title='')
+        fig.update_layout(title=f'{sector} Sub-Industry {ratio}s', xaxis_title='')
         st.plotly_chart(fig)
 
     # Select sub-industry    
@@ -1166,8 +1154,7 @@ if option == 'Stock Comparisons By Sector':
         # Show how many stocks in the sub-industry are missing data
         try:
             missing = missing_mkt_data[sector][subIndustry]
-            i = 0
-            
+            i = 0 
             for stock in missing:
                 i += 1
         except:
@@ -1225,7 +1212,7 @@ if option == 'Stock Comparisons By Sector':
         st.subheader('Stocks Ranked By Returns')
         st.markdown('For top *n* returns enter a positive integer, \
                     and for bottom *n* returns enter a negative integer')
-        n = st.text_input(label='Number Of Stocks To Show', value='25')
+        n = st.text_input(label='Number of Stocks to Show', value='25')
         n = int(n)
         all_returns_df = pd.DataFrame.from_dict(ticker_cols_dict, orient='index')
         all_returns_df.sort_values('Return (%)', ascending=False, inplace=True)
@@ -1288,7 +1275,7 @@ if option == 'Stock Comparisons By Sector':
         st.subheader('Stocks Ranked By Returns Volatility')
         st.markdown('For top *n* volatile returns enter a positive integer, \
                     and for bottom *n* volatile returns enter a negative integer')
-        n = st.text_input(label='Number Of Stocks To Show', value='25')
+        n = st.text_input(label='Number of Stocks to Show', value='25')
         n = int(n)
         all_vols_df = pd.DataFrame.from_dict(ticker_cols_dict, orient='index')
         all_vols_df.sort_values('Returns Volatility (%)', ascending=False, inplace=True)
@@ -1307,8 +1294,8 @@ if option == 'Stock Comparisons By Sector':
     if metric == 'Sharpe Ratio':
         subIndustry_sharpe = subIndustry_sharpes_df.loc[subIndustry].item()
         
-        d = {}
         # Make dataframe of tickers
+        d = {}
         for ticker in tickers:
             d[ticker] = ticker_cols_dict[ticker]
         
@@ -1343,13 +1330,13 @@ if option == 'Stock Comparisons By Sector':
                       annotation_text=f'{subIndustry} Sharpe Ratio ({subIndustry_sharpe:.4f})',
                       annotation_position=pos2, annotation_bgcolor='#90ee90',
                       annotation_bordercolor='green')
-        fig.update_layout(title=f'{subIndustry} Company Sharpe Ratio', xaxis_title='')
+        fig.update_layout(title=f'{subIndustry} Company Sharpe Ratios', xaxis_title='')
         st.plotly_chart(fig)
 
         # Dataframe of stocks ranked by Sharpe Ratio
         st.subheader('Stocks Ranked By Sharpe Ratio')
         st.markdown('For top *n* Sharpe Ratio enter a positive integer, and for bottom *n* Sharpe Ratio enter a negative integer')
-        n = st.text_input(label='Number Of Stocks To Show', value='25', key='A1')
+        n = st.text_input(label='Number of Stocks to Show', value='25', key='A1')
         n = int(n)
         # all_vols_df['Return/Volatility'] = all_vols_df['Return (%)'] / all_vols_df['Returns Volatility (%)']
         all_sharpes_df = pd.DataFrame.from_dict(ticker_cols_dict, orient='index')
@@ -1391,22 +1378,28 @@ if option == 'Stock Comparisons By Sector':
             pos2 = 'top right'
 
         # Chart of ticker betas
-        fig = px.bar(ticker_betas_df, x=ticker_betas_df.index, y='Beta', opacity=0.65, hover_name=ticker_names)
-        fig.add_hline(y=1, line_color='red', line_width=0.75, annotation_text=f'S&P 500 Beta (1.00)',
-                      annotation_position=pos, annotation_bgcolor='#FF7F7F', annotation_bordercolor='red')
+        fig = px.bar(ticker_betas_df, x=ticker_betas_df.index, y='Beta',
+                     opacity=0.65, hover_name=ticker_names)
+        fig.add_hline(y=1, line_color='red', line_width=0.75,
+                      annotation_text=f'S&P 500 Beta (1.00)',
+                      annotation_position=pos, annotation_bgcolor='#FF7F7F',
+                      annotation_bordercolor='red')
         fig.add_hline(y=sector_beta, line_color='green', line_width=0.75,
                       annotation_text=f'{sector} Beta ({sector_beta:,.2f})',
-                      annotation_position=pos1, annotation_bgcolor='#90ee90', annotation_bordercolor='green')
+                      annotation_position=pos1, annotation_bgcolor='#90ee90',
+                      annotation_bordercolor='green')
         fig.add_hline(y=subIndustry_beta, line_color='purple', line_width=0.75,
                       annotation_text=f'{subIndustry} Beta ({subIndustry_beta:,.2f})',
-                      annotation_position=pos2, annotation_bgcolor='#CBC3E3', annotation_bordercolor='purple')
+                      annotation_position=pos2, annotation_bgcolor='#CBC3E3',
+                      annotation_bordercolor='purple')
         fig.update_layout(title=f'{subIndustry} Company Betas', xaxis_title='')
         st.plotly_chart(fig)
 
         # Dataframe of stocks ranked by betas
         st.subheader('Stocks Ranked By Betas')
-        st.markdown('For top *n* betas enter a positive integer, and for bottom *n* betas enter a negative integer')
-        n = st.text_input(label='Number Of Stocks To Show', value='25')
+        st.markdown('For top *n* betas enter a positive integer, \
+                    and for bottom *n* betas enter a negative integer')
+        n = st.text_input(label='Number of Stocks to Show', value='25')
         n = int(n)
 
         all_betas_df = pd.DataFrame.from_dict(ticker_betas_dict, orient='index')
@@ -1442,18 +1435,24 @@ if option == 'Stock Comparisons By Sector':
             pos1 = 'top right'
 
         # Chart of ticker ratios
-        fig = px.bar(ticker_ratios_df, x=ticker_ratios_df.index, y=ratio, opacity=0.65, hover_name=ticker_names)
-        fig.add_hline(y=sector_ratio, line_color='red', line_width=0.75, annotation_text=f'{sector} {ratio} ({sector_ratio:.4f})',
-                      annotation_position=pos, annotation_bgcolor='#FF7F7F', annotation_bordercolor='red')
-        fig.add_hline(y=subIndustry_ratio, line_color='green', line_width=0.75, annotation_text=f'{subIndustry} {ratio} ({subIndustry_ratio:.4f})',
-                      annotation_position=pos1, annotation_bgcolor='#90ee90', annotation_bordercolor='green')
-        fig.update_layout(title=f'{subIndustry} Company {ratio}', xaxis_title='')
+        fig = px.bar(ticker_ratios_df, x=ticker_ratios_df.index, y=ratio,
+                     opacity=0.65, hover_name=ticker_names)
+        fig.add_hline(y=sector_ratio, line_color='red', line_width=0.75,
+                      annotation_text=f'{sector} {ratio} ({sector_ratio:.4f})',
+                      annotation_position=pos, annotation_bgcolor='#FF7F7F',
+                      annotation_bordercolor='red')
+        fig.add_hline(y=subIndustry_ratio, line_color='green', line_width=0.75,
+                      annotation_text=f'{subIndustry} {ratio} ({subIndustry_ratio:.4f})',
+                      annotation_position=pos1, annotation_bgcolor='#90ee90',
+                      annotation_bordercolor='green')
+        fig.update_layout(title=f'{subIndustry} Company {ratio}s', xaxis_title='')
         st.plotly_chart(fig)
 
         # Dataframe of stocks ranked by ratios
         st.subheader(f'Stocks Ranked By {ratio}')
-        st.markdown('For top *n* ratios enter a positive integer, and for bottom *n* ratios enter a negative integer')
-        n = st.text_input(label='Number Of Stocks To Show', value='25')
+        st.markdown('For top *n* ratios enter a positive integer, \
+                    and for bottom *n* ratios enter a negative integer')
+        n = st.text_input(label='Number of Stocks to Show', value='25')
         n = int(n)
 
         all_ratios_df = pd.DataFrame.from_dict(ticker_ratios_dict, orient='index')
@@ -1473,7 +1472,8 @@ if option == 'Stock Comparisons By Sector':
 
 if option == 'Technical Analysis':
     # 'Bollinger Squeeze'
-    indicators = ['Simple Moving Average Crossovers', 'TTM Squeeze', 'Fibonacci Retracement Levels']
+    indicators = ['Simple Moving Average Crossovers', 'TTM Squeeze',
+                  'Fibonacci Retracement Levels']
     indicator = st.selectbox('Technical Indicator', indicators)
     
     if indicator == 'TTM Squeeze':
@@ -1532,15 +1532,24 @@ if option == 'Technical Analysis':
                 df['upper_keltner'] = df['20sma'] + (df['ATR'] * 1.5)
                 name = SPY_info_df[SPY_info_df['Symbol'] == ticker]['Security'].item()
                 title = f'{name} ({ticker})'
-                candlestick = go.Candlestick(x=df.index, open=df['open'], high=df['high'], low=df['low'], close=df['close'], name=ticker)
-                upper_band = go.Scatter(x=df.index, y=df['upper_band'], name='Upper Bollinger Band', line={'color': 'blue', 'width': 0.75})
-                lower_band = go.Scatter(x=df.index, y=df['lower_band'], name='Lower Bollinger Band', line={'color': 'blue', 'width': 0.75})
-                upper_keltner = go.Scatter(x=df.index, y=df['upper_keltner'], name='Upper Keltner Channel', 
+                candlestick = go.Candlestick(x=df.index, open=df['open'], high=df['high'],
+                                             low=df['low'], close=df['close'], name=ticker)
+                upper_band = go.Scatter(x=df.index, y=df['upper_band'],
+                                        name='Upper Bollinger Band',
+                                        line={'color': 'blue', 'width': 0.75})
+                lower_band = go.Scatter(x=df.index, y=df['lower_band'],
+                                        name='Lower Bollinger Band',
+                                        line={'color': 'blue', 'width': 0.75})
+                upper_keltner = go.Scatter(x=df.index, y=df['upper_keltner'],
+                                           name='Upper Keltner Channel', 
                                            line={'color': 'red', 'width': 0.75})
-                lower_keltner = go.Scatter(x=df.index, y=df['lower_keltner'], name='Lower Keltner Channel', 
+                lower_keltner = go.Scatter(x=df.index, y=df['lower_keltner'],
+                                           name='Lower Keltner Channel', 
                                            line={'color': 'red', 'width': 0.75})
                 layout = go.Layout(plot_bgcolor='#ECECEC', paper_bgcolor='#ECECEC')
-                fig = go.Figure(data=[candlestick, upper_band, lower_band, upper_keltner, lower_keltner], layout=layout)
+                fig = go.Figure(data=[candlestick, upper_band, lower_band,
+                                      upper_keltner, lower_keltner],
+                                layout=layout)
                 # Set candlestick line and fill colors
                 cs = fig.data[0]
                 cs.increasing.fillcolor = '#B7E9F7'
@@ -1563,7 +1572,8 @@ if option == 'Technical Analysis':
         else:
             date = last_date.strftime('%B %d, %Y')
     
-        st.info(f'{len(comingOut)} stocks have **broken out of the squeeze** in the 5 trading days prior to {date}.')
+        st.info(f'{len(comingOut)} stocks have **broken out of the squeeze** \
+                  in the 5 trading days prior to {date}.')
         
         if len(comingOut) > 0:
             with st.expander('Stocks That Have Broken Out'):
@@ -1587,8 +1597,10 @@ if option == 'Technical Analysis':
             make_TTM_squeeze_charts(lst)
             
     if indicator == 'Simple Moving Average Crossovers':              
-        st.write('For more details on Simple Moving Average (SMA) Crossovers visit https://www.investopedia.com/terms/c/crossover.asp')
-        crossovers = ['5/15 Day SMA', '10/20 Day SMA', '15/25 Day SMA', '20/50 Day SMA', '50/100 Day SMA', '50/200 Day SMA']
+        st.write('For more details on Simple Moving Average (SMA) Crossovers \
+                  visit https://www.investopedia.com/terms/c/crossover.asp')
+        crossovers = ['5/15 Day SMA', '10/20 Day SMA', '15/25 Day SMA',
+                      '20/50 Day SMA', '50/100 Day SMA', '50/200 Day SMA']
         crossover = st.selectbox('Crossovers', crossovers)
 
         # Check if stock had a SMA crossover in the last 5 trading days
