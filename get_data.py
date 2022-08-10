@@ -271,8 +271,8 @@ def save_TTM_financial_ratios(d):
            
 # get_SPY_companies()
 # get_SPY_weights()
-# get_market_data()
+get_market_data()
 # move_market_data()
-get_TTM_financial_ratios(0, 1, {})
+# get_TTM_financial_ratios(0, 1, {})
 # get_financial_ratios(0, 1)
 

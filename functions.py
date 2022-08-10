@@ -374,67 +374,6 @@ def get_betas(start_date, end_date):
 
 
 @st.cache
-def get_current_ratios(ratios, ratio):
-    r = ratios[ratio]
-    sector_ratios = {}
-    subIndustry_ratios = {}
-    ticker_ratios = {}
-
-    for sector in sector_list:
-        subIndustry_dict = SPY_info_df[SPY_info_df['GICS Sector'] == sector] \
-                            ['GICS Sub-Industry'].value_counts().to_dict()
-        subIndustry_list = list(subIndustry_dict.keys())
-        for subIndustry in subIndustry_list:
-            subIndustry_ratios[subIndustry] = []
-
-    for sector in sector_list:
-        sector_tickers = SPY_info_df[SPY_info_df['GICS Sector'] == sector] \
-                            ['Symbol'].to_list()
-        sector_ratio = []
-        for ticker in sector_tickers:
-            # Get sub-industry of ticker
-            t_subIndustry = SPY_info_df[SPY_info_df['Symbol'] == ticker] \
-                            ['GICS Sub-Industry'].item()
-            # Get weight to use in weighted average calculation
-            mktCap = ticker_weights[ticker]
-            ticker_sector_weight = mktCap / sector_weights[sector]
-            ticker_subIndustry_weight = mktCap / subIndustry_weights[t_subIndustry]
-            # Ratio result
-            res = current_ratios[ticker][r]
-
-            if math.isnan(res):
-                res = 0
-            # Append ratio to its sector list
-            sector_ratio.append(res * ticker_sector_weight)
-            # Append ratio to its sub-industry list
-            subIndustry_ratios[t_subIndustry].append(res * ticker_subIndustry_weight)
-            # Get ratio, name, sector, sub-industry of each ticker
-            ticker_ratios[ticker] = {}
-            ticker_ratios[ticker]['Company'] = SPY_info_df[SPY_info_df['Symbol'] == ticker] \
-                                                ['Security'].item()
-            ticker_ratios[ticker]['Sector'] = SPY_info_df[SPY_info_df['Symbol'] == ticker] \
-                                                ['GICS Sector'].item()
-            ticker_ratios[ticker]['Sub-Industry'] = SPY_info_df[SPY_info_df['Symbol'] == ticker] \
-                                                    ['GICS Sub-Industry'].item()
-            ticker_ratios[ticker][ratio] = res                    
-
-        # Calculate sector ratios
-        sector_res = sum(sector_ratio)
-        sector_ratios[sector] = sector_res
-
-    # Get sub-industry ratios
-    subIndustry_dict = SPY_info_df['GICS Sub-Industry'].value_counts().to_dict()
-    subIndustry_list = list(subIndustry_dict.keys())
-
-    for subIndustry in subIndustry_list:
-        subIndustry_ratios[subIndustry] = sum(subIndustry_ratios[subIndustry])
-
-    df = pd.DataFrame.from_dict(sector_ratios, orient='index', columns=[ratio])
-
-    return df, subIndustry_ratios, ticker_ratios 
-
-
-@st.cache
 def TTM_Squeeze():
     coming_out = []
     
