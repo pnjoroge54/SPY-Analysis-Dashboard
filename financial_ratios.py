@@ -1,15 +1,15 @@
 '''
 For more information on the calculation of financial ratios
-visit https://financialmodelingprep.com/financial-ratios/
+visit https://en.wikipedia.org/wiki/Financial_ratio
 '''        
 
 FORMULAS = {
     'Investment Valuation Ratios':
-        {'Price to Earnings Ratio': r'$P/E = \frac{StockPrice/Share}{EPS}$', 
-         'Price to Book Value Ratio': r'$\frac{StockPrice/Share}{Equity/Share}$', 
-         'Price to Sales Ratio': 'priceToSalesRatioTTM', 
-         'Price to Earnings to Growth Ratio': 'priceEarningsToGrowthRatioTTM',
-         'Price to Free Cash Flows Ratio': r'$\frac{StockPrice/Share}{FreeCashFlow/Share}$', 
+        {'Price to Earnings Ratio': r'$P/E = \frac{Stock Price}{Diluted EPS}$', 
+         'Price to Book Value Ratio': r'$P/B = \frac{Stock Price}{Book Value per Share}$', 
+         'Price to Sales Ratio': r'$P/S = \frac{Stock Price}{Gross Sales}$', 
+         'Price to Earnings to Growth Ratio': r'$PEG = \frac{Price per Earnings}{Annual EPS Growth}$', 
+         'Price to Free Cash Flows Ratio': r'$P/FCFF = \frac{Stock Price}{Free Cash Flow per Share}$', 
          'Enterprise Value Multiplier': 'enterpriseValueMultipleTTM', 
          'Dividend Yield': 'dividendYieldTTM'},
 

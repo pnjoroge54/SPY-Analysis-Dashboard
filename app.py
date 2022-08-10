@@ -18,12 +18,12 @@ from config import TWITTER_USERNAMES
 from SPY import INFO
 from financial_ratios import FORMULAS, MEANINGS
 from functions import (getIndexOfTuple, calculate_beta, sector_list, coming_out,
-                    get_returns_and_volatility, get_betas, get_current_ratios, 
-                    make_TTM_squeeze_charts, plot_fibonacci_levels, get_news, SPY_info_df, 
-                    SPY_df, ticker_list, last_date, yr_ago, first_dates, combined_returns_df,
-                    ratios_data_report, sector_weights, subIndustry_weights, 
-                    ticker_weights, find_stocks_missing_data, find_SMA_crossovers,
-                    make_crossover_charts, current_ratios)
+                       get_returns_and_volatility, get_betas, make_TTM_squeeze_charts, 
+                       plot_fibonacci_levels, get_news, SPY_info_df, current_ratios,
+                       SPY_df, ticker_list, last_date, yr_ago, first_dates,
+                       ratios_data_report, sector_weights, subIndustry_weights, 
+                       ticker_weights, combined_returns_df, find_stocks_missing_data, 
+                       find_SMA_crossovers, make_crossover_charts)
 
 
 nltk.download([
