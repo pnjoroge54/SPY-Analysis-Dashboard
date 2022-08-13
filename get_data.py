@@ -7,6 +7,7 @@ from datetime import datetime as dt
 from datetime import timedelta
 from pytz import timezone
 
+import pandas_datareader as pdr
 import yfinance as yf
 import yahoo_fin.stock_info as si
 import FundamentalAnalysis as fa
@@ -132,6 +133,9 @@ def ratios_to_update():
         else:
             not_downloaded.append(ticker)
 
+    print(f'{len(not_current) if not_current is not None else 0} in not_current: {not_current}')
+    print(f'{len(no_data) if no_data is not None else 0} in no_data: {no_data}')
+    
     to_update = not_current + no_data + not_downloaded
     
     return to_update
@@ -168,16 +172,19 @@ def get_financial_ratios(i, n):
                 ratios.to_csv(os.path.join(f, f'{ticker}.csv'))
                 i += 1
                 sys.stdout.write("\r")
-                sys.stdout.write(f"{i}/{len(to_update)} outdated financial ratios downloaded")
+                sys.stdout.write(f"{i} / {len(to_update)} outdated financial ratios downloaded")
                 sys.stdout.flush()
         except Exception as e:
             if e == '<urlopen error [Errno 11001] getaddrinfo failed>':
                 print(e)
+                return -1
             else:
                 if n <= 4:
                     print(f'\nAPI Key {n} has maxed out its requests\n')
                     n += 1
-                    get_financial_ratios(i, n)
+
+        return get_financial_ratios(i, n)
+
     else:
         print('\n\nAnnual financial ratios are up to date!\n')       
 
@@ -220,21 +227,21 @@ def get_TTM_financial_ratios(i, n, d):
         except Exception as e:
             if e == '<urlopen error [Errno 11001] getaddrinfo failed>':
                 print(e)
+                return -1
             else:
-                sys.stdout.flush()
-
                 if n <= 4:
                     print(f'\nAPI Key {n} has maxed out its requests\n')
                     n += 1
-                    get_TTM_financial_ratios(i, n, d)
-    
+
+        return get_TTM_financial_ratios(i, n, d) 
+
     else:
         print('\nCurrent ratios are up to date!\n')
-        save_TTM_financial_ratios(d)  
+        return d
 
             
-def save_TTM_financial_ratios(d):
-    '''Save financial ratios as pickle file'''
+def save_TTM_financial_ratios():
+    '''Save ratios as pickle file'''
 
     # Set datetime object to EST timezone
     tz = timezone('EST')
@@ -261,18 +268,33 @@ def save_TTM_financial_ratios(d):
         cdate -= timedelta(days=days)
     
     file = cdate.strftime('%d-%m-%Y') + '.pickle'
-    f = r'data\financial_ratios\Current'
+    f = 'data/financial_ratios/Current'
+    d = get_TTM_financial_ratios(0, 1, {})
+    tickers = get_tickers()
 
-    with open(os.path.join(f, file), 'wb') as f1:
-        pickle.dump(d, f1)
+    if len(d) == len(tickers):
+        with open(os.path.join(f, file), 'wb') as f1:
+            pickle.dump(d, f1)
 
-    print(file, 'saved\n')
+        print(file, 'saved\n')
 
-           
-# get_SPY_companies()
-# get_SPY_weights()
-get_market_data()
-# move_market_data()
-# get_TTM_financial_ratios(0, 1, {})
-# get_financial_ratios(0, 1)
+    else:
+        print(f'{len(tickers) - len(d)} / {len(tickers)} ratios not downloaded\n')
+
+
+def get_risk_free_rates():
+    rf_rates = pdr.fred.FredReader('DTB3', dt(1954, 1, 4), dt.now()).read()
+    rf_rates.to_csv(r'data\T-Bill Rates.csv')
+    print('\nT-Bill Rates saved\n')
+
+
+if __name__ == "__main__":           
+    get_SPY_companies()
+    get_SPY_weights()
+    get_market_data()
+    move_market_data()
+    get_risk_free_rates()
+    save_TTM_financial_ratios()
+    get_financial_ratios(0, 1)
+    
 

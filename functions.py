@@ -11,7 +11,6 @@ from pytz import timezone
 import cufflinks as cf
 import plotly.graph_objects as go
 import streamlit as st
-import pandas_datareader as pdr
 
 
 f = 'data/market_data/'
@@ -60,7 +59,7 @@ def get_first_dates():
 def make_combined_returns_df():
     '''Make dataframe of returns for all SPY stocks, as well as SPY index'''
 
-    combined_returns = SPY_df.copy(deep=True)
+    combined_returns = SPY_df.copy()
     combined_returns['Return'] = combined_returns['Close'].pct_change() * 100
     combined_returns.drop(
         ['Open', 'High', 'Low', 'Close', 'Volume', 'Dividends', 'Stock Splits'],
@@ -103,7 +102,7 @@ def get_all_current_ratios():
         cdate -= timedelta(days=days)
     
     file = cdate.strftime('%d-%m-%Y') + '.pickle'
-    f = 'data/financial_ratios/Current'
+    f = r'data\financial_ratios\Current'
     
     if file in os.listdir(f):
         s = "The data reported is today's."
@@ -122,8 +121,72 @@ def get_all_current_ratios():
 
     with open(os.path.join(f, file), 'rb') as f1:
         d = pickle.load(f1)
-
+    
     return d, s
+
+
+@st.cache
+def get_current_ratios(ratios, ratio):
+    r = ratios[ratio]
+    sector_ratios = {}
+    subIndustry_ratios = {}
+    ticker_ratios = {}
+
+    for sector in sector_list:
+        subIndustry_dict = SPY_info_df[SPY_info_df['GICS Sector'] == sector] \
+                            ['GICS Sub-Industry'].value_counts().to_dict()
+        subIndustry_list = list(subIndustry_dict.keys())
+        for subIndustry in subIndustry_list:
+            subIndustry_ratios[subIndustry] = []
+
+    for sector in sector_list:
+        sector_tickers = SPY_info_df[SPY_info_df['GICS Sector'] == sector] \
+                            ['Symbol'].to_list()
+        sector_ratio = []
+        for ticker in sector_tickers:
+            # Get sub-industry of ticker
+            t_subIndustry = SPY_info_df[SPY_info_df['Symbol'] == ticker] \
+                            ['GICS Sub-Industry'].item()
+            # Get weight to use in weighted average calculation
+            mktCap = ticker_weights[ticker]
+            ticker_sector_weight = mktCap / sector_weights[sector]
+            ticker_subIndustry_weight = mktCap / subIndustry_weights[t_subIndustry]
+            # Ratio result
+            try:
+                res = current_ratios[ticker][r]
+            except:
+                res = 0
+
+            if math.isnan(res):
+                res = 0
+            # Append ratio to its sector list
+            sector_ratio.append(res * ticker_sector_weight)
+            # Append ratio to its sub-industry list
+            subIndustry_ratios[t_subIndustry].append(res * ticker_subIndustry_weight)
+            # Get ratio, name, sector, sub-industry of each ticker
+            ticker_ratios[ticker] = {}
+            ticker_ratios[ticker]['Company'] = SPY_info_df[SPY_info_df['Symbol'] == ticker] \
+                                                ['Security'].item()
+            ticker_ratios[ticker]['Sector'] = SPY_info_df[SPY_info_df['Symbol'] == ticker] \
+                                                ['GICS Sector'].item()
+            ticker_ratios[ticker]['Sub-Industry'] = SPY_info_df[SPY_info_df['Symbol'] == ticker] \
+                                                    ['GICS Sub-Industry'].item()
+            ticker_ratios[ticker][ratio] = res                    
+
+        # Calculate sector ratios
+        sector_res = sum(sector_ratio)
+        sector_ratios[sector] = sector_res
+
+    # Get sub-industry ratios
+    subIndustry_dict = SPY_info_df['GICS Sub-Industry'].value_counts().to_dict()
+    subIndustry_list = list(subIndustry_dict.keys())
+
+    for subIndustry in subIndustry_list:
+        subIndustry_ratios[subIndustry] = sum(subIndustry_ratios[subIndustry])
+
+    df = pd.DataFrame.from_dict(sector_ratios, orient='index', columns=[ratio])
+
+    return df, subIndustry_ratios, ticker_ratios 
 
 
 @st.cache
@@ -203,7 +266,7 @@ def find_stocks_missing_data(start_date, end_date):
             del d[sector]
 
     if len(missing) > 0:
-        s2 += f"{len(missing)}/505 stocks have data that begins after {start_date.strftime('%B %d, %Y')}. \
+        s2 += f"{len(missing)}/{len(ticker_list)} stocks have data that begins after {start_date.strftime('%B %d, %Y')}. \
                 \nMissing data affects the accuracy of results displayed below."
 
     return d, s, s1, s2
@@ -218,7 +281,7 @@ def get_returns_and_volatility(start_date, end_date):
     sector_sharpes = {}
     subIndustry_sharpes = {}
     ticker_cols = {}
-    rf_rates = pdr.fred.FredReader('DTB3', dt(1954, 1, 4), dt.now()).read()
+    rf_rates = pd.read_csv(r'data\T-Bill Rates.csv', index_col='DATE', parse_dates=True)
     
     for sector in sector_list:
         subIndustry_dict = SPY_info_df[SPY_info_df['GICS Sector'] == sector] \
@@ -241,19 +304,17 @@ def get_returns_and_volatility(start_date, end_date):
             df = df[start_date: end_date]
             df = df.join(rf_rates, how='left')
             df.ffill(inplace=True)
-            t = len(df) / 252
             df['Daily T-Bill Rate'] = (1 + df['DTB3'] / 100)**(1 / 365) - 1
             df['Daily Return'] = df['adjclose'].pct_change()
-            df['Excess Return'] = df['Daily Return'] - (df['Daily T-Bill Rate'] / 100)
-            df_return = ((df.iloc[-1]['adjclose'] / df.iloc[0]['open'])**(1 / t) - 1) * 100
-            df_ereturn = ((df.iloc[-1]['Excess Return'] / (df.iloc[0]['open'] \
-                           - df.iloc[0]['Daily T-Bill Rate']))**(1 / t) - 1) * 100
-            df_std = df['Daily Return'].std() * 252**0.5 * 100
-            df_estd = df['Excess Return'].std() * 252**0.5 * 100
-            # Needs fixing
-            print(df_ereturn)
-            print(df_estd)
+            df['Daily Excess Return'] = df['Daily Return'] - df['Daily T-Bill Rate']
+            df['Cumulative Return'] = (1 + df['Daily Return']).cumprod() - 1 
+            df['Cumulative Excess Return'] = (1 + df['Daily Excess Return']).cumprod() - 1 
+            df_return = df['Cumulative Return'][-1]
+            df_ereturn = df['Cumulative Excess Return'][-1]
+            df_std = df['Daily Return'].std() * 100
+            df_estd = df['Daily Excess Return'].std() * 100
             df_sharpe = df_ereturn / df_estd
+
             # Get weight to use in weighted average calculation
             mktCap = ticker_weights[ticker]
             ticker_sector_weight = mktCap / sector_weights[sector]
@@ -302,18 +363,20 @@ def get_returns_and_volatility(start_date, end_date):
     df3.ffill(inplace=True)
     df3['Daily T-Bill Rate'] = (1 + df3['DTB3'] / 100)**(1 / 365) - 1        
     df3['Daily Return'] = df3['Close'].pct_change()
-    df3['Excess Return'] = df3['Daily Return'] - (df3['Daily T-Bill Rate'] / 100)
-    df3_return = ((df3.iloc[-1]['Close'] / df3.iloc[0]['Open'])**(1 / t) - 1) * 100
-    df3_ereturn = ((df3.iloc[-1]['Excess Return'] / (df3.iloc[0]['Open'] \
-                    - df3.iloc[0]['Daily T-Bill Rate']))**(1 / t) - 1) * 100
-    df3_vol = df3['Daily Return'].std() * 252**0.5 * 100
-    df3_evol = df3['Excess Return'].std() * 252**0.5 * 100
-    df3_sharpe = df3_ereturn / df3_evol
+    df3['Daily Excess Return'] = df3['Daily Return'] - df3['Daily T-Bill Rate']
+    df3['Cumulative Return'] = (1 + df3['Daily Return']).cumprod() - 1 
+    df3['Cumulative Excess Return'] = (1 + df3['Daily Excess Return']).cumprod() - 1 
+    df3_return = df3['Cumulative Return'][-1]
+    df3_ereturn = df3['Cumulative Excess Return'][-1]
+    df3_std = df3['Daily Return'].std() * 100
+    df3_estd = df3['Daily Excess Return'].std() * 100
+    df3_sharpe = df3_ereturn / df3_estd
 
-    print('df2\n', df2.head())
+    print(df2.head())
+    print('SPY Sharpe Ratio:', df3_sharpe)
 
     return df, subIndustry_returns, ticker_cols, df1, subIndustry_vols, \
-            df2, subIndustry_sharpes, df3_return, df3_vol, df3_sharpe
+            df2, subIndustry_sharpes, df3_return, df3_std, df3_sharpe
 
     
 @st.cache
@@ -375,8 +438,12 @@ def get_betas(start_date, end_date):
 
 @st.cache
 def TTM_Squeeze():
+
+    def in_squeeze(df):
+        return df['lower_band'] > df['lower_keltner'] and df['upper_band'] < df['upper_keltner']
+
     coming_out = []
-    
+
     for file in os.listdir(f):
         ticker = file.split('.')[0]
         start_date = yr_ago
@@ -390,9 +457,6 @@ def TTM_Squeeze():
         df['ATR'] = df['TR'].rolling(window=20).mean()
         df['lower_keltner'] = df['20sma'] - (df['ATR'] * 1.5)
         df['upper_keltner'] = df['20sma'] + (df['ATR'] * 1.5)
-
-        def in_squeeze(df):
-            return df['lower_band'] > df['lower_keltner'] and df['upper_band'] < df['upper_keltner']
 
         df['squeeze_on'] = df.apply(in_squeeze, axis=1)
 
@@ -445,6 +509,7 @@ def make_TTM_squeeze_charts(lst):
         fig = go.Figure(data=[candlestick, upper_band, lower_band,
                                 upper_keltner, lower_keltner],
                         layout=layout)
+                        
         # Set candlestick line and fill colors
         cs = fig.data[0]
         cs.increasing.fillcolor = '#B7E9F7'

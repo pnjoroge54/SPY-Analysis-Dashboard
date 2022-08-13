@@ -1,5 +1,4 @@
 from math import sqrt
-import math
 import numpy as np
 import pandas as pd
 import requests
@@ -15,15 +14,14 @@ import tweepy
 from newspaper import Article
 
 from config import TWITTER_USERNAMES
-from SPY import INFO
-from financial_ratios import FORMULAS, MEANINGS
-from functions import (getIndexOfTuple, calculate_beta, sector_list, coming_out,
-                       get_returns_and_volatility, get_betas, make_TTM_squeeze_charts, 
-                       plot_fibonacci_levels, get_news, SPY_info_df, current_ratios,
-                       SPY_df, ticker_list, last_date, yr_ago, first_dates,
+from info import SPY_INFO, FINANCIAL_RATIOS
+from functions import (SPY_df, SPY_info_df, ticker_list, sector_list,                         
+                       last_date, yr_ago, first_dates, combined_returns_df,
                        ratios_data_report, sector_weights, subIndustry_weights, 
-                       ticker_weights, combined_returns_df, find_stocks_missing_data, 
-                       find_SMA_crossovers, make_crossover_charts)
+                       ticker_weights, coming_out, getIndexOfTuple, calculate_beta, 
+                       get_betas, get_returns_and_volatility,  get_current_ratios, 
+                       make_TTM_squeeze_charts, plot_fibonacci_levels, get_news, 
+                       find_stocks_missing_data, find_SMA_crossovers, make_crossover_charts)
 
 
 nltk.download([
@@ -33,6 +31,7 @@ nltk.download([
      "vader_lexicon",
      "punkt"
       ])
+      
 
 f = 'data/market_data/'
 
@@ -47,7 +46,7 @@ option = st.sidebar.selectbox("Select A Dashboard", options)
 st.header(option)
 
 if option == 'S&P 500 Information':
-    st.info(INFO)
+    st.info(SPY_INFO)
     st.subheader('Market Data')
     st.write('Select Chart Display Period')
 
@@ -544,76 +543,16 @@ if option == 'Stock Comparisons By Sector':
             }
 
         ratio = col2.selectbox('Ratio', list(ratios.keys()))
-        formula = FORMULAS[category][ratio]
-        meaning = MEANINGS[category][ratio]
+        formula = FINANCIAL_RATIOS['formulas'][category][ratio]
+        definition = FINANCIAL_RATIOS['definitions'][category][ratio]
         st.write('\n')
-        text = st.markdown(f'       {formula}\n{meaning}')
-
-        @st.cache
-        def get_current_ratios(ratios, ratio):
-            r = ratios[ratio]
-            sector_ratios = {}
-            subIndustry_ratios = {}
-            ticker_ratios = {}
-
-            for sector in sector_list:
-                subIndustry_dict = SPY_info_df[SPY_info_df['GICS Sector'] == sector] \
-                                    ['GICS Sub-Industry'].value_counts().to_dict()
-                subIndustry_list = list(subIndustry_dict.keys())
-                for subIndustry in subIndustry_list:
-                    subIndustry_ratios[subIndustry] = []
-
-            for sector in sector_list:
-                sector_tickers = SPY_info_df[SPY_info_df['GICS Sector'] == sector] \
-                                    ['Symbol'].to_list()
-                sector_ratio = []
-                for ticker in sector_tickers:
-                    # Get sub-industry of ticker
-                    t_subIndustry = SPY_info_df[SPY_info_df['Symbol'] == ticker] \
-                                    ['GICS Sub-Industry'].item()
-                    # Get weight to use in weighted average calculation
-                    mktCap = ticker_weights[ticker]
-                    ticker_sector_weight = mktCap / sector_weights[sector]
-                    ticker_subIndustry_weight = mktCap / subIndustry_weights[t_subIndustry]
-                    # Ratio result
-                    res = current_ratios[ticker][r]
-
-                    if math.isnan(res):
-                        res = 0
-                    # Append ratio to its sector list
-                    sector_ratio.append(res * ticker_sector_weight)
-                    # Append ratio to its sub-industry list
-                    subIndustry_ratios[t_subIndustry].append(res * ticker_subIndustry_weight)
-                    # Get ratio, name, sector, sub-industry of each ticker
-                    ticker_ratios[ticker] = {}
-                    ticker_ratios[ticker]['Company'] = SPY_info_df[SPY_info_df['Symbol'] == ticker] \
-                                                        ['Security'].item()
-                    ticker_ratios[ticker]['Sector'] = SPY_info_df[SPY_info_df['Symbol'] == ticker] \
-                                                        ['GICS Sector'].item()
-                    ticker_ratios[ticker]['Sub-Industry'] = SPY_info_df[SPY_info_df['Symbol'] == ticker] \
-                                                            ['GICS Sub-Industry'].item()
-                    ticker_ratios[ticker][ratio] = res                    
-
-                # Calculate sector ratios
-                sector_res = sum(sector_ratio)
-                sector_ratios[sector] = sector_res
-
-            # Get sub-industry ratios
-            subIndustry_dict = SPY_info_df['GICS Sub-Industry'].value_counts().to_dict()
-            subIndustry_list = list(subIndustry_dict.keys())
-
-            for subIndustry in subIndustry_list:
-                subIndustry_ratios[subIndustry] = sum(subIndustry_ratios[subIndustry])
-
-            df = pd.DataFrame.from_dict(sector_ratios, orient='index', columns=[ratio])
-
-            return df, subIndustry_ratios, ticker_ratios 
+        text = st.markdown(f'       {formula}\n{definition}')
 
         sector_ratios_df, subIndustry_ratios_dict, ticker_ratios_dict = get_current_ratios(ratios, ratio)
             
         # Charts of sector ratios
         fig = px.bar(sector_ratios_df, x=sector_ratios_df.index, y=ratio, opacity=0.65)
-        fig.update_layout(title=f'Sector {ratio}s', xaxis_title='')
+        fig.update_layout(title=f'Sector {ratio}', xaxis_title='')
         st.plotly_chart(fig)
 
     # Get GICS sectors
@@ -1203,8 +1142,7 @@ if option == 'Technical Analysis':
             start_date = st.date_input("Start Date", yr_ago, min_value=first_dates[0][1])
             end_date = st.date_input("End Date", last_date)
             submit_button = st.form_submit_button(label='Submit')
-
-        
+    
         plot_fibonacci_levels(ticker, start_date, end_date)
 
 
