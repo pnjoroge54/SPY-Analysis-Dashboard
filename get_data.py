@@ -10,7 +10,7 @@ from pytz import timezone
 import pandas_datareader as pdr
 import yfinance as yf
 import yahoo_fin.stock_info as si
-import FundamentalAnalysis as fa
+import fundamentalanalysis as fa
 from urllib.request import Request, urlopen
 from html_table_parser.parser import HTMLTableParser 
 import streamlit as st
