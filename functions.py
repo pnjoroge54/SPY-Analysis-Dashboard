@@ -134,14 +134,14 @@ def get_current_ratios(ratios, ratio):
 
     for sector in sector_list:
         subIndustry_dict = SPY_info_df[SPY_info_df['GICS Sector'] == sector] \
-                            ['GICS Sub-Industry'].value_counts().to_dict()
+                           ['GICS Sub-Industry'].value_counts().to_dict()
         subIndustry_list = list(subIndustry_dict.keys())
         for subIndustry in subIndustry_list:
             subIndustry_ratios[subIndustry] = []
 
     for sector in sector_list:
         sector_tickers = SPY_info_df[SPY_info_df['GICS Sector'] == sector] \
-                            ['Symbol'].to_list()
+                         ['Symbol'].to_list()
         sector_ratio = []
         for ticker in sector_tickers:
             # Get sub-industry of ticker
@@ -157,8 +157,6 @@ def get_current_ratios(ratios, ratio):
             except:
                 res = 0
 
-            if math.isnan(res):
-                res = 0
             # Append ratio to its sector list
             sector_ratio.append(res * ticker_sector_weight)
             # Append ratio to its sub-industry list
@@ -285,7 +283,7 @@ def get_returns_and_volatility(start_date, end_date):
     
     for sector in sector_list:
         subIndustry_dict = SPY_info_df[SPY_info_df['GICS Sector'] == sector] \
-                            ['GICS Sub-Industry'].value_counts().to_dict()
+                           ['GICS Sub-Industry'].value_counts().to_dict()
         subIndustry_list = list(subIndustry_dict.keys())
         for subIndustry in subIndustry_list:
             subIndustry_returns[subIndustry] = []
@@ -293,13 +291,15 @@ def get_returns_and_volatility(start_date, end_date):
             subIndustry_sharpes[subIndustry] = []
     
     for sector in sector_list:
-        sector_tickers = SPY_info_df[SPY_info_df['GICS Sector'] == sector]['Symbol'].to_list()
+        sector_tickers = SPY_info_df[SPY_info_df['GICS Sector'] == sector] \
+                         ['Symbol'].to_list()
         sector_return = []
         sector_vol = []
         sector_sharpe = []
         for ticker in sector_tickers:
             # Get sub-industry of ticker
-            t_subIndustry = SPY_info_df[SPY_info_df['Symbol'] == ticker]['GICS Sub-Industry'].item()
+            t_subIndustry = SPY_info_df[SPY_info_df['Symbol'] == ticker] \
+                            ['GICS Sub-Industry'].item()
             df = pd.read_csv(f + ticker + '.csv', index_col='Unnamed: 0', parse_dates=True)
             df = df[start_date: end_date]
             df = df.join(rf_rates, how='left')
@@ -309,8 +309,8 @@ def get_returns_and_volatility(start_date, end_date):
             df['Daily Excess Return'] = df['Daily Return'] - df['Daily T-Bill Rate']
             df['Cumulative Return'] = (1 + df['Daily Return']).cumprod() - 1 
             df['Cumulative Excess Return'] = (1 + df['Daily Excess Return']).cumprod() - 1 
-            df_return = df['Cumulative Return'][-1]
-            df_ereturn = df['Cumulative Excess Return'][-1]
+            df_return = df['Cumulative Return'][-1] * 100
+            df_ereturn = df['Cumulative Excess Return'][-1] * 100
             df_std = df['Daily Return'].std() * 100
             df_estd = df['Daily Excess Return'].std() * 100
             df_sharpe = df_ereturn / df_estd
@@ -336,15 +336,12 @@ def get_returns_and_volatility(start_date, end_date):
             ticker_cols[ticker]['Sub-Industry'] = SPY_info_df[SPY_info_df['Symbol'] == ticker] \
                                                   ['GICS Sub-Industry'].item()
             ticker_cols[ticker]['Return (%)'] = df_return
-            ticker_cols[ticker]['Returns Volatility (%)'] = df_std
+            ticker_cols[ticker]['Volatility (%)'] = df_std
             ticker_cols[ticker]['Sharpe Ratio'] = df_sharpe
 
-        res = sum(sector_return)
-        res1 = sum(sector_vol)
-        res2 = sum(sector_sharpe)
-        sector_returns[sector] = res
-        sector_vols[sector] = res1
-        sector_sharpes[sector] = res2
+        sector_returns[sector] =  sum(sector_return)
+        sector_vols[sector] = sum(sector_vol)
+        sector_sharpes[sector] = sum(sector_sharpe)
 
     # Get sub-industry returns
     subIndustry_dict = SPY_info_df['GICS Sub-Industry'].value_counts().to_dict()
@@ -355,28 +352,25 @@ def get_returns_and_volatility(start_date, end_date):
         subIndustry_vols[subIndustry] = sum(subIndustry_vols[subIndustry])
         subIndustry_sharpes[subIndustry] = sum(subIndustry_sharpes[subIndustry])
     
-    df = pd.DataFrame.from_dict(sector_returns, orient='index', columns=['Return (%)'])
-    df1 = pd.DataFrame.from_dict(sector_vols, orient='index', columns=['Returns Volatility (%)'])
-    df2 = pd.DataFrame.from_dict(sector_sharpes, orient='index', columns=['Sharpe Ratio'])
-    df3 = SPY_df[start_date: end_date]
-    df3 = df3.join(rf_rates, how='left')
-    df3.ffill(inplace=True)
-    df3['Daily T-Bill Rate'] = (1 + df3['DTB3'] / 100)**(1 / 365) - 1        
-    df3['Daily Return'] = df3['Close'].pct_change()
-    df3['Daily Excess Return'] = df3['Daily Return'] - df3['Daily T-Bill Rate']
-    df3['Cumulative Return'] = (1 + df3['Daily Return']).cumprod() - 1 
-    df3['Cumulative Excess Return'] = (1 + df3['Daily Excess Return']).cumprod() - 1 
-    df3_return = df3['Cumulative Return'][-1]
-    df3_ereturn = df3['Cumulative Excess Return'][-1]
-    df3_std = df3['Daily Return'].std() * 100
-    df3_estd = df3['Daily Excess Return'].std() * 100
-    df3_sharpe = df3_ereturn / df3_estd
+    sector_returns_df = pd.DataFrame.from_dict(sector_returns, orient='index', columns=['Return (%)'])
+    sector_vols_df = pd.DataFrame.from_dict(sector_vols, orient='index', columns=['Returns Volatility (%)'])
+    sector_sharpes_df = pd.DataFrame.from_dict(sector_sharpes, orient='index', columns=['Sharpe Ratio'])
+    df = SPY_df[start_date: end_date]
+    df = df.join(rf_rates, how='left')
+    df.ffill(inplace=True)
+    df['Daily T-Bill Rate'] = (1 + df['DTB3'] / 100)**(1 / 365) - 1        
+    df['Daily Return'] = df['Close'].pct_change()
+    df['Daily Excess Return'] = df['Daily Return'] - df['Daily T-Bill Rate']
+    df['Cumulative Return'] = (1 + df['Daily Return']).cumprod() - 1 
+    df['Cumulative Excess Return'] = (1 + df['Daily Excess Return']).cumprod() - 1 
+    SPY_return = df['Cumulative Return'][-1] * 100
+    SPY_ereturn = df['Cumulative Excess Return'][-1] * 100
+    SPY_std = df['Daily Return'].std() * 100
+    SPY_estd = df['Daily Excess Return'].std() * 100
+    SPY_sharpe = SPY_ereturn / SPY_estd
 
-    print(df2.head())
-    print('SPY Sharpe Ratio:', df3_sharpe)
-
-    return df, subIndustry_returns, ticker_cols, df1, subIndustry_vols, \
-            df2, subIndustry_sharpes, df3_return, df3_std, df3_sharpe
+    return sector_returns_df, subIndustry_returns, ticker_cols, sector_vols_df, subIndustry_vols, \
+            sector_sharpes_df, subIndustry_sharpes, SPY_return, SPY_std, SPY_sharpe
 
     
 @st.cache

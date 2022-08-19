@@ -177,9 +177,8 @@ def get_financial_ratios(i, n):
         except Exception as e:
             if e == '<urlopen error [Errno 11001] getaddrinfo failed>':
                 print(e)
-                return -1
             else:
-                if n <= 4:
+                if n < 4:
                     print(f'\nAPI Key {n} has maxed out its requests\n')
                     n += 1
 
@@ -227,9 +226,8 @@ def get_TTM_financial_ratios(i, n, d):
         except Exception as e:
             if e == '<urlopen error [Errno 11001] getaddrinfo failed>':
                 print(e)
-                return -1
             else:
-                if n <= 4:
+                if n < 4:
                     print(f'\nAPI Key {n} has maxed out its requests\n')
                     n += 1
 

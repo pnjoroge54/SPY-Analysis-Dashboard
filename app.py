@@ -24,13 +24,13 @@ from functions import (SPY_df, SPY_info_df, ticker_list, sector_list,
                        find_stocks_missing_data, find_SMA_crossovers, make_crossover_charts)
 
 
-nltk.download([
-     "names",
-     "stopwords",
-     "averaged_perceptron_tagger",
-     "vader_lexicon",
-     "punkt"
-      ])
+# nltk.download([
+#      "names",
+#      "stopwords",
+#      "averaged_perceptron_tagger",
+#      "vader_lexicon",
+#      "punkt"
+#       ])
       
 
 f = 'data/market_data/'
@@ -354,17 +354,25 @@ if option == 'Stock Information':
 
 if option == 'Stock Comparisons By Sector':
     # Metrics to display graph of
-    metrics = ['Returns', 'Returns Volatility', 'Sharpe Ratios', 'Betas', 'Financial Ratios']
+    metrics = ['Returns', 'Returns Volatility', 'Sharpe Ratio', 'Betas', 'Financial Ratios']
     metric = st.selectbox('Display Graphs of', metrics)
 
     # Additional info about metrics
     if metric == 'Returns Volatility':
         st.info('**Returns Volatility** is calculated as the standard deviation of returns.')
     
-    if metric == 'Sharpe Ratios':
-        st.info('**Sharpe Ratio** can be thought of as the *excess return per \
-                unit of risk*, where risk is the standard deviation of excess \
-                returns.')
+    if metric == 'Sharpe Ratio':
+        st.info('''
+                The **Sharpe Ratio** can be thought of as the *excess return per
+                unit of risk*, where risk is the standard deviation of excess
+                returns. Sharpe ratios above 1.0 are generally considered “good", 
+                as this would suggest that the portfolio is offering excess returns 
+                relative to its volatility. Having said that, investors will often 
+                compare the Sharpe ratio of a portfolio relative to its peers. 
+                Therefore, a portfolio with a Sharpe ratio of 1.0 might be considered 
+                inadequate if the competitors in its peer group have an average Sharpe
+                ratio above 1.0.
+                ''')
     
     # Date input
     if metric != 'Financial Ratios':
@@ -427,7 +435,7 @@ if option == 'Stock Comparisons By Sector':
         fig.update_layout(title='Sector Returns Volatility', xaxis_title='')
         st.plotly_chart(fig)
 
-    if metric == 'Sharpe Ratios':        
+    if metric == 'Sharpe Ratio':        
         # Charts of sector Sharpe Ratio
         fig = px.bar(sector_sharpes_df,
                      x=sector_sharpes_df.index,
@@ -439,10 +447,10 @@ if option == 'Stock Comparisons By Sector':
                       annotation_text=f'S&P 500 Sharpe Ratio ({SPY_sharpe:.4f})', 
                       annotation_bgcolor='#FF7F7F',
                       annotation_bordercolor='red')
-        fig.update_layout(title='Sector Sharpe Ratios', xaxis_title='')
+        fig.update_layout(title='Sector Sharpe Ratio', xaxis_title='')
         st.plotly_chart(fig)
 
-    if metric == 'Beta':
+    if metric == 'Betas':
         sector_betas_df, subIndustry_betas_dict, ticker_betas_dict = get_betas(start_date, end_date)
         
         # Charts of sector betas
@@ -651,7 +659,7 @@ if option == 'Stock Comparisons By Sector':
         for subIndustry in subIndustry_list:
             d[subIndustry] = subIndustry_sharpes_dict[subIndustry]
 
-        subIndustry_sharpes_df = pd.DataFrame.from_dict(d, orient='index', columns=['Sharpe Ratio'])     
+        subIndustry_sharpes_df = pd.DataFrame.from_dict(d, orient='index', columns=['Sharpe Ratio'])    
         sector_sharpe = sector_sharpes_df.loc[sector].item()
 
         # Set positions of annotation texts
@@ -673,10 +681,10 @@ if option == 'Stock Comparisons By Sector':
                       annotation_text=f'{sector} Sharpe Ratio ({sector_sharpe:.4f})',
                       annotation_position=pos1, annotation_bgcolor='#90ee90',
                       annotation_bordercolor='green')
-        fig.update_layout(title=f'{sector} Sub-Industry Sharpe Ratios', xaxis_title='')
+        fig.update_layout(title=f'{sector} Sub-Industry Sharpe Ratio', xaxis_title='')
         st.plotly_chart(fig)
 
-    if metric == 'Beta':
+    if metric == 'Betas':
         # Make dataframe of sub-industries
         d = {}
         for subIndustry in subIndustry_list:
@@ -909,7 +917,7 @@ if option == 'Stock Comparisons By Sector':
                       annotation_text=f'{subIndustry} Sharpe Ratio ({subIndustry_sharpe:.4f})',
                       annotation_position=pos2, annotation_bgcolor='#90ee90',
                       annotation_bordercolor='green')
-        fig.update_layout(title=f'{subIndustry} Company Sharpe Ratios', xaxis_title='')
+        fig.update_layout(title=f'{subIndustry} Company Sharpe Ratio', xaxis_title='')
         st.plotly_chart(fig)
 
         # Dataframe of stocks ranked by Sharpe Ratio
@@ -932,7 +940,7 @@ if option == 'Stock Comparisons By Sector':
         
         st.dataframe(all_sharpes_df)
 
-    if metric == 'Beta':
+    if metric == 'Betas':
         subIndustry_beta = subIndustry_betas_df.loc[subIndustry].item()
 
         # Make dataframe of tickers
