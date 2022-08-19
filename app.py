@@ -984,7 +984,7 @@ if option == 'Stock Comparisons By Sector':
         st.plotly_chart(fig)
 
         # Dataframe of stocks ranked by betas
-        st.subheader('Stocks Ranked By Betas')
+        st.subheader('Stocks Ranked By Beta')
         st.markdown('For top *n* betas enter a positive integer, \
                     and for bottom *n* betas enter a negative integer')
         n = st.text_input(label='Number of Stocks to Show', value='25')
@@ -1060,8 +1060,7 @@ if option == 'Stock Comparisons By Sector':
 
 if option == 'Technical Analysis':
     # 'Bollinger Squeeze'
-    indicators = ['Simple Moving Average Crossovers', 'TTM Squeeze',
-                  'Fibonacci Retracement Levels']
+    indicators = ['Simple Moving Average Crossovers', 'TTM Squeeze', 'Fibonacci Retracement Levels']
     indicator = st.selectbox('Technical Indicator', indicators)
     
     if indicator == 'TTM Squeeze':           
@@ -1189,15 +1188,22 @@ if option == 'News':
             article.parse()
             article.nlp()
             summary = article.summary
-            err = 'Javascript is DisabledYour current browser configurationis not compatible with this site.'
+            err = 'Javascript is DisabledYour current browser configurationis not \
+                   compatible with this site.'
             
             if summary == err:
                 summary = story['summary']
         except:
             summary = story['summary']
     
-        st.info(f'**{headline}**  \n_**Source:** {source}_  \n_**Published:** {published}_ \
-                  \n\n**Summary:**  \n{summary} \n\n_**URL:** {url}_')
+        st.info(f'''
+                ### {headline}
+                \n\n##### Summary:
+                \n\n{summary}
+                \n_**Source:** {source}_  
+                _**Published:** {published}_ 
+                \n_**Full story:** {url}_
+                ''')
         
 
 if option == 'Social Media':
@@ -1205,8 +1211,10 @@ if option == 'Social Media':
     
     if platform == 'Twitter':
         # Twitter API settings
-        auth = tweepy.OAuthHandler(st.secrets['TWITTER_CONSUMER_KEY'], st.secrets['TWITTER_CONSUMER_SECRET'])
-        auth.set_access_token(st.secrets['TWITTER_ACCESS_TOKEN'], st.secrets['TWITTER_ACCESS_TOKEN_SECRET'])
+        auth = tweepy.OAuthHandler(st.secrets['TWITTER_CONSUMER_KEY'], 
+                                   st.secrets['TWITTER_CONSUMER_SECRET'])
+        auth.set_access_token(st.secrets['TWITTER_ACCESS_TOKEN'], 
+                              st.secrets['TWITTER_ACCESS_TOKEN_SECRET'])
         api = tweepy.API(auth)
 
         for username in TWITTER_USERNAMES:
@@ -1230,7 +1238,9 @@ if option == 'Social Media':
 
         for message in data['messages']:
             st.image(message['user']['avatar_url'])
-            st.info(f"{message['user']['username']}  \
-                    \n{message['created_at']}  \
-                    \n{message['body']}")
+            st.info(f'''
+                    {message['user']['username']} 
+                    \n{message['created_at']} 
+                    \n{message['body']}
+                    ''')
             
