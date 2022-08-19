@@ -1,5 +1,6 @@
 from math import sqrt
 import numpy as np
+import os
 import pandas as pd
 import requests
 from datetime import datetime as dt
@@ -24,13 +25,13 @@ from functions import (SPY_df, SPY_info_df, ticker_list, sector_list,
                        find_stocks_missing_data, find_SMA_crossovers, make_crossover_charts)
 
 
-# nltk.download([
-#      "names",
-#      "stopwords",
-#      "averaged_perceptron_tagger",
-#      "vader_lexicon",
-#      "punkt"
-#       ])
+nltk.download([
+     "names",
+     "stopwords",
+     "averaged_perceptron_tagger",
+     "vader_lexicon",
+     "punkt"
+      ])
       
 
 f = 'data/market_data/'
@@ -253,7 +254,7 @@ if option == 'Stock Information':
     subIndustry_ticker_weights = []
 
     for ticker in sector_tickers:
-        df = pd.read_csv(f + ticker + '.csv', index_col='Unnamed: 0', parse_dates=True)
+        df = pd.read_csv(os.path.join(f, ticker + '.csv'), index_col='Unnamed: 0', parse_dates=True)
         df = df[start_date: end_date]
         df['Daily Return'] = df['adjclose'].pct_change() * 100
         df_return = ((1 + df['Daily Return'].mean() / 100)**(len(df) - 1) - 1) * 100
@@ -272,7 +273,7 @@ if option == 'Stock Information':
     subIndustry_returns = []
 
     for ticker in subIndustry_tickers:
-        df = pd.read_csv(f + ticker + '.csv', index_col='Unnamed: 0', parse_dates=True)
+        df = pd.read_csv(os.path.join(f, ticker + '.csv'), index_col='Unnamed: 0', parse_dates=True)
         df = df[start_date: end_date]
         t = len(df) / 252
         df['Daily Return'] = df['adjclose'].pct_change() * 100

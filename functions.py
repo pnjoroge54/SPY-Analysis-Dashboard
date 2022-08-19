@@ -300,7 +300,7 @@ def get_returns_and_volatility(start_date, end_date):
             # Get sub-industry of ticker
             t_subIndustry = SPY_info_df[SPY_info_df['Symbol'] == ticker] \
                             ['GICS Sub-Industry'].item()
-            df = pd.read_csv(f + ticker + '.csv', index_col='Unnamed: 0', parse_dates=True)
+            df = pd.read_csv(os.path.join(f, ticker + '.csv'), index_col='Unnamed: 0', parse_dates=True)
             df = df[start_date: end_date]
             df = df.join(rf_rates, how='left')
             df.ffill(inplace=True)
@@ -472,7 +472,7 @@ def make_TTM_squeeze_charts(lst):
     for item in lst:
         ticker = item[0]
         date = item[1].strftime('%b %d')
-        df = pd.read_csv(f + ticker + '.csv', index_col='Unnamed: 0', parse_dates=True)
+        df = pd.read_csv(os.path.join(f, ticker + '.csv'), index_col='Unnamed: 0', parse_dates=True)
         start_date = last_date - timedelta(days=180)
         df = df[start_date: last_date]
         df['20sma'] = df['close'].rolling(window=20).mean()
@@ -520,7 +520,7 @@ def make_TTM_squeeze_charts(lst):
 
 
 def plot_fibonacci_levels(ticker, start_date, end_date):
-    df = pd.read_csv(f + ticker + '.csv', index_col='Unnamed: 0', parse_dates=True)
+    df = pd.read_csv(os.path.join(f, ticker + '.csv'), index_col='Unnamed: 0', parse_dates=True)
     df = df[start_date: end_date]
     df.reset_index(inplace=True)
     df.rename(columns={'index': 'date'}, inplace=True)
@@ -594,7 +594,7 @@ def find_SMA_crossovers(crossover):
     csma2 = str(sma2) + 'sma'
     
     for ticker in ticker_list:
-        df = pd.read_csv(f + ticker + '.csv', index_col='Unnamed: 0', parse_dates=True)
+        df = pd.read_csv(os.path.join(f, ticker + '.csv'), index_col='Unnamed: 0', parse_dates=True)
         
         if len(df) < sma2:
             continue
@@ -623,7 +623,7 @@ def make_crossover_charts(crossover, lst, n):
     sma2 = int(s2[0])
     
     for ticker in lst[n: n + 10]:
-        df = pd.read_csv(f + ticker + '.csv', index_col='Unnamed: 0', parse_dates=True)
+        df = pd.read_csv(os.path.join(f, ticker + '.csv'), index_col='Unnamed: 0', parse_dates=True)
         df = df.iloc[-sma2 * 3:]
         name = SPY_info_df[SPY_info_df['Symbol'] == ticker]['Security'].item()
         title = f'{name} ({ticker})'
@@ -635,8 +635,8 @@ def make_crossover_charts(crossover, lst, n):
 
 
 def get_news(ticker, date):
-    r = requests.get(f'https://finnhub.io/api/v1/company-news?symbol={ticker}&from='
-                     f'{date}&to={date}&token={st.secrets["FINNHUB_API_KEY"]}')
+    r = requests.get(f'''https://finnhub.io/api/v1/company-news?symbol={ticker}&from=
+                         {date}&to={date}&token={st.secrets["FINNHUB_API_KEY"]}''')
     data = r.json()
     
     return data
