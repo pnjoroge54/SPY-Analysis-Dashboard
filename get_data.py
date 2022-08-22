@@ -21,6 +21,7 @@ def get_SPY_companies():
 
     table = pd.read_html('https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')
     df = table[0]
+    # df1 = table[1]
     c_df = pd.read_csv('data/SPY-Info.csv')
     
     # Change '.' to '-' in ticker before df is written
@@ -84,20 +85,20 @@ def get_market_data():
 
     # download stock data
     for ticker in tickers:
-        i += 1
         data = si.get_data(ticker)
         data.to_csv(f'data/market_data/{ticker}.csv')
+        i += 1
         sys.stdout.write("\r")
         sys.stdout.write(f"{i}/{n} ({i/n * 100:.2f}%) of SPY market data downloaded")
         sys.stdout.flush()
-
+        
     # download index data
     SPY = yf.Ticker('^GSPC').history(period='max')
     SPY.to_csv('data/SPY.csv')
     print('\n')
 
 
-def move_market_data():
+def remove_replaced_tickers():
     '''Move tickers that have been removed from the SPY to their own folder'''
 
     tickers = get_tickers()
@@ -109,7 +110,8 @@ def move_market_data():
         missing = set(files) - set(tickers)
         for ticker in missing:
             file = ticker + '.csv'
-            shutil.move(f'data/market_data/{file}', f'data/removed_from_index/{file}')
+            os.remove(f'data/market_data/{file}')
+            os.remove(f'data/financial_ratios/Annual/{file}')
             print(f'{ticker} is no longer in SPY.')
     
         
@@ -141,7 +143,7 @@ def ratios_to_update():
     return to_update
 
 
-def get_financial_ratios(i, n):
+def get_financial_ratios(i=0, n=1):
     '''
     Downloads annual financial ratios
 
@@ -188,7 +190,7 @@ def get_financial_ratios(i, n):
         print('\n\nAnnual financial ratios are up to date!\n')       
 
 
-def get_TTM_financial_ratios(i, n, d):
+def get_TTM_financial_ratios(i=0, n=1, d={}):
     '''
     Downloads trailing twelve month (TTM) financial ratios
 
@@ -267,7 +269,7 @@ def save_TTM_financial_ratios():
     
     file = cdate.strftime('%d-%m-%Y') + '.pickle'
     f = 'data/financial_ratios/Current'
-    d = get_TTM_financial_ratios(0, 1, {})
+    d = get_TTM_financial_ratios()
     tickers = get_tickers()
 
     if len(d) == len(tickers):
@@ -281,7 +283,8 @@ def save_TTM_financial_ratios():
 
 
 def get_risk_free_rates():
-    rf_rates = pdr.fred.FredReader('DTB3', dt(1954, 1, 4), dt.now()).read()
+    # rf_rates = pdr.fred.FredReader('DTB3', dt(1954, 1, 4), dt.now()).read()
+    rf_rates = yf.download('^IRX', progress=False)
     rf_rates.to_csv(r'data\T-Bill Rates.csv')
     print('\nT-Bill Rates saved\n')
 
@@ -290,9 +293,7 @@ if __name__ == "__main__":
     get_SPY_companies()
     get_SPY_weights()
     get_market_data()
-    move_market_data()
+    remove_replaced_tickers()
     get_risk_free_rates()
     save_TTM_financial_ratios()
-    get_financial_ratios(0, 1)
-    
-
+    get_financial_ratios()

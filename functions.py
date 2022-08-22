@@ -46,7 +46,7 @@ def get_first_dates():
     first_dates = []
 
     for file in os.listdir(f):
-        df = pd.read_csv(f + file, index_col='Unnamed: 0', parse_dates=True)
+        df = pd.read_csv(os.path.join(f, file), index_col='Unnamed: 0', parse_dates=True)
         first_date = df.iloc[0].name
         ticker = file.split('.')[0]
         first_dates.append((ticker, first_date))
@@ -61,15 +61,13 @@ def make_combined_returns_df():
 
     combined_returns = SPY_df.copy()
     combined_returns['Return'] = combined_returns['Close'].pct_change() * 100
-    combined_returns.drop(
-        ['Open', 'High', 'Low', 'Close', 'Volume', 'Dividends', 'Stock Splits'],
-        axis=1, inplace=True
-        )
+    combined_returns.drop([x for x in combined_returns.columns if x != 'Return'],
+                          axis=1, inplace=True)
     combined_returns.rename(columns={'Return': 'SPY'}, inplace=True)
     
     for file in os.listdir(f):
         ticker = file.replace('.csv', '')
-        df = pd.read_csv(f + file, index_col='Unnamed: 0', parse_dates=True)
+        df = pd.read_csv(os.path.join(f, file), index_col='Unnamed: 0', parse_dates=True)
         df['Return'] = df['adjclose'].pct_change() * 100
         combined_returns = combined_returns.join(df['Return'], how='left')
         combined_returns.rename(columns={'Return': ticker}, inplace=True)
@@ -131,13 +129,10 @@ def get_current_ratios(ratios, ratio):
     sector_ratios = {}
     subIndustry_ratios = {}
     ticker_ratios = {}
-
-    for sector in sector_list:
-        subIndustry_dict = SPY_info_df[SPY_info_df['GICS Sector'] == sector] \
-                           ['GICS Sub-Industry'].value_counts().to_dict()
-        subIndustry_list = list(subIndustry_dict.keys())
-        for subIndustry in subIndustry_list:
-            subIndustry_ratios[subIndustry] = []
+    subIndustry_list = SPY_info_df['GICS Sub-Industry'].unique()
+    
+    for subIndustry in subIndustry_list:
+        subIndustry_ratios[subIndustry] = []
 
     for sector in sector_list:
         sector_tickers = SPY_info_df[SPY_info_df['GICS Sector'] == sector] \
@@ -148,9 +143,9 @@ def get_current_ratios(ratios, ratio):
             t_subIndustry = SPY_info_df[SPY_info_df['Symbol'] == ticker] \
                             ['GICS Sub-Industry'].item()
             # Get weight to use in weighted average calculation
-            mktCap = ticker_weights[ticker]
-            ticker_sector_weight = mktCap / sector_weights[sector]
-            ticker_subIndustry_weight = mktCap / subIndustry_weights[t_subIndustry]
+            weight = ticker_weights[ticker]
+            ticker_sector_weight = weight / sector_weights[sector]
+            ticker_subIndustry_weight = weight / subIndustry_weights[t_subIndustry]
             # Ratio result
             try:
                 res = current_ratios[ticker][r]
@@ -176,9 +171,6 @@ def get_current_ratios(ratios, ratio):
         sector_ratios[sector] = sector_res
 
     # Get sub-industry ratios
-    subIndustry_dict = SPY_info_df['GICS Sub-Industry'].value_counts().to_dict()
-    subIndustry_list = list(subIndustry_dict.keys())
-
     for subIndustry in subIndustry_list:
         subIndustry_ratios[subIndustry] = sum(subIndustry_ratios[subIndustry])
 
@@ -210,11 +202,11 @@ def get_weights():
 
     for sector in sector_list:
         subIndustry_list = SPY_info_df[SPY_info_df['GICS Sector'] == sector] \
-                            ['GICS Sub-Industry'].unique()
+                           ['GICS Sub-Industry'].to_list()
         sector_weight = 0
         for subIndustry in subIndustry_list:
             tickers = SPY_info_df[SPY_info_df['GICS Sub-Industry'] == subIndustry] \
-                        ['Symbol'].unique()
+                      ['Symbol'].to_list()
             subIndustry_weight = 0
             for ticker in tickers:
                 weight = weights_df.loc[ticker, 'Weight']
@@ -279,17 +271,15 @@ def get_returns_and_volatility(start_date, end_date):
     sector_sharpes = {}
     subIndustry_sharpes = {}
     ticker_cols = {}
-    rf_rates = pd.read_csv(r'data\T-Bill Rates.csv', index_col='DATE', parse_dates=True)
+    rf_rates = pd.read_csv(r'data\T-Bill Rates.csv', index_col='Date', parse_dates=True)
+    rf_rates.rename(columns={'Close': 'DTB3'}, inplace=True)
+    subIndustry_list = SPY_info_df['GICS Sub-Industry'].unique()
     
-    for sector in sector_list:
-        subIndustry_dict = SPY_info_df[SPY_info_df['GICS Sector'] == sector] \
-                           ['GICS Sub-Industry'].value_counts().to_dict()
-        subIndustry_list = list(subIndustry_dict.keys())
-        for subIndustry in subIndustry_list:
-            subIndustry_returns[subIndustry] = []
-            subIndustry_vols[subIndustry] = []
-            subIndustry_sharpes[subIndustry] = []
-    
+    for subIndustry in subIndustry_list:
+        subIndustry_returns[subIndustry] = []
+        subIndustry_vols[subIndustry] = []
+        subIndustry_sharpes[subIndustry] = []
+
     for sector in sector_list:
         sector_tickers = SPY_info_df[SPY_info_df['GICS Sector'] == sector] \
                          ['Symbol'].to_list()
@@ -302,9 +292,9 @@ def get_returns_and_volatility(start_date, end_date):
                             ['GICS Sub-Industry'].item()
             df = pd.read_csv(os.path.join(f, ticker + '.csv'), index_col='Unnamed: 0', parse_dates=True)
             df = df[start_date: end_date]
-            df = df.join(rf_rates, how='left')
+            df = pd.concat([df, rf_rates.DTB3], axis=1, join='inner')
             df.ffill(inplace=True)
-            df['Daily T-Bill Rate'] = (1 + df['DTB3'] / 100)**(1 / 365) - 1
+            df['Daily T-Bill Rate'] = (1 / (1 - (df['DTB3'] / 100) * (90 / 360)))**(1 / 90) - 1
             df['Daily Return'] = df['adjclose'].pct_change()
             df['Daily Excess Return'] = df['Daily Return'] - df['Daily T-Bill Rate']
             df['Cumulative Return'] = (1 + df['Daily Return']).cumprod() - 1 
@@ -316,9 +306,9 @@ def get_returns_and_volatility(start_date, end_date):
             df_sharpe = df_ereturn / df_estd
 
             # Get weight to use in weighted average calculation
-            mktCap = ticker_weights[ticker]
-            ticker_sector_weight = mktCap / sector_weights[sector]
-            ticker_subIndustry_weight = mktCap / subIndustry_weights[t_subIndustry]
+            weight = ticker_weights[ticker]
+            ticker_sector_weight = weight / sector_weights[sector]
+            ticker_subIndustry_weight = weight / subIndustry_weights[t_subIndustry]
             # Append result to its sector list
             sector_return.append(df_return * ticker_sector_weight)
             sector_vol.append(df_std * ticker_sector_weight)
@@ -344,9 +334,6 @@ def get_returns_and_volatility(start_date, end_date):
         sector_sharpes[sector] = sum(sector_sharpe)
 
     # Get sub-industry returns
-    subIndustry_dict = SPY_info_df['GICS Sub-Industry'].value_counts().to_dict()
-    subIndustry_list = list(subIndustry_dict.keys())
-    
     for subIndustry in subIndustry_list:
         subIndustry_returns[subIndustry] = sum(subIndustry_returns[subIndustry])
         subIndustry_vols[subIndustry] = sum(subIndustry_vols[subIndustry])
@@ -356,9 +343,9 @@ def get_returns_and_volatility(start_date, end_date):
     sector_vols_df = pd.DataFrame.from_dict(sector_vols, orient='index', columns=['Returns Volatility (%)'])
     sector_sharpes_df = pd.DataFrame.from_dict(sector_sharpes, orient='index', columns=['Sharpe Ratio'])
     df = SPY_df[start_date: end_date]
-    df = df.join(rf_rates, how='left')
+    df = pd.concat([df, rf_rates.DTB3], axis=1, join='inner')
     df.ffill(inplace=True)
-    df['Daily T-Bill Rate'] = (1 + df['DTB3'] / 100)**(1 / 365) - 1        
+    df['Daily T-Bill Rate'] = (1 / (1 - (df['DTB3'] / 100) * (90 / 360)))**(1 / 90) - 1      
     df['Daily Return'] = df['Close'].pct_change()
     df['Daily Excess Return'] = df['Daily Return'] - df['Daily T-Bill Rate']
     df['Cumulative Return'] = (1 + df['Daily Return']).cumprod() - 1 
@@ -368,9 +355,9 @@ def get_returns_and_volatility(start_date, end_date):
     SPY_std = df['Daily Return'].std() * 100
     SPY_estd = df['Daily Excess Return'].std() * 100
     SPY_sharpe = SPY_ereturn / SPY_estd
-
+    
     return sector_returns_df, subIndustry_returns, ticker_cols, sector_vols_df, subIndustry_vols, \
-            sector_sharpes_df, subIndustry_sharpes, SPY_return, SPY_std, SPY_sharpe
+           sector_sharpes_df, subIndustry_sharpes, SPY_return, SPY_std, SPY_sharpe
 
     
 @st.cache
@@ -378,14 +365,10 @@ def get_betas(start_date, end_date):
     sector_betas = {}
     subIndustry_betas = {}
     ticker_betas = {}
-
-    for sector in sector_list:
-        subIndustry_dict = SPY_info_df[SPY_info_df['GICS Sector'] == sector] \
-                            ['GICS Sub-Industry'].value_counts().to_dict()
-        subIndustry_list = list(subIndustry_dict.keys())
-        # Make an empty list for each sub-industry
-        for subIndustry in subIndustry_list:
-            subIndustry_betas[subIndustry] = []
+    subIndustry_list = SPY_info_df['GICS Sub-Industry'].unique()
+    
+    for subIndustry in subIndustry_list:
+        subIndustry_betas[subIndustry] = []
 
     for sector in sector_list:
         sector_tickers = SPY_info_df[SPY_info_df['GICS Sector'] == sector] \
@@ -398,9 +381,9 @@ def get_betas(start_date, end_date):
             # Get beta for each ticker
             beta = calculate_beta(combined_returns_df, ticker, start_date, end_date)
             # Get weight to use in weighted average calculation
-            mktCap = ticker_weights[ticker]
-            ticker_sector_weight = mktCap / sector_weights[sector]
-            ticker_subIndustry_weight = mktCap / subIndustry_weights[t_subIndustry]
+            weight = ticker_weights[ticker]
+            ticker_sector_weight = weight / sector_weights[sector]
+            ticker_subIndustry_weight = weight / subIndustry_weights[t_subIndustry]
             # Append beta to its sector list
             sector_beta.append(beta * ticker_sector_weight)  
             # Append beta to its sub-industry list
@@ -408,20 +391,17 @@ def get_betas(start_date, end_date):
             # Get beta, name, sector, sub-industry of each ticker
             ticker_betas[ticker] = {}
             ticker_betas[ticker]['Company'] = SPY_info_df[SPY_info_df['Symbol'] == ticker] \
-                                                ['Security'].item()
+                                              ['Security'].item()
             ticker_betas[ticker]['Sector'] = SPY_info_df[SPY_info_df['Symbol'] == ticker] \
-                                                ['GICS Sector'].item()
+                                             ['GICS Sector'].item()
             ticker_betas[ticker]['Sub-Industry'] = SPY_info_df[SPY_info_df['Symbol'] == ticker] \
-                                                    ['GICS Sub-Industry'].item()
+                                                   ['GICS Sub-Industry'].item()
             ticker_betas[ticker]['Beta'] = beta       
 
         # Calculate sector betas
         sector_betas[sector] = sum(sector_beta)
 
     # Get sub-industry betas
-    subIndustry_dict = SPY_info_df['GICS Sub-Industry'].value_counts().to_dict()
-    subIndustry_list = list(subIndustry_dict.keys())
-
     for subIndustry in subIndustry_list:
         subIndustry_betas[subIndustry] = sum(subIndustry_betas[subIndustry])
 
@@ -441,7 +421,7 @@ def TTM_Squeeze():
     for file in os.listdir(f):
         ticker = file.split('.')[0]
         start_date = yr_ago
-        df = pd.read_csv(f + file, index_col='Unnamed: 0', parse_dates=True)
+        df = pd.read_csv(os.path.join(f, file), index_col='Unnamed: 0', parse_dates=True)
         df = df[start_date: last_date]
         df['20sma'] = df['close'].rolling(window=20).mean()
         df['std deviation'] = df['close'].rolling(window=20).std()
@@ -501,7 +481,7 @@ def make_TTM_squeeze_charts(lst):
                                     line={'color': 'red', 'width': 0.75})
         layout = go.Layout(plot_bgcolor='#ECECEC', paper_bgcolor='#ECECEC')
         fig = go.Figure(data=[candlestick, upper_band, lower_band,
-                                upper_keltner, lower_keltner],
+                              upper_keltner, lower_keltner],
                         layout=layout)
                         
         # Set candlestick line and fill colors
