@@ -45,10 +45,9 @@ def get_first_dates():
 
     first_dates = []
 
-    for file in os.listdir(f):
-        df = pd.read_csv(os.path.join(f, file), index_col='Unnamed: 0', parse_dates=True)
+    for ticker in ticker_list:
+        df = pd.read_csv(os.path.join(f, f'{ticker}.csv'), index_col='Unnamed: 0', parse_dates=True)
         first_date = df.iloc[0].name
-        ticker = file.split('.')[0]
         first_dates.append((ticker, first_date))
         first_dates = sorted(first_dates, key=lambda x: x[1])
 
@@ -65,9 +64,8 @@ def make_combined_returns_df():
                           axis=1, inplace=True)
     combined_returns.rename(columns={'Return': 'SPY'}, inplace=True)
     
-    for file in os.listdir(f):
-        ticker = file.replace('.csv', '')
-        df = pd.read_csv(os.path.join(f, file), index_col='Unnamed: 0', parse_dates=True)
+    for ticker in ticker_list:
+        df = pd.read_csv(os.path.join(f, f'{ticker}.csv'), index_col='Unnamed: 0', parse_dates=True)
         df['Return'] = df['adjclose'].pct_change() * 100
         combined_returns = combined_returns.join(df['Return'], how='left')
         combined_returns.rename(columns={'Return': ticker}, inplace=True)
@@ -238,9 +236,8 @@ def find_stocks_missing_data(start_date, end_date):
     missing = [x[0] for x in missing]
 
     # Make dict of stocks by sector & sub-industry
-    d = {}
-    for sector in sector_list:
-        d[sector] = {}
+    d = {sector: {} for sector in sector_list}
+    
     for ticker in missing:
         sector = SPY_info_df[SPY_info_df['Symbol'] == ticker]['GICS Sector'].item()
         subIndustry = SPY_info_df[SPY_info_df['Symbol'] == ticker]['GICS Sub-Industry'].item()
@@ -256,7 +253,8 @@ def find_stocks_missing_data(start_date, end_date):
             del d[sector]
 
     if len(missing) > 0:
-        s2 += f"{len(missing)}/{len(ticker_list)} stocks have data that begins after {start_date.strftime('%B %d, %Y')}. \
+        s2 += f"{len(missing)}/{len(ticker_list)} stocks have data that begins after \
+                {start_date.strftime('%B %d, %Y')}. \
                 \nMissing data affects the accuracy of results displayed below."
 
     return d, s, s1, s2
@@ -294,7 +292,7 @@ def get_returns_and_volatility(start_date, end_date):
             df = df[start_date: end_date]
             df = pd.concat([df, rf_rates.DTB3], axis=1, join='inner')
             df.ffill(inplace=True)
-            df['Daily T-Bill Rate'] = (1 / (1 - (df['DTB3'] / 100) * (90 / 360)))**(1 / 90) - 1
+            df['Daily T-Bill Rate'] = (1 + df['DTB3'] / 100 * (90 / 360))**(1 / 90) - 1
             df['Daily Return'] = df['adjclose'].pct_change()
             df['Daily Excess Return'] = df['Daily Return'] - df['Daily T-Bill Rate']
             df['Cumulative Return'] = (1 + df['Daily Return']).cumprod() - 1 
@@ -340,12 +338,12 @@ def get_returns_and_volatility(start_date, end_date):
         subIndustry_sharpes[subIndustry] = sum(subIndustry_sharpes[subIndustry])
     
     sector_returns_df = pd.DataFrame.from_dict(sector_returns, orient='index', columns=['Return (%)'])
-    sector_vols_df = pd.DataFrame.from_dict(sector_vols, orient='index', columns=['Returns Volatility (%)'])
+    sector_vols_df = pd.DataFrame.from_dict(sector_vols, orient='index', columns=['Volatility (%)'])
     sector_sharpes_df = pd.DataFrame.from_dict(sector_sharpes, orient='index', columns=['Sharpe Ratio'])
     df = SPY_df[start_date: end_date]
     df = pd.concat([df, rf_rates.DTB3], axis=1, join='inner')
     df.ffill(inplace=True)
-    df['Daily T-Bill Rate'] = (1 / (1 - (df['DTB3'] / 100) * (90 / 360)))**(1 / 90) - 1      
+    df['Daily T-Bill Rate'] = (1 + df['DTB3'] / 100 * (90 / 360))**(1 / 90) - 1      
     df['Daily Return'] = df['Close'].pct_change()
     df['Daily Excess Return'] = df['Daily Return'] - df['Daily T-Bill Rate']
     df['Cumulative Return'] = (1 + df['Daily Return']).cumprod() - 1 
