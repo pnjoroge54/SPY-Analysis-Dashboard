@@ -1076,25 +1076,26 @@ if option == 'Technical Analysis':
                   in the 5 trading days prior to {date}.')
         
         if len(coming_out) > 0:
-            with st.expander('Stocks That Have Broken Out'):
-                st.write([x[0] for x in coming_out])
-            
             dates = list(set([x[1] for x in coming_out]))
             dates = sorted(dates, reverse=True)
             dates = [date.strftime('%B %d, %Y') for date in dates]
+
+            with st.expander(f'Stocks that have broken out since {dates[-1]}'):
+                st.write([x[0] for x in coming_out])
+            
             b_date = st.selectbox('Breakout Date', dates)
-            lst = []
+            broke_out = []
 
             for item in coming_out:
                 if item[1] == dt.strptime(b_date, '%B %d, %Y'):
-                    lst.append(item)
+                    broke_out.append(item)
 
-            st.info(f'{len(lst)} stocks have **broken out of the squeeze** on {b_date}.') 
+            st.info(f'{len(broke_out)} stocks **broke out of the squeeze** on {b_date}.') 
 
-            with st.expander(f'{b_date} Stocks'):
-                st.write([x[0] for x in lst])
+            with st.expander(f'Stocks that broke out on {b_date}'):
+                st.write([x[0] for x in broke_out])
 
-            make_TTM_squeeze_charts(lst)
+            make_TTM_squeeze_charts(broke_out)
             
     if indicator == 'Simple Moving Average Crossovers':              
         st.write('For more details on Simple Moving Average (SMA) Crossovers \

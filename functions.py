@@ -327,7 +327,7 @@ def get_returns_and_volatility(start_date, end_date):
             ticker_cols[ticker]['Volatility (%)'] = df_std
             ticker_cols[ticker]['Sharpe Ratio'] = df_sharpe
 
-        sector_returns[sector] =  sum(sector_return)
+        sector_returns[sector] = sum(sector_return)
         sector_vols[sector] = sum(sector_vol)
         sector_sharpes[sector] = sum(sector_sharpe)
 
@@ -416,10 +416,10 @@ def TTM_Squeeze():
 
     coming_out = []
 
-    for file in os.listdir(f):
-        ticker = file.split('.')[0]
+    for ticker in ticker_list:
         start_date = yr_ago
-        df = pd.read_csv(os.path.join(f, file), index_col='Unnamed: 0', parse_dates=True)
+        df = pd.read_csv(os.path.join(f, f'{ticker}.csv'), index_col='Unnamed: 0', 
+                                      parse_dates=True)
         df = df[start_date: last_date]
         df['20sma'] = df['close'].rolling(window=20).mean()
         df['std deviation'] = df['close'].rolling(window=20).std()
@@ -477,7 +477,8 @@ def make_TTM_squeeze_charts(lst):
         lower_keltner = go.Scatter(x=df.index, y=df['lower_keltner'],
                                     name='Lower Keltner Channel', 
                                     line={'color': 'red', 'width': 0.75})
-        layout = go.Layout(plot_bgcolor='#ECECEC', paper_bgcolor='#ECECEC')
+        layout = go.Layout(plot_bgcolor='#ECECEC', paper_bgcolor='#ECECEC', 
+                           font_color='black')
         fig = go.Figure(data=[candlestick, upper_band, lower_band,
                               upper_keltner, lower_keltner],
                         layout=layout)
@@ -546,7 +547,7 @@ def plot_fibonacci_levels(ticker, start_date, end_date):
     frl4 = go.Scatter(x=df.date, y=sy[4], name='61.8%', line={'color': colors[4], 'width': 0.75})
     frl5 = go.Scatter(x=df.date, y=sy[5], name='78.6%', line={'color': colors[5], 'width': 0.75})
     frl6 = go.Scatter(x=df.date, y=sy[6], name='100%', line={'color': colors[6], 'width': 0.75})
-    layout = go.Layout(plot_bgcolor='#ECECEC', paper_bgcolor='#ECECEC')
+    layout = go.Layout(plot_bgcolor='#ECECEC', paper_bgcolor='#ECECEC', font_color='black')
     fig = go.Figure(data=[candlesticks, frl, frl1, frl2, frl3, frl4, frl5, frl6], layout=layout)
     cs = fig.data[0]
     cs.increasing.fillcolor = '#B7E9F7'
