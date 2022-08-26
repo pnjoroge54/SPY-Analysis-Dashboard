@@ -1,5 +1,6 @@
 import os
 import math
+from pprint import pprint
 import numpy as np
 import pandas as pd
 import requests
@@ -13,7 +14,14 @@ import plotly.graph_objects as go
 import streamlit as st
 
 
-f = 'data/market_data/'
+@st.cache
+def get_ticker_data(ticker):
+    f = 'data/market_data/'
+
+    ticker_df = pd.read_csv(os.path.join(f, f'{ticker}.csv'), index_col='Unnamed: 0',
+                            parse_dates=True)
+
+    return ticker_df
 
 
 def getIndexOfTuple(lst, index, value):
@@ -42,11 +50,12 @@ def get_SPY_data():
 @st.cache
 def get_first_dates():
     '''Get the earliest date for which market data is available for each company'''
-
+    f = 'data/market_data/'
     first_dates = []
 
     for ticker in ticker_list:
-        df = pd.read_csv(os.path.join(f, f'{ticker}.csv'), index_col='Unnamed: 0', parse_dates=True)
+        df = pd.read_csv(os.path.join(f, f'{ticker}.csv'), index_col='Unnamed: 0', 
+                         parse_dates=True)
         first_date = df.iloc[0].name
         first_dates.append((ticker, first_date))
         first_dates = sorted(first_dates, key=lambda x: x[1])
@@ -63,12 +72,13 @@ def make_combined_returns_df():
     combined_returns.drop([x for x in combined_returns.columns if x != 'Return'],
                           axis=1, inplace=True)
     combined_returns.rename(columns={'Return': 'SPY'}, inplace=True)
+    f = 'data/market_data/'
     
     for ticker in ticker_list:
-        df = pd.read_csv(os.path.join(f, f'{ticker}.csv'), index_col='Unnamed: 0', parse_dates=True)
-        df['Return'] = df['adjclose'].pct_change() * 100
-        combined_returns = combined_returns.join(df['Return'], how='left')
-        combined_returns.rename(columns={'Return': ticker}, inplace=True)
+        df = pd.read_csv(os.path.join(f, f'{ticker}.csv'), index_col='Unnamed: 0',
+                         parse_dates=True)
+        df[ticker] = df['adjclose'].pct_change() * 100
+        combined_returns = combined_returns.join(df[ticker], how='left')
 
     return combined_returns
 
@@ -128,7 +138,7 @@ def get_current_ratios(ratios, ratio):
     subIndustry_ratios = {}
     ticker_ratios = {}
     subIndustry_list = SPY_info_df['GICS Sub-Industry'].unique()
-    
+
     for subIndustry in subIndustry_list:
         subIndustry_ratios[subIndustry] = []
 
@@ -140,16 +150,13 @@ def get_current_ratios(ratios, ratio):
             # Get sub-industry of ticker
             t_subIndustry = SPY_info_df[SPY_info_df['Symbol'] == ticker] \
                             ['GICS Sub-Industry'].item()
+            res = current_ratios[ticker][r] # Ratio result
+
             # Get weight to use in weighted average calculation
             weight = ticker_weights[ticker]
             ticker_sector_weight = weight / sector_weights[sector]
             ticker_subIndustry_weight = weight / subIndustry_weights[t_subIndustry]
-            # Ratio result
-            try:
-                res = current_ratios[ticker][r]
-            except:
-                res = 0
-
+            
             # Append ratio to its sector list
             sector_ratio.append(res * ticker_sector_weight)
             # Append ratio to its sub-industry list
@@ -165,16 +172,15 @@ def get_current_ratios(ratios, ratio):
             ticker_ratios[ticker][ratio] = res                    
 
         # Calculate sector ratios
-        sector_res = sum(sector_ratio)
-        sector_ratios[sector] = sector_res
-
+        sector_ratios[sector] = sum(sector_ratio)
+        
     # Get sub-industry ratios
     for subIndustry in subIndustry_list:
         subIndustry_ratios[subIndustry] = sum(subIndustry_ratios[subIndustry])
 
-    df = pd.DataFrame.from_dict(sector_ratios, orient='index', columns=[ratio])
+    sector_ratios_df = pd.DataFrame.from_dict(sector_ratios, orient='index', columns=[ratio])
 
-    return df, subIndustry_ratios, ticker_ratios 
+    return sector_ratios_df, subIndustry_ratios, ticker_ratios 
 
 
 @st.cache
@@ -200,11 +206,11 @@ def get_weights():
 
     for sector in sector_list:
         subIndustry_list = SPY_info_df[SPY_info_df['GICS Sector'] == sector] \
-                           ['GICS Sub-Industry'].to_list()
+                            ['GICS Sub-Industry'].unique()
         sector_weight = 0
         for subIndustry in subIndustry_list:
             tickers = SPY_info_df[SPY_info_df['GICS Sub-Industry'] == subIndustry] \
-                      ['Symbol'].to_list()
+                        ['Symbol'].unique()
             subIndustry_weight = 0
             for ticker in tickers:
                 weight = weights_df.loc[ticker, 'Weight']
@@ -253,9 +259,9 @@ def find_stocks_missing_data(start_date, end_date):
             del d[sector]
 
     if len(missing) > 0:
-        s2 += f"{len(missing)}/{len(ticker_list)} stocks have data that begins after \
-                {start_date.strftime('%B %d, %Y')}. \
-                \nMissing data affects the accuracy of results displayed below."
+        s2 += f'''{len(missing)}/{len(ticker_list)} stocks have data that begins after 
+                  {start_date.strftime('%B %d, %Y')}.
+                  \nMissing data affects the accuracy of results displayed below.'''
 
     return d, s, s1, s2
 
@@ -269,9 +275,11 @@ def get_returns_and_volatility(start_date, end_date):
     sector_sharpes = {}
     subIndustry_sharpes = {}
     ticker_cols = {}
-    rf_rates = pd.read_csv(r'data\T-Bill Rates.csv', index_col='Date', parse_dates=True)
+    rf_rates = pd.read_csv(r'data\T-Bill Rates.csv', index_col='Date', 
+                           parse_dates=True)
     rf_rates.rename(columns={'Close': 'DTB3'}, inplace=True)
     subIndustry_list = SPY_info_df['GICS Sub-Industry'].unique()
+    f = 'data/market_data/'
     
     for subIndustry in subIndustry_list:
         subIndustry_returns[subIndustry] = []
@@ -288,7 +296,8 @@ def get_returns_and_volatility(start_date, end_date):
             # Get sub-industry of ticker
             t_subIndustry = SPY_info_df[SPY_info_df['Symbol'] == ticker] \
                             ['GICS Sub-Industry'].item()
-            df = pd.read_csv(os.path.join(f, ticker + '.csv'), index_col='Unnamed: 0', parse_dates=True)
+            df = pd.read_csv(os.path.join(f, ticker + '.csv'), index_col='Unnamed: 0', 
+                             parse_dates=True)
             df = df[start_date: end_date]
             df = pd.concat([df, rf_rates.DTB3], axis=1, join='inner')
             df.ffill(inplace=True)
@@ -340,6 +349,9 @@ def get_returns_and_volatility(start_date, end_date):
     sector_returns_df = pd.DataFrame.from_dict(sector_returns, orient='index', columns=['Return (%)'])
     sector_vols_df = pd.DataFrame.from_dict(sector_vols, orient='index', columns=['Volatility (%)'])
     sector_sharpes_df = pd.DataFrame.from_dict(sector_sharpes, orient='index', columns=['Sharpe Ratio'])
+    sector_returns_df.index.names = ['Sector']
+    sector_vols_df.index.names = ['Sector']
+    sector_sharpes_df.index.names = ['Sector']
     df = SPY_df[start_date: end_date]
     df = pd.concat([df, rf_rates.DTB3], axis=1, join='inner')
     df.ffill(inplace=True)
@@ -370,7 +382,7 @@ def get_betas(start_date, end_date):
 
     for sector in sector_list:
         sector_tickers = SPY_info_df[SPY_info_df['GICS Sector'] == sector] \
-                        ['Symbol'].to_list()
+                         ['Symbol'].to_list()
         sector_beta = []
         for ticker in sector_tickers:
             # Get sub-industry of ticker
@@ -415,6 +427,7 @@ def TTM_Squeeze():
         return df['lower_band'] > df['lower_keltner'] and df['upper_band'] < df['upper_keltner']
 
     coming_out = []
+    f = 'data/market_data/'
 
     for ticker in ticker_list:
         start_date = yr_ago
@@ -447,10 +460,12 @@ def TTM_Squeeze():
     
 
 def make_TTM_squeeze_charts(lst):
+    f = 'data/market_data/'
     for item in lst:
         ticker = item[0]
         date = item[1].strftime('%b %d')
-        df = pd.read_csv(os.path.join(f, ticker + '.csv'), index_col='Unnamed: 0', parse_dates=True)
+        df = pd.read_csv(os.path.join(f, ticker + '.csv'), index_col='Unnamed: 0', 
+                         parse_dates=True)
         start_date = last_date - timedelta(days=180)
         df = df[start_date: last_date]
         df['20sma'] = df['close'].rolling(window=20).mean()
@@ -464,7 +479,7 @@ def make_TTM_squeeze_charts(lst):
         name = SPY_info_df[SPY_info_df['Symbol'] == ticker]['Security'].item()
         title = f'{name} ({ticker})'
         candlestick = go.Candlestick(x=df.index, open=df['open'], high=df['high'],
-                                        low=df['low'], close=df['close'], name=ticker)
+                                     low=df['low'], close=df['close'], name=ticker)
         upper_band = go.Scatter(x=df.index, y=df['upper_band'],
                                 name='Upper Bollinger Band',
                                 line={'color': 'blue', 'width': 0.75})
@@ -472,11 +487,11 @@ def make_TTM_squeeze_charts(lst):
                                 name='Lower Bollinger Band',
                                 line={'color': 'blue', 'width': 0.75})
         upper_keltner = go.Scatter(x=df.index, y=df['upper_keltner'],
-                                    name='Upper Keltner Channel', 
-                                    line={'color': 'red', 'width': 0.75})
+                                   name='Upper Keltner Channel', 
+                                   line={'color': 'red', 'width': 0.75})
         lower_keltner = go.Scatter(x=df.index, y=df['lower_keltner'],
-                                    name='Lower Keltner Channel', 
-                                    line={'color': 'red', 'width': 0.75})
+                                   name='Lower Keltner Channel', 
+                                   line={'color': 'red', 'width': 0.75})
         layout = go.Layout(plot_bgcolor='#ECECEC', paper_bgcolor='#ECECEC', 
                            font_color='black')
         fig = go.Figure(data=[candlestick, upper_band, lower_band,
@@ -499,7 +514,9 @@ def make_TTM_squeeze_charts(lst):
 
 
 def plot_fibonacci_levels(ticker, start_date, end_date):
-    df = pd.read_csv(os.path.join(f, ticker + '.csv'), index_col='Unnamed: 0', parse_dates=True)
+    f = 'data/market_data/'
+    df = pd.read_csv(os.path.join(f, ticker + '.csv'), index_col='Unnamed: 0', 
+                     parse_dates=True)
     df = df[start_date: end_date]
     df.reset_index(inplace=True)
     df.rename(columns={'index': 'date'}, inplace=True)
@@ -571,9 +588,11 @@ def find_SMA_crossovers(crossover):
     s2 = s1[1].split(' ')
     sma2 = int(s2[0])
     csma2 = str(sma2) + 'sma'
-    
+    f = 'data/market_data/'
+
     for ticker in ticker_list:
-        df = pd.read_csv(os.path.join(f, ticker + '.csv'), index_col='Unnamed: 0', parse_dates=True)
+        df = pd.read_csv(os.path.join(f, ticker + '.csv'), index_col='Unnamed: 0', 
+                         parse_dates=True)
         
         if len(df) < sma2:
             continue
@@ -600,9 +619,11 @@ def make_crossover_charts(crossover, lst, n):
     sma1 = int(s1[0])
     s2 = s1[1].split(' ')
     sma2 = int(s2[0])
-    
+    f = 'data/market_data/'
+
     for ticker in lst[n: n + 10]:
-        df = pd.read_csv(os.path.join(f, ticker + '.csv'), index_col='Unnamed: 0', parse_dates=True)
+        df = pd.read_csv(os.path.join(f, ticker + '.csv'), index_col='Unnamed: 0', 
+                         parse_dates=True)
         df = df.iloc[-sma2 * 3:]
         name = SPY_info_df[SPY_info_df['Symbol'] == ticker]['Security'].item()
         title = f'{name} ({ticker})'

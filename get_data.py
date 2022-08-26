@@ -69,7 +69,7 @@ def get_tickers():
     df1[:'2015-01-01']
     
     tickers = df['Symbol'].to_list()
-    hist_tickers = list(set(df['Symbol'].to_list() + df1['Ticker'].to_list()))
+    hist_tickers = list(set(tickers + df1['Ticker'].to_list()))
 
     return tickers, hist_tickers
 
@@ -130,7 +130,7 @@ def get_market_data():
         else:
             last_changed = -1
 
-        if last_changed == -1 or last_changed >= 12:
+        if last_changed == -1 or last_changed >= 6:
             try:
                 data = si.get_data(ticker)
                 data.to_csv(path)
@@ -238,7 +238,7 @@ def get_financial_ratios(i=0, n=1):
         return get_financial_ratios(i, n)
 
     else:
-        print('\n\nAnnual financial ratios are up to date!\n')       
+        print('\nAnnual financial ratios are up to date!\n')       
 
 
 def get_TTM_financial_ratios(i=0, n=1, d={}):
@@ -343,8 +343,8 @@ def get_risk_free_rates():
 if __name__ == "__main__":           
     get_SPY_companies()
     get_SPY_weights()
-    # get_market_data()
+    get_market_data()
     # remove_replaced_tickers()
-    # get_risk_free_rates()
-    # save_TTM_financial_ratios()
-    # get_financial_ratios()
+    get_risk_free_rates()
+    save_TTM_financial_ratios()
+    get_financial_ratios()

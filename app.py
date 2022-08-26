@@ -19,10 +19,11 @@ from info import SPY_INFO, FINANCIAL_RATIOS
 from functions import (SPY_df, SPY_info_df, ticker_list, sector_list,                         
                        last_date, yr_ago, first_dates, combined_returns_df,
                        ratios_data_report, sector_weights, subIndustry_weights, 
-                       ticker_weights, coming_out, getIndexOfTuple, calculate_beta, 
-                       get_betas, get_returns_and_volatility,  get_current_ratios, 
-                       make_TTM_squeeze_charts, plot_fibonacci_levels, get_news, 
-                       find_stocks_missing_data, find_SMA_crossovers, make_crossover_charts)
+                       ticker_weights, coming_out, getIndexOfTuple, get_ticker_data,
+                       calculate_beta, get_betas, get_returns_and_volatility, 
+                       get_current_ratios, make_TTM_squeeze_charts, plot_fibonacci_levels, 
+                       get_news, find_stocks_missing_data, find_SMA_crossovers, 
+                       make_crossover_charts)
 
 
 nltk.download([
@@ -33,9 +34,6 @@ nltk.download([
      "punkt"
       ])
       
-
-f = 'data/market_data/'
-
 
 st.title('S&P 500 Dashboards')
 
@@ -84,16 +82,8 @@ if option == 'Stock Information':
         submit_button = st.form_submit_button(label='Submit')
 
     tickerSymbol = st.selectbox('Stock Ticker', ticker_list)
-    
-    @st.cache
-    def get_ticker_data():
-        ticker_df = pd.read_csv(f + f'{tickerSymbol}.csv',
-                                index_col='Unnamed: 0',
-                                parse_dates=True)
 
-        return ticker_df
-
-    ticker_df = get_ticker_data()
+    ticker_df = get_ticker_data(tickerSymbol)
     first_date = ticker_df.iloc[0].name.date()
     ticker_df = ticker_df[start_date: end_date]
     ticker_df.rename(columns={'volume': 'Volume'}, inplace=True)
@@ -242,10 +232,8 @@ if option == 'Stock Information':
     # Period returns
     t = len(ticker_df) / 252
     t1 = len(SPY_df) / 252
-    ticker_return = ((ticker_df.iloc[-1]['adjclose'] \
-                      / ticker_df.iloc[0]['open'])**(1 / t) - 1) * 100
-    SPY_return = ((SPY_df.iloc[-1]['Close'] \
-                   / SPY_df.iloc[0]['Open'])**(1 / t1) - 1) * 100    
+    ticker_return = ((ticker_df.iloc[-1]['adjclose'] / ticker_df.iloc[0]['open'])**(1 / t) - 1) * 100
+    SPY_return = ((SPY_df.iloc[-1]['Close'] / SPY_df.iloc[0]['Open'])**(1 / t1) - 1) * 100    
     
     # Sector returns
     sector_tickers = SPY_info_df[SPY_info_df['GICS Sector'] == sector]['Symbol'].to_list()
@@ -254,7 +242,7 @@ if option == 'Stock Information':
     subIndustry_ticker_weights = []
 
     for ticker in sector_tickers:
-        df = pd.read_csv(os.path.join(f, ticker + '.csv'), index_col='Unnamed: 0', parse_dates=True)
+        df = get_ticker_data(ticker)
         df = df[start_date: end_date]
         df['Daily Return'] = df['adjclose'].pct_change() * 100
         df_return = ((1 + df['Daily Return'].mean() / 100)**(len(df) - 1) - 1) * 100
@@ -273,7 +261,7 @@ if option == 'Stock Information':
     subIndustry_returns = []
 
     for ticker in subIndustry_tickers:
-        df = pd.read_csv(os.path.join(f, ticker + '.csv'), index_col='Unnamed: 0', parse_dates=True)
+        df = get_ticker_data(ticker)
         df = df[start_date: end_date]
         t = len(df) / 252
         df['Daily Return'] = df['adjclose'].pct_change() * 100
@@ -378,8 +366,7 @@ if option == 'Stock Comparisons By Sector':
     # Date input
     if metric != 'Financial Ratios':
         with st.form(key='my_form'):
-            start_date = st.date_input("Start Date", yr_ago,
-                                        min_value=first_dates[0][1])
+            start_date = st.date_input("Start Date", yr_ago, min_value=first_dates[0][1])
             end_date = st.date_input("End Date", last_date)
             submit_button = st.form_submit_button(label='Submit')
 
@@ -426,7 +413,7 @@ if option == 'Stock Comparisons By Sector':
         # Charts of sector volatilities
         fig = px.bar(sector_vols_df,
                      x=sector_vols_df.index,
-                     y='Returns Volatility (%)',
+                     y='Volatility (%)',
                      opacity=0.65)
         fig.add_hline(y=SPY_vol, line_color='red',
                       line_width=0.75,
@@ -598,8 +585,9 @@ if option == 'Stock Comparisons By Sector':
             d[subIndustry] = subIndustry_returns_dict[subIndustry]
 
         subIndustry_returns_df = pd.DataFrame.from_dict(d, orient='index', columns=['Return (%)'])     
+        subIndustry_returns_df.index.names = ['Sub-Industry']
         sector_return = sector_returns_df.loc[sector].item()
-
+        
         # Set positions of annotation texts
         if SPY_return > sector_return:
             pos = 'top right'
@@ -628,8 +616,8 @@ if option == 'Stock Comparisons By Sector':
         for subIndustry in subIndustry_list:
             d[subIndustry] = subIndustry_vols_dict[subIndustry]
 
-        subIndustry_vols_df = pd.DataFrame.from_dict(d, orient='index', 
-                                                     columns=['Returns Volatility (%)'])      
+        subIndustry_vols_df = pd.DataFrame.from_dict(d, orient='index', columns=['Volatility (%)'])
+        subIndustry_vols_df.index.names = ['Sub-Industry']
         sector_vol = sector_vols_df.loc[sector].item()
 
         # Set positions of annotation texts
@@ -642,7 +630,7 @@ if option == 'Stock Comparisons By Sector':
 
         # Charts of sub-industry returns
         fig = px.bar(subIndustry_vols_df, x=subIndustry_vols_df.index,
-                     y='Returns Volatility (%)', opacity=0.65)
+                     y='Volatility (%)', opacity=0.65)
         fig.add_hline(y=SPY_vol, line_color='red', line_width=0.75,
                       annotation_text=f'S&P 500 Returns Volatility ({SPY_vol:,.2f}%)',
                       annotation_position=pos, annotation_bgcolor='#FF7F7F',
@@ -661,6 +649,7 @@ if option == 'Stock Comparisons By Sector':
             d[subIndustry] = subIndustry_sharpes_dict[subIndustry]
 
         subIndustry_sharpes_df = pd.DataFrame.from_dict(d, orient='index', columns=['Sharpe Ratio'])    
+        subIndustry_sharpes_df.index.names = ['Sub-Industry']
         sector_sharpe = sector_sharpes_df.loc[sector].item()
 
         # Set positions of annotation texts
@@ -692,6 +681,7 @@ if option == 'Stock Comparisons By Sector':
             d[subIndustry] = subIndustry_betas_dict[subIndustry]
 
         subIndustry_betas_df = pd.DataFrame.from_dict(d, orient='index', columns=['Beta'])
+        subIndustry_betas_df.index.names = ['Sub-Industry']
         sector_beta = sector_betas_df.loc[sector].item()
 
         # Set positions of annotation texts
@@ -721,6 +711,7 @@ if option == 'Stock Comparisons By Sector':
             d[subIndustry] = subIndustry_ratios_dict[subIndustry]
 
         subIndustry_ratios_df = pd.DataFrame.from_dict(d, orient='index', columns=[ratio])
+        subIndustry_ratios_df.index.names = ['Sub-Industry']
         sector_ratio = sector_ratios_df.loc[sector].item()
 
         fig = px.bar(subIndustry_ratios_df, x=subIndustry_ratios_df.index,
@@ -734,9 +725,7 @@ if option == 'Stock Comparisons By Sector':
     # Select sub-industry    
     subIndustry = st.selectbox('GICS Sub-Industry', subIndustry_list)
     tickers = SPY_info_df[SPY_info_df['GICS Sub-Industry'] == subIndustry] \
-                ['Symbol'].to_list()
-    ticker_names = SPY_info_df[SPY_info_df['GICS Sub-Industry'] == subIndustry] \
-                    ['Security'].to_list()
+              ['Symbol'].to_list()
 
     if metric != 'Financial Ratios':
         # Show how many stocks in the sub-industry are missing data
@@ -750,7 +739,7 @@ if option == 'Stock Comparisons By Sector':
 
         if len(missing) > 0:
             s = f"{i}/{len(tickers)} stocks in the {subIndustry} sub-industry have \
-                data that begins after {start_date.strftime('%B %d, %Y')}"
+                  data that begins after {start_date.strftime('%B %d, %Y')}"
             st.info(s)
             with st.expander("Sub-Industry Stocks Missing Data"):
                 st.write(missing)
@@ -759,10 +748,12 @@ if option == 'Stock Comparisons By Sector':
         subIndustry_return = subIndustry_returns_df.loc[subIndustry].item()
 
         d = {}
+
         for ticker in tickers:
             d[ticker] = ticker_cols_dict[ticker]
-
-        ticker_cols_df = pd.DataFrame.from_dict(d, orient='index', columns=['Return (%)'])
+            
+        ticker_cols_df = pd.DataFrame.from_dict(d, orient='index', columns=['Return (%)', 'Company'])
+        ticker_cols_df.index.names = ['Ticker']
         returns = [SPY_return, sector_return, subIndustry_return]
 
         # Set positions of annotation texts
@@ -778,9 +769,11 @@ if option == 'Stock Comparisons By Sector':
             pos1 = 'bottom right'
             pos2 = 'top right'
 
+        y = 'Return (%)'
+
         # Charts of ticker returns
-        fig = px.bar(ticker_cols_df, x=ticker_cols_df.index, y='Return (%)',
-                     opacity=0.65, hover_name=ticker_names)
+        fig = px.bar(ticker_cols_df, x=ticker_cols_df.index, y=y,
+                     opacity=0.65, hover_data={y:True, 'Company':True})
         fig.add_hline(y=SPY_return, line_color='red', line_width=0.75,
                       annotation_text=f'S&P 500 Return ({SPY_return:,.2f}%)',
                       annotation_position=pos, annotation_bgcolor='#FF7F7F',
@@ -821,11 +814,13 @@ if option == 'Stock Comparisons By Sector':
 
         # Make dataframe of tickers
         d = {}
+
         for ticker in tickers:
             d[ticker] = ticker_cols_dict[ticker]
         
         ticker_vols_df = pd.DataFrame.from_dict(d, orient='index', 
-                                                columns=['Returns Volatility (%)'])
+                                                columns=['Volatility (%)', 'Company'])
+        ticker_vols_df.index.names = ['Ticker']
         vols = [SPY_vol, sector_vol, subIndustry_vol]
 
         # Set positions of annotation texts
@@ -841,9 +836,11 @@ if option == 'Stock Comparisons By Sector':
             pos1 = 'bottom right'
             pos2 = 'top right'
 
+        y = 'Volatility (%)'
+
         # Charts of ticker returns
-        fig = px.bar(ticker_vols_df, x=ticker_vols_df.index, y='Returns Volatility (%)',
-                     opacity=0.65, hover_name=ticker_names)
+        fig = px.bar(ticker_vols_df, x=ticker_vols_df.index, y=y,
+                     opacity=0.65, hover_data={y:True, 'Company':True})
         fig.add_hline(y=SPY_vol, line_color='red', line_width=0.75,
                       annotation_text=f'S&P 500 Returns Volatility ({SPY_vol:,.2f}%)',
                       annotation_position=pos, annotation_bgcolor='#FF7F7F',
@@ -862,11 +859,11 @@ if option == 'Stock Comparisons By Sector':
         # Dataframe of stocks ranked by returns volatility
         st.subheader('Stocks Ranked By Returns Volatility')
         st.markdown('For top *n* volatile returns enter a positive integer, \
-                    and for bottom *n* volatile returns enter a negative integer')
+                     and for bottom *n* volatile returns enter a negative integer')
         n = st.text_input(label='Number of Stocks to Show', value='25')
         n = int(n)
         all_vols_df = pd.DataFrame.from_dict(ticker_cols_dict, orient='index')
-        all_vols_df.sort_values('Returns Volatility (%)', ascending=False, inplace=True)
+        all_vols_df.sort_values('Volatility (%)', ascending=False, inplace=True)
         all_vols_df.reset_index(inplace=True)
         all_vols_df.rename(columns={'index': 'Ticker'}, inplace=True)
         all_vols_df.index += 1
@@ -875,7 +872,7 @@ if option == 'Stock Comparisons By Sector':
             all_vols_df = all_vols_df[:n]
         else:
             all_vols_df = all_vols_df[n:]
-            all_vols_df.sort_values('Returns Volatility (%)', ascending=True, inplace=True)
+            all_vols_df.sort_values('Volatility (%)', ascending=True, inplace=True)
 
         st.dataframe(all_vols_df)
 
@@ -887,7 +884,9 @@ if option == 'Stock Comparisons By Sector':
         for ticker in tickers:
             d[ticker] = ticker_cols_dict[ticker]
         
-        ticker_sharpes_df = pd.DataFrame.from_dict(d, orient='index', columns=['Sharpe Ratio'])
+        ticker_sharpes_df = pd.DataFrame.from_dict(d, orient='index', 
+                                                   columns=['Sharpe Ratio', 'Company'])
+        ticker_sharpes_df.index.names = ['Ticker']
         sharpes = [SPY_sharpe, sector_sharpe, subIndustry_sharpe]
         
         # Set positions of annotation texts
@@ -903,9 +902,11 @@ if option == 'Stock Comparisons By Sector':
             pos1 = 'bottom right'
             pos2 = 'top right'
 
+        y = 'Sharpe Ratio'
+
         # Charts of ticker returns
-        fig = px.bar(ticker_sharpes_df, x=ticker_sharpes_df.index, y='Sharpe Ratio',
-                     opacity=0.65, hover_name=ticker_names)
+        fig = px.bar(ticker_sharpes_df, x=ticker_sharpes_df.index, y=y,
+                     opacity=0.65, hover_data={y:True, 'Company':True})
         fig.add_hline(y=SPY_sharpe, line_color='red', line_width=0.75,
                       annotation_text=f'S&P 500 Sharpe Ratio ({SPY_sharpe:.4f})',
                       annotation_position=pos, annotation_bgcolor='#FF7F7F',
@@ -923,10 +924,11 @@ if option == 'Stock Comparisons By Sector':
 
         # Dataframe of stocks ranked by Sharpe Ratio
         st.subheader('Stocks Ranked By Sharpe Ratio')
-        st.markdown('For top *n* Sharpe Ratio enter a positive integer, and for bottom *n* Sharpe Ratio enter a negative integer')
+        st.markdown('For top *n* Sharpe Ratio enter a positive integer, \
+                     and for bottom *n* Sharpe Ratio enter a negative integer')
         n = st.text_input(label='Number of Stocks to Show', value='25', key='A1')
         n = int(n)
-        # all_vols_df['Return/Volatility'] = all_vols_df['Return (%)'] / all_vols_df['Returns Volatility (%)']
+        # all_vols_df['Return/Volatility'] = all_vols_df['Return (%)'] / all_vols_df['Volatility (%)']
         all_sharpes_df = pd.DataFrame.from_dict(ticker_cols_dict, orient='index')
         all_sharpes_df.sort_values('Sharpe Ratio', ascending=False, inplace=True)
         all_sharpes_df.reset_index(inplace=True)
@@ -949,7 +951,8 @@ if option == 'Stock Comparisons By Sector':
         for ticker in tickers:
             d[ticker] = ticker_betas_dict[ticker]
         
-        ticker_betas_df = pd.DataFrame.from_dict(d, orient='index', columns=['Beta'])
+        ticker_betas_df = pd.DataFrame.from_dict(d, orient='index', columns=['Beta', 'Company'])
+        ticker_betas_df.index.names = ['Ticker']
         betas = [sector_beta, subIndustry_beta]
 
         # Set positions of annotation texts
@@ -965,9 +968,11 @@ if option == 'Stock Comparisons By Sector':
             pos1 = 'bottom right'
             pos2 = 'top right'
 
+        y = 'Beta'
+
         # Chart of ticker betas
-        fig = px.bar(ticker_betas_df, x=ticker_betas_df.index, y='Beta',
-                     opacity=0.65, hover_name=ticker_names)
+        fig = px.bar(ticker_betas_df, x=ticker_betas_df.index, y=y,
+                     opacity=0.65, hover_data={y:True, 'Company':True})
         fig.add_hline(y=1, line_color='red', line_width=0.75,
                       annotation_text=f'S&P 500 Beta (1.00)',
                       annotation_position=pos, annotation_bgcolor='#FF7F7F',
@@ -1012,7 +1017,8 @@ if option == 'Stock Comparisons By Sector':
         for ticker in tickers:
             d[ticker] = ticker_ratios_dict[ticker]
         
-        ticker_ratios_df = pd.DataFrame.from_dict(d, orient='index', columns=[ratio])
+        ticker_ratios_df = pd.DataFrame.from_dict(d, orient='index', columns=[ratio, 'Company'])
+        ticker_ratios_df.index.names = ['Ticker']
 
         # Set positions of annotation texts
         if sector_ratio > subIndustry_ratio:
@@ -1022,9 +1028,11 @@ if option == 'Stock Comparisons By Sector':
             pos = 'bottom right'
             pos1 = 'top right'
 
+        y = ratio
+
         # Chart of ticker ratios
-        fig = px.bar(ticker_ratios_df, x=ticker_ratios_df.index, y=ratio,
-                     opacity=0.65, hover_name=ticker_names)
+        fig = px.bar(ticker_ratios_df, x=ticker_ratios_df.index, y=y,
+                     opacity=0.65, hover_data={y:True, 'Company':True})
         fig.add_hline(y=sector_ratio, line_color='red', line_width=0.75,
                       annotation_text=f'{sector} {ratio} ({sector_ratio:.4f})',
                       annotation_position=pos, annotation_bgcolor='#FF7F7F',
@@ -1244,4 +1252,3 @@ if option == 'Social Media':
                     \n{message['created_at']} 
                     \n{message['body']}
                     ''')
-            
