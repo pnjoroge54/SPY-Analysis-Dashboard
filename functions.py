@@ -301,7 +301,7 @@ def get_returns_and_volatility(start_date, end_date):
             df = df[start_date: end_date]
             df = pd.concat([df, rf_rates.DTB3], axis=1, join='inner')
             df.ffill(inplace=True)
-            df['Daily T-Bill Rate'] = (1 + df['DTB3'] / 100 * (90 / 360))**(1 / 90) - 1
+            df['Daily T-Bill Rate'] = (1 / (1 - df['DTB3'] / 100 * (90 / 360)))**(1 / 90) - 1
             df['Daily Return'] = df['adjclose'].pct_change()
             df['Daily Excess Return'] = df['Daily Return'] - df['Daily T-Bill Rate']
             df['Cumulative Return'] = (1 + df['Daily Return']).cumprod() - 1 
@@ -355,7 +355,7 @@ def get_returns_and_volatility(start_date, end_date):
     df = SPY_df[start_date: end_date]
     df = pd.concat([df, rf_rates.DTB3], axis=1, join='inner')
     df.ffill(inplace=True)
-    df['Daily T-Bill Rate'] = (1 + df['DTB3'] / 100 * (90 / 360))**(1 / 90) - 1      
+    df['Daily T-Bill Rate'] = (1 / (1 - df['DTB3'] / 100 * (90 / 360)))**(1 / 90) - 1      
     df['Daily Return'] = df['Close'].pct_change()
     df['Daily Excess Return'] = df['Daily Return'] - df['Daily T-Bill Rate']
     df['Cumulative Return'] = (1 + df['Daily Return']).cumprod() - 1 

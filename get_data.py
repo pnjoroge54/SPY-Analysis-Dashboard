@@ -126,7 +126,7 @@ def get_market_data():
         if os.path.exists(path):
             ts = int(os.stat(path).st_mtime)
             last_changed = dt.now() - dt.utcfromtimestamp(ts)
-            last_changed = last_changed.seconds // 60**3
+            last_changed = last_changed.seconds // 60**2
         else:
             last_changed = -1
 
@@ -330,7 +330,7 @@ def save_TTM_financial_ratios():
         print(file, 'saved\n')
 
     else:
-        print(f'{len(tickers) - len(d)} / {len(tickers)} ratios not downloaded\n')
+        print(f'{len(tickers) - len(d)}/{len(tickers)} ratios not downloaded\n')
 
 
 def get_risk_free_rates():
@@ -341,10 +341,10 @@ def get_risk_free_rates():
 
 
 if __name__ == "__main__":           
-    get_SPY_companies()
-    get_SPY_weights()
+    # get_SPY_companies()
+    # get_SPY_weights()
     get_market_data()
     # remove_replaced_tickers()
-    get_risk_free_rates()
-    save_TTM_financial_ratios()
-    get_financial_ratios()
+    # get_risk_free_rates()
+    # save_TTM_financial_ratios()
+    # get_financial_ratios()
