@@ -420,7 +420,7 @@ def get_betas(start_date, end_date):
     return df, subIndustry_betas, ticker_betas
 
 
-@st.cache
+# @st.cache
 def TTM_Squeeze():
 
     def in_squeeze(df):
@@ -431,8 +431,9 @@ def TTM_Squeeze():
 
     for ticker in ticker_list:
         start_date = yr_ago
-        df = pd.read_csv(os.path.join(f, f'{ticker}.csv'), index_col='Unnamed: 0', 
-                                      parse_dates=True)
+        df = pd.read_csv(os.path.join(f, f'{ticker}.csv'), index_col='Unnamed: 0',
+                         parse_dates=True)
+
         df = df[start_date: last_date]
         df['20sma'] = df['close'].rolling(window=20).mean()
         df['std deviation'] = df['close'].rolling(window=20).std()
@@ -461,11 +462,13 @@ def TTM_Squeeze():
 
 def make_TTM_squeeze_charts(lst):
     f = 'data/market_data/'
+
     for item in lst:
         ticker = item[0]
         date = item[1].strftime('%b %d')
-        df = pd.read_csv(os.path.join(f, ticker + '.csv'), index_col='Unnamed: 0', 
+        df = pd.read_csv(os.path.join(f, f'{ticker}.csv'), index_col='Unnamed: 0',
                          parse_dates=True)
+
         start_date = last_date - timedelta(days=180)
         df = df[start_date: last_date]
         df['20sma'] = df['close'].rolling(window=20).mean()

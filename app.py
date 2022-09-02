@@ -50,8 +50,7 @@ if option == 'S&P 500 Information':
     st.write('Select Chart Display Period')
 
     with st.form(key='form1'):
-        start_date = st.date_input('Start Date', yr_ago,
-                                    min_value=SPY_df.iloc[0].name)
+        start_date = st.date_input('Start Date', yr_ago, min_value=SPY_df.iloc[0].name)
         end_date = st.date_input('End Date', last_date)
         submit_button = st.form_submit_button(label='Submit')
     

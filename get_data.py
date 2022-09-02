@@ -7,6 +7,7 @@ from datetime import timedelta
 from pytz import timezone
 
 import pandas_datareader as pdr
+import pandas_datareader.data as web
 import yfinance as yf
 import yahoo_fin.stock_info as si
 import fundamentalanalysis as fa
@@ -126,11 +127,11 @@ def get_market_data():
         if os.path.exists(path):
             ts = int(os.stat(path).st_mtime)
             last_changed = dt.now() - dt.utcfromtimestamp(ts)
-            last_changed = last_changed.seconds // 60**2
+            last_changed = last_changed.days
         else:
             last_changed = -1
 
-        if last_changed == -1 or last_changed >= 6:
+        if last_changed > 0:
             try:
                 data = si.get_data(ticker)
                 data.to_csv(path)
@@ -141,9 +142,7 @@ def get_market_data():
             except Exception as e:
                 # print(e)
                 j += 1
-                sys.stdout.write("\r")
-                sys.stdout.write(f"{j}/{n} ({j / n * 100:.2f}%) of SPY market data NOT downloaded")
-                sys.stdout.flush()
+                print(f"{j}/{n} ({j / n * 100:.2f}%) of SPY market data NOT downloaded")
                 not_downloaded.append(ticker)            
 
     return not_downloaded
@@ -340,11 +339,37 @@ def get_risk_free_rates():
     print('\nT-Bill Rates saved\n')
 
 
+def get_multi_factor_model_data():
+    # three factors 
+    df_three_factor = web.DataReader('F-F_Research_Data_Factors', 'famafrench', 
+                                    start='1954-01-01')[0]
+    df_three_factor.index = df_three_factor.index.format()
+
+    # momentum factor
+    df_mom = web.DataReader('F-F_Momentum_Factor', 'famafrench', 
+                            start='1954-01-01')[0]
+    df_mom.index = df_mom.index.format()
+
+    # four factors
+    df_four_factor = df_three_factor.join(df_mom)
+
+    # five factors
+    df_five_factor = web.DataReader('F-F_Research_Data_5_Factors_2x3', 
+                                    'famafrench', 
+                                    start='1954-01-01')[0]
+    df_five_factor.index = df_five_factor.index.format()
+
+    df_three_factor.to_csv('data/multi-factor_models/F-F_Research_Data_Factors.csv')
+    df_four_factor.to_csv('data/multi-factor_models/Carhart_4_Factors.csv')
+    df_five_factor.to_csv('data/multi-factor_models/F-F_Research_Data_5_Factors_2x3.csv')
+
+
 if __name__ == "__main__":           
-    # get_SPY_companies()
-    # get_SPY_weights()
+    get_SPY_companies()
+    get_SPY_weights()
+    get_multi_factor_model_data()
     get_market_data()
     # remove_replaced_tickers()
-    # get_risk_free_rates()
-    # save_TTM_financial_ratios()
-    # get_financial_ratios()
+    get_risk_free_rates()
+    save_TTM_financial_ratios()
+    get_financial_ratios()
