@@ -17,8 +17,7 @@ import streamlit as st
 @st.cache
 def get_ticker_data(ticker):
     f = 'data/market_data/'
-
-    ticker_df = pd.read_csv(os.path.join(f, f'{ticker}.csv'), index_col='Unnamed: 0',
+    ticker_df = pd.read_csv(os.path.join(f, f'{ticker}.csv'), index_col=0,
                             parse_dates=True)
 
     return ticker_df
@@ -50,12 +49,11 @@ def get_SPY_data():
 @st.cache
 def get_first_dates():
     '''Get the earliest date for which market data is available for each company'''
-    f = 'data/market_data/'
+
     first_dates = []
 
     for ticker in ticker_list:
-        df = pd.read_csv(os.path.join(f, f'{ticker}.csv'), index_col='Unnamed: 0', 
-                         parse_dates=True)
+        df = get_ticker_data(ticker)
         first_date = df.iloc[0].name
         first_dates.append((ticker, first_date))
         first_dates = sorted(first_dates, key=lambda x: x[1])
@@ -72,11 +70,9 @@ def make_combined_returns_df():
     combined_returns.drop([x for x in combined_returns.columns if x != 'Return'],
                           axis=1, inplace=True)
     combined_returns.rename(columns={'Return': 'SPY'}, inplace=True)
-    f = 'data/market_data/'
     
     for ticker in ticker_list:
-        df = pd.read_csv(os.path.join(f, f'{ticker}.csv'), index_col='Unnamed: 0',
-                         parse_dates=True)
+        df = get_ticker_data(ticker)
         df[ticker] = df['adjclose'].pct_change() * 100
         combined_returns = combined_returns.join(df[ticker], how='left')
 
@@ -84,9 +80,8 @@ def make_combined_returns_df():
 
 
 def get_all_current_ratios():
-    # Set datetime object to EST timezone
     tz = timezone('EST')
-    cdate = dt.now(tz)
+    cdate = dt.now(tz)  # Set datetime object to EST timezone
     hour = cdate.hour
 
     # Sets the file name to today's date only after the US stock market
@@ -296,7 +291,7 @@ def get_returns_and_volatility(start_date, end_date):
             # Get sub-industry of ticker
             t_subIndustry = SPY_info_df[SPY_info_df['Symbol'] == ticker] \
                             ['GICS Sub-Industry'].item()
-            df = pd.read_csv(os.path.join(f, ticker + '.csv'), index_col='Unnamed: 0', 
+            df = pd.read_csv(os.path.join(f, ticker + '.csv'), index_col=0, 
                              parse_dates=True)
             df = df[start_date: end_date]
             df = pd.concat([df, rf_rates.DTB3], axis=1, join='inner')
@@ -420,20 +415,17 @@ def get_betas(start_date, end_date):
     return df, subIndustry_betas, ticker_betas
 
 
-# @st.cache
+@st.cache
 def TTM_Squeeze():
 
     def in_squeeze(df):
         return df['lower_band'] > df['lower_keltner'] and df['upper_band'] < df['upper_keltner']
 
     coming_out = []
-    f = 'data/market_data/'
 
     for ticker in ticker_list:
         start_date = yr_ago
-        df = pd.read_csv(os.path.join(f, f'{ticker}.csv'), index_col='Unnamed: 0',
-                         parse_dates=True)
-
+        df = get_ticker_data(ticker)
         df = df[start_date: last_date]
         df['20sma'] = df['close'].rolling(window=20).mean()
         df['std deviation'] = df['close'].rolling(window=20).std()
@@ -461,14 +453,10 @@ def TTM_Squeeze():
     
 
 def make_TTM_squeeze_charts(lst):
-    f = 'data/market_data/'
-
     for item in lst:
         ticker = item[0]
         date = item[1].strftime('%b %d')
-        df = pd.read_csv(os.path.join(f, f'{ticker}.csv'), index_col='Unnamed: 0',
-                         parse_dates=True)
-
+        df = get_ticker_data(ticker)
         start_date = last_date - timedelta(days=180)
         df = df[start_date: last_date]
         df['20sma'] = df['close'].rolling(window=20).mean()
@@ -517,9 +505,7 @@ def make_TTM_squeeze_charts(lst):
 
 
 def plot_fibonacci_levels(ticker, start_date, end_date):
-    f = 'data/market_data/'
-    df = pd.read_csv(os.path.join(f, ticker + '.csv'), index_col='Unnamed: 0', 
-                     parse_dates=True)
+    df = get_ticker_data(ticker)
     df = df[start_date: end_date]
     df.reset_index(inplace=True)
     df.rename(columns={'index': 'date'}, inplace=True)
@@ -581,9 +567,10 @@ def plot_fibonacci_levels(ticker, start_date, end_date):
     st.plotly_chart(fig)
 
 
-# Check if stock had a SMA crossover in the last 5 trading days
 @st.cache
 def find_SMA_crossovers(crossover):
+    # Check if stock had a SMA crossover in the last 5 trading days
+
     golden, death = [], []
     s1 = crossover.split('/')
     sma1 = int(s1[0])
@@ -591,12 +578,10 @@ def find_SMA_crossovers(crossover):
     s2 = s1[1].split(' ')
     sma2 = int(s2[0])
     csma2 = str(sma2) + 'sma'
-    f = 'data/market_data/'
 
     for ticker in ticker_list:
-        df = pd.read_csv(os.path.join(f, ticker + '.csv'), index_col='Unnamed: 0', 
-                         parse_dates=True)
-        
+        df = get_ticker_data(ticker)
+
         if len(df) < sma2:
             continue
         else:
@@ -622,11 +607,9 @@ def make_crossover_charts(crossover, lst, n):
     sma1 = int(s1[0])
     s2 = s1[1].split(' ')
     sma2 = int(s2[0])
-    f = 'data/market_data/'
 
     for ticker in lst[n: n + 10]:
-        df = pd.read_csv(os.path.join(f, ticker + '.csv'), index_col='Unnamed: 0', 
-                         parse_dates=True)
+        df = get_ticker_data(ticker)
         df = df.iloc[-sma2 * 3:]
         name = SPY_info_df[SPY_info_df['Symbol'] == ticker]['Security'].item()
         title = f'{name} ({ticker})'

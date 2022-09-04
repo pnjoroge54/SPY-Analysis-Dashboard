@@ -118,7 +118,7 @@ def get_market_data():
 
     tickers = get_tickers()[0]
     n = len(tickers)
-    i, j = 0, 0
+    i = 0
     not_downloaded = []
 
     # download stock data
@@ -140,12 +140,10 @@ def get_market_data():
                 sys.stdout.write(f"{i}/{n} ({i / n * 100:.2f}%) of SPY market data downloaded")
                 sys.stdout.flush()
             except Exception as e:
-                # print(e)
-                j += 1
-                print(f"{j}/{n} ({j / n * 100:.2f}%) of SPY market data NOT downloaded")
+                print(e)
                 not_downloaded.append(ticker)            
 
-    return not_downloaded
+    print('\n', not_downloaded, '\n')
 
 
 def remove_replaced_tickers():
@@ -162,7 +160,7 @@ def remove_replaced_tickers():
             file = ticker + '.csv'
             os.remove(f'data/market_data/{file}')
             os.remove(f'data/financial_ratios/Annual/{file}')
-            print(f'{ticker} is no longer in SPY.')
+            print(f'{ticker} is no longer in SPY')
     
         
 def ratios_to_update():
@@ -184,9 +182,6 @@ def ratios_to_update():
                 no_data.append(ticker)
         else:
             not_downloaded.append(ticker)
-
-    # print(f'{len(not_current) if not_current is not None else 0} in not_current: {not_current}')
-    # print(f'{len(no_data) if no_data is not None else 0} in no_data: {no_data}\n')
     
     to_update = not_current + no_data + not_downloaded
     
@@ -230,7 +225,7 @@ def get_financial_ratios(i=0, n=1):
             if e == '<urlopen error [Errno 11001] getaddrinfo failed>':
                 print(e)
             else:
-                if n < 4:
+                if n < 5:
                     print(f'\nAPI Key {n} has maxed out its requests\n')
                     n += 1
 
@@ -279,7 +274,7 @@ def get_TTM_financial_ratios(i=0, n=1, d={}):
             if e == '<urlopen error [Errno 11001] getaddrinfo failed>':
                 print(e)
             else:
-                if n < 4:
+                if n < 5:
                     print(f'\nAPI Key {n} has maxed out its requests\n')
                     n += 1
 
@@ -340,14 +335,15 @@ def get_risk_free_rates():
 
 
 def get_multi_factor_model_data():
+    start_date = '1954-01-01'
     # three factors 
     df_three_factor = web.DataReader('F-F_Research_Data_Factors', 'famafrench', 
-                                    start='1954-01-01')[0]
+                                    start=start_date)[0]
     df_three_factor.index = df_three_factor.index.format()
 
     # momentum factor
     df_mom = web.DataReader('F-F_Momentum_Factor', 'famafrench', 
-                            start='1954-01-01')[0]
+                            start=start_date)[0]
     df_mom.index = df_mom.index.format()
 
     # four factors
@@ -356,20 +352,22 @@ def get_multi_factor_model_data():
     # five factors
     df_five_factor = web.DataReader('F-F_Research_Data_5_Factors_2x3', 
                                     'famafrench', 
-                                    start='1954-01-01')[0]
+                                    start=start_date)[0]
     df_five_factor.index = df_five_factor.index.format()
 
     df_three_factor.to_csv('data/multi-factor_models/F-F_Research_Data_Factors.csv')
     df_four_factor.to_csv('data/multi-factor_models/Carhart_4_Factors.csv')
     df_five_factor.to_csv('data/multi-factor_models/F-F_Research_Data_5_Factors_2x3.csv')
 
+    print('\nMulti-factor model data downloaded\n')
+
 
 if __name__ == "__main__":           
     get_SPY_companies()
     get_SPY_weights()
+    get_risk_free_rates()
     get_multi_factor_model_data()
     get_market_data()
     # remove_replaced_tickers()
-    get_risk_free_rates()
     save_TTM_financial_ratios()
     get_financial_ratios()
