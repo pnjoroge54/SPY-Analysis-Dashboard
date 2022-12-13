@@ -214,7 +214,8 @@ def get_financial_ratios(i=0, n=1):
     if i < len(to_update):
         try:
             for ticker in to_update[i: i + 250]:
-                ratios = fa.financial_ratios(ticker, st.secrets[f'FUNDAMENTAL_ANALYSIS_API_KEY{n}'],
+                ratios = fa.financial_ratios(ticker, 
+                                             st.secrets[f'FUNDAMENTAL_ANALYSIS_API_KEY{n}'],
                                              period='annual')
                 ratios.to_csv(os.path.join(f, f'{ticker}.csv'))
                 i += 1
@@ -262,7 +263,8 @@ def get_TTM_financial_ratios(i=0, n=1, d={}):
     if i < len(tickers):
         try:
             for ticker in tickers[i: i + 250]:
-                ratios = fa.financial_ratios(ticker, st.secrets[f'FUNDAMENTAL_ANALYSIS_API_KEY{n}'],
+                ratios = fa.financial_ratios(ticker, 
+                                             st.secrets[f'FUNDAMENTAL_ANALYSIS_API_KEY{n}'],
                                              period='annual', TTM=True)
                 d[ticker] = ratios.to_dict()
                 i += 1

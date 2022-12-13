@@ -1,6 +1,5 @@
 from math import sqrt
 import numpy as np
-import os
 import pandas as pd
 import requests
 from datetime import datetime as dt
