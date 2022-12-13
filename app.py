@@ -578,10 +578,7 @@ if option == 'Stock Comparisons By Sector':
 
     if metric == 'Returns':
         # Make dataframe of sub-industries
-        d = {}
-        for subIndustry in subIndustry_list:
-            d[subIndustry] = subIndustry_returns_dict[subIndustry]
-
+        d = {si: subIndustry_returns_dict[si] for si in subIndustry_list}
         subIndustry_returns_df = pd.DataFrame.from_dict(d, orient='index', columns=['Return (%)'])     
         subIndustry_returns_df.index.names = ['Sub-Industry']
         sector_return = sector_returns_df.loc[sector].item()
@@ -610,10 +607,7 @@ if option == 'Stock Comparisons By Sector':
 
     if metric == 'Returns Volatility':
         # Make dataframe of sub-industries
-        d = {}
-        for subIndustry in subIndustry_list:
-            d[subIndustry] = subIndustry_vols_dict[subIndustry]
-
+        d = {si: subIndustry_vols_dict[si] for si in subIndustry_list} 
         subIndustry_vols_df = pd.DataFrame.from_dict(d, orient='index', columns=['Volatility (%)'])
         subIndustry_vols_df.index.names = ['Sub-Industry']
         sector_vol = sector_vols_df.loc[sector].item()
@@ -642,10 +636,7 @@ if option == 'Stock Comparisons By Sector':
 
     if metric == 'Sharpe Ratio':
         # Make dataframe of sub-industries
-        d = {}
-        for subIndustry in subIndustry_list:
-            d[subIndustry] = subIndustry_sharpes_dict[subIndustry]
-
+        d = {si: subIndustry_sharpes_dict[si] for si in subIndustry_list}
         subIndustry_sharpes_df = pd.DataFrame.from_dict(d, orient='index', columns=['Sharpe Ratio'])    
         subIndustry_sharpes_df.index.names = ['Sub-Industry']
         sector_sharpe = sector_sharpes_df.loc[sector].item()
@@ -674,10 +665,7 @@ if option == 'Stock Comparisons By Sector':
 
     if metric == 'Betas':
         # Make dataframe of sub-industries
-        d = {}
-        for subIndustry in subIndustry_list:
-            d[subIndustry] = subIndustry_betas_dict[subIndustry]
-
+        d = {si: subIndustry_betas_dict[si] for si in subIndustry_list}
         subIndustry_betas_df = pd.DataFrame.from_dict(d, orient='index', columns=['Beta'])
         subIndustry_betas_df.index.names = ['Sub-Industry']
         sector_beta = sector_betas_df.loc[sector].item()
@@ -704,10 +692,7 @@ if option == 'Stock Comparisons By Sector':
 
     if metric == 'Financial Ratios':
         # Make dataframe of sub-industries
-        d = {}
-        for subIndustry in subIndustry_list:
-            d[subIndustry] = subIndustry_ratios_dict[subIndustry]
-
+        d = {si: subIndustry_ratios_dict[si] for si in subIndustry_list}
         subIndustry_ratios_df = pd.DataFrame.from_dict(d, orient='index', columns=[ratio])
         subIndustry_ratios_df.index.names = ['Sub-Industry']
         sector_ratio = sector_ratios_df.loc[sector].item()
@@ -745,11 +730,7 @@ if option == 'Stock Comparisons By Sector':
     if metric == 'Returns':
         subIndustry_return = subIndustry_returns_df.loc[subIndustry].item()
 
-        d = {}
-
-        for ticker in tickers:
-            d[ticker] = ticker_cols_dict[ticker]
-            
+        d = {ticker: ticker_cols_dict[ticker] for ticker in tickers}            
         ticker_cols_df = pd.DataFrame.from_dict(d, orient='index', columns=['Return (%)', 'Company'])
         ticker_cols_df.index.names = ['Ticker']
         returns = [SPY_return, sector_return, subIndustry_return]
@@ -811,11 +792,7 @@ if option == 'Stock Comparisons By Sector':
         subIndustry_vol = subIndustry_vols_df.loc[subIndustry].item()
 
         # Make dataframe of tickers
-        d = {}
-
-        for ticker in tickers:
-            d[ticker] = ticker_cols_dict[ticker]
-        
+        d = {ticker: ticker_cols_dict[ticker] for ticker in tickers}                  
         ticker_vols_df = pd.DataFrame.from_dict(d, orient='index', 
                                                 columns=['Volatility (%)', 'Company'])
         ticker_vols_df.index.names = ['Ticker']
@@ -878,10 +855,7 @@ if option == 'Stock Comparisons By Sector':
         subIndustry_sharpe = subIndustry_sharpes_df.loc[subIndustry].item()
         
         # Make dataframe of tickers
-        d = {}
-        for ticker in tickers:
-            d[ticker] = ticker_cols_dict[ticker]
-        
+        d = {ticker: ticker_cols_dict[ticker] for ticker in tickers}            
         ticker_sharpes_df = pd.DataFrame.from_dict(d, orient='index', 
                                                    columns=['Sharpe Ratio', 'Company'])
         ticker_sharpes_df.index.names = ['Ticker']
@@ -945,10 +919,7 @@ if option == 'Stock Comparisons By Sector':
         subIndustry_beta = subIndustry_betas_df.loc[subIndustry].item()
 
         # Make dataframe of tickers
-        d = {}
-        for ticker in tickers:
-            d[ticker] = ticker_betas_dict[ticker]
-        
+        d = {ticker: ticker_betas_dict[ticker] for ticker in tickers}                   
         ticker_betas_df = pd.DataFrame.from_dict(d, orient='index', columns=['Beta', 'Company'])
         ticker_betas_df.index.names = ['Ticker']
         betas = [sector_beta, subIndustry_beta]
@@ -1011,10 +982,7 @@ if option == 'Stock Comparisons By Sector':
         subIndustry_ratio = subIndustry_ratios_df.loc[subIndustry].item()
 
         # Make dataframe of tickers
-        d = {}
-        for ticker in tickers:
-            d[ticker] = ticker_ratios_dict[ticker]
-        
+        d = {ticker: ticker_ratios_dict[ticker] for ticker in tickers}            
         ticker_ratios_df = pd.DataFrame.from_dict(d, orient='index', columns=[ratio, 'Company'])
         ticker_ratios_df.index.names = ['Ticker']
 
@@ -1196,8 +1164,7 @@ if option == 'News':
             article.nlp()
             summary = article.summary
             err = 'Javascript is DisabledYour current browser configurationis not \
-                   compatible with this site.'
-            
+                   compatible with this site.'           
             if summary == err:
                 summary = story['summary']
         except:

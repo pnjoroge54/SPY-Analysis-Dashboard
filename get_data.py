@@ -6,7 +6,6 @@ from datetime import datetime as dt
 from datetime import timedelta
 from pytz import timezone
 
-import pandas_datareader as pdr
 import pandas_datareader.data as web
 import yfinance as yf
 import yahoo_fin.stock_info as si
@@ -322,9 +321,7 @@ def save_TTM_financial_ratios():
     if len(d) == len(tickers):
         with open(os.path.join(f, file), 'wb') as f1:
             pickle.dump(d, f1)
-
         print(file, 'saved\n')
-
     else:
         print(f'{len(tickers) - len(d)}/{len(tickers)} ratios not downloaded\n')
 
@@ -333,25 +330,19 @@ def get_risk_free_rates():
     # rf_rates = pdr.fred.FredReader('DTB3', dt(1954, 1, 4), dt.now()).read()
     rf_rates = yf.download('^IRX', progress=False)
     rf_rates.to_csv(r'data\T-Bill Rates.csv')
-    print('\nT-Bill Rates saved\n')
+    print('T-Bill Rates saved\n')
 
 
 def get_multi_factor_model_data():
-    start_date = '1954-01-01'
-    # three factors 
+    start_date = '1954-01-01' 
     df_three_factor = web.DataReader('F-F_Research_Data_Factors', 'famafrench', 
                                     start=start_date)[0]
     df_three_factor.index = df_three_factor.index.format()
 
-    # momentum factor
     df_mom = web.DataReader('F-F_Momentum_Factor', 'famafrench', 
                             start=start_date)[0]
     df_mom.index = df_mom.index.format()
-
-    # four factors
     df_four_factor = df_three_factor.join(df_mom)
-
-    # five factors
     df_five_factor = web.DataReader('F-F_Research_Data_5_Factors_2x3', 
                                     'famafrench', 
                                     start=start_date)[0]
@@ -361,7 +352,7 @@ def get_multi_factor_model_data():
     df_four_factor.to_csv('data/multi-factor_models/Carhart_4_Factors.csv')
     df_five_factor.to_csv('data/multi-factor_models/F-F_Research_Data_5_Factors_2x3.csv')
 
-    print('\nMulti-factor model data downloaded\n')
+    print('Multi-factor model data downloaded\n')
 
 
 if __name__ == "__main__":           
