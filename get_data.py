@@ -356,11 +356,11 @@ def get_multi_factor_model_data():
 
 
 if __name__ == "__main__":           
-    get_SPY_companies()
-    get_SPY_weights()
-    get_risk_free_rates()
-    get_multi_factor_model_data()
-    get_market_data()
-    # remove_replaced_tickers()
-    save_TTM_financial_ratios()
-    get_financial_ratios()
+    # get_SPY_companies()
+    # get_SPY_weights()
+    # get_risk_free_rates()
+    # get_multi_factor_model_data()
+    # get_market_data()
+    remove_replaced_tickers()
+    # save_TTM_financial_ratios()
+    # get_financial_ratios()
