@@ -1,4 +1,3 @@
-from math import sqrt
 import numpy as np
 import pandas as pd
 import requests
@@ -15,7 +14,7 @@ from newspaper import Article
 
 from config import TWITTER_USERNAMES
 from info import SPY_INFO, FINANCIAL_RATIOS
-from functions import (SPY_df, SPY_info_df, ticker_list, sector_list,                         
+from functions import (SPY_df, SPY_info_df, ticker_list, sector_list, first_date,                       
                        last_date, yr_ago, first_dates, combined_returns_df,
                        ratios_data_report, sector_weights, subIndustry_weights, 
                        ticker_weights, coming_out, getIndexOfTuple, get_ticker_data,
@@ -39,7 +38,7 @@ st.title('S&P 500 Dashboards')
 options = ('S&P 500 Information', 'Stock Information',
            'Stock Comparisons By Sector', 'Technical Analysis',
            'News', 'Social Media')
-option = st.sidebar.selectbox("Select A Dashboard", options)
+option = st.sidebar.selectbox("Select Dashboard", options)
 
 st.header(option)
 
@@ -49,9 +48,9 @@ if option == 'S&P 500 Information':
     st.write('Select Chart Display Period')
 
     with st.form(key='form1'):
-        start_date = st.date_input('Start Date', yr_ago, min_value=SPY_df.iloc[0].name)
-        end_date = st.date_input('End Date', last_date)
-        submit_button = st.form_submit_button(label='Submit')
+        start_date = st.date_input('Start Date', yr_ago, min_value=first_date)
+        end_date = st.date_input('End Date', last_date, max_value=last_date)
+        submit_btn = st.form_submit_button(label='Submit')
     
     SPY_df = SPY_df[start_date: end_date]
     SPY_df['Daily Return'] = SPY_df['Close'].pct_change() * 100
@@ -63,7 +62,7 @@ if option == 'S&P 500 Information':
     s = f'Positive Daily Returns: {(len(pos) / len(SPY_df)) * 100:.2f}%'
     s1 = f'Negative Daily Returns: {(len(neg) / len(SPY_df)) * 100:.2f}%'
     s2 = f'CAGR is {rtn:.2f}%'
-    s3 = f'Annualised Volatility is {std * sqrt(252):.2f}%'
+    s3 = f'Annualised Volatility is {std * (252)**0.5:.2f}%'
     s4 = f'{s1} | {s}'
 
     # Candlestick chart
@@ -74,10 +73,10 @@ if option == 'S&P 500 Information':
 
 
 if option == 'Stock Information':
-    with st.form(key='my_form'):
+    with st.form(key='form2'):
         start_date = st.date_input('Start Date', yr_ago, min_value=first_dates[0][1])
         end_date = st.date_input('End Date', last_date)
-        submit_button = st.form_submit_button(label='Submit')
+        submit_btn = st.form_submit_button(label='Submit')
 
     tickerSymbol = st.selectbox('Stock Ticker', ticker_list)
 
@@ -267,8 +266,8 @@ if option == 'Stock Information':
         subIndustry_returns.append((ticker, df_return))
         subIndustry_ticker_weights.append(ticker_weights[ticker] / subIndustry_weights[subIndustry])
 
-    siReturns = [x[1] for x in subIndustry_returns]
-    subIndustry_return = sum(np.multiply(siReturns, subIndustry_ticker_weights))
+    si_returns = [x[1] for x in subIndustry_returns]
+    subIndustry_return = sum(np.multiply(si_returns, subIndustry_ticker_weights))
     subIndustry_returns = sorted(subIndustry_returns, key=lambda x: x[1], reverse=True) 
     ticker_rank1 = getIndexOfTuple(subIndustry_returns, 0, tickerSymbol) 
     nsubIndustry = len(subIndustry_tickers)
@@ -363,10 +362,10 @@ if option == 'Stock Comparisons By Sector':
     
     # Date input
     if metric != 'Financial Ratios':
-        with st.form(key='my_form'):
+        with st.form(key='form3'):
             start_date = st.date_input("Start Date", yr_ago, min_value=first_dates[0][1])
             end_date = st.date_input("End Date", last_date)
-            submit_button = st.form_submit_button(label='Submit')
+            submit_btn = st.form_submit_button(label='Submit')
 
         # Show date range of ticker data and raise error messages
         if start_date > end_date:
@@ -1120,11 +1119,11 @@ if option == 'Technical Analysis':
         st.write('For more details on Fibonacci Retracement Levels visit \
                   https://www.investopedia.com/terms/f/fibonacciretracement.asp')
 
-        with st.form(key='my_form'):
+        with st.form(key='form2'):
             ticker = st.selectbox('Stock Ticker', ticker_list)
             start_date = st.date_input("Start Date", yr_ago, min_value=first_dates[0][1])
             end_date = st.date_input("End Date", last_date)
-            submit_button = st.form_submit_button(label='Submit')
+            submit_btn = st.form_submit_button(label='Submit')
     
         plot_fibonacci_levels(ticker, start_date, end_date)
 

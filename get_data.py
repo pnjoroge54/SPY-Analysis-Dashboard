@@ -123,43 +123,54 @@ def get_market_data():
     # download stock data
     for ticker in tickers:
         path = f'data/market_data/{ticker}.csv'
-        if os.path.exists(path):
-            ts = int(os.stat(path).st_mtime)
-            last_changed = dt.now() - dt.utcfromtimestamp(ts)
-            last_changed = last_changed.days
-        else:
-            last_changed = -1
+        # if os.path.exists(path):
+        #     ts = int(os.stat(path).st_mtime)
+        #     last_changed = dt.now() - dt.utcfromtimestamp(ts)
+        #     last_changed = last_changed.days
+        # else:
+        #     last_changed = -1
 
-        if last_changed > 0:
-            try:
-                data = si.get_data(ticker)
-                data.to_csv(path)
-                i += 1
-                sys.stdout.write("\r")
-                sys.stdout.write(f"{i}/{n} ({i / n * 100:.2f}%) of SPY market data downloaded")
-                sys.stdout.flush()
-            except Exception as e:
-                print(e)
-                not_downloaded.append(ticker)            
-
-    print('\n', not_downloaded, '\n')
+        # if last_changed > 0:
+        try:
+            data = si.get_data(ticker)
+            data.to_csv(path)
+            i += 1
+            sys.stdout.write("\r")
+            sys.stdout.write(f"{i}/{n} ({i / n * 100:.2f}%) of SPY market data downloaded")
+            sys.stdout.flush()
+        except Exception as e:
+            print(e)
+            not_downloaded.append(ticker)            
+    if not_downloaded:
+        print('\n', not_downloaded, '\n')
 
 
 def remove_replaced_tickers():
     '''Move tickers that have been removed from the SPY to their own folder'''
 
     tickers = get_tickers()[0]
-    files = [x.replace('.csv', '') for x in os.listdir('data/market_data')]
+    mkt_path = r'data\market_data'
+    ratios_path = r'data\financial_ratios\Annual'
+    mkt = [x.replace('.csv', '') for x in os.listdir(mkt_path)]
+    ratios = [x.replace('.csv', '') for x in os.listdir(ratios_path)]
 
-    if set(files) == set(tickers):
+    if set(mkt) == set(tickers):
         print('No new companies in SPY\n')
     else:
-        missing = set(files) - set(tickers)
-        for ticker in missing:
+        mkt = set(mkt) - set(tickers)
+        ratios = set(ratios) - set(tickers)
+        removed = mkt | ratios
+        for ticker in removed:
             file = ticker + '.csv'
-            os.remove(f'data/market_data/{file}')
-            os.remove(f'data/financial_ratios/Annual/{file}')
-            print(f'{ticker} is no longer in SPY')
+            try:
+                os.remove(f'{mkt_path}\{file}')
+            except:
+                pass
+            try:
+                os.remove(f'{ratios_path}\{file}')
+            except:
+                continue
+            # print(f'{ticker} is no longer in SPY')
     
         
 def ratios_to_update():
@@ -360,7 +371,7 @@ if __name__ == "__main__":
     # get_SPY_weights()
     # get_risk_free_rates()
     # get_multi_factor_model_data()
-    # get_market_data()
-    remove_replaced_tickers()
+    get_market_data()
+    # remove_replaced_tickers()
     # save_TTM_financial_ratios()
     # get_financial_ratios()
