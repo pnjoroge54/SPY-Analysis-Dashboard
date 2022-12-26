@@ -283,16 +283,16 @@ def get_returns_and_volatility(start_date, end_date):
             df = df[start_date : end_date]
             df = pd.concat([df, rf_rates.DTB3], axis=1, join='inner')
             df.ffill(inplace=True)
-            t = len(df) / 252
+            t = len(df)
             df['Daily T-Bill Rate'] = (1 / (1 - df['DTB3'] / 100 * (90 / 360)))**(1 / 90) - 1
             df['Daily Return'] = df['adjclose'].pct_change()
             df['Daily Excess Return'] = df['Daily Return'] - df['Daily T-Bill Rate']
-            df['Cumulative Return'] = (1 + df['Daily Return']).cumprod() - 1 
-            df['Cumulative Excess Return'] = (1 + df['Daily Excess Return']).cumprod() - 1 
+            df['Cumulative Return'] = (1 + df['Daily Return']).cumprod() - 1
+            df['Cumulative Excess Return'] = (1 + df['Daily Excess Return']).cumprod() - 1
             df_return = df['Cumulative Return'][-1] * 100
             df_ereturn = df['Cumulative Excess Return'][-1] * 100
-            df_std = df['Daily Return'].std() * np.sqrt(t * 252) * 100
-            df_estd = df['Daily Excess Return'].std() * np.sqrt(t * 252) * 100
+            df_std = df['Daily Return'].std() * np.sqrt(t) * 100
+            df_estd = df['Daily Excess Return'].std() * np.sqrt(t) * 100
             df_sharpe = df_ereturn / df_estd
 
             # Get weight to use in weighted average calculation
@@ -338,7 +338,7 @@ def get_returns_and_volatility(start_date, end_date):
     df = SPY_df[start_date : end_date]
     df = pd.concat([df, rf_rates.DTB3], axis=1, join='inner')
     df.ffill(inplace=True)
-    t = len(df) / 252
+    t = len(df)
     df['Daily T-Bill Rate'] = (1 / (1 - df['DTB3'] / 100 * (90 / 360)))**(1 / 90) - 1      
     df['Daily Return'] = df['Close'].pct_change()
     df['Daily Excess Return'] = df['Daily Return'] - df['Daily T-Bill Rate']
@@ -346,8 +346,8 @@ def get_returns_and_volatility(start_date, end_date):
     df['Cumulative Excess Return'] = (1 + df['Daily Excess Return']).cumprod() - 1 
     SPY_return = df['Cumulative Return'][-1] * 100
     SPY_ereturn = df['Cumulative Excess Return'][-1] * 100
-    SPY_std = df['Daily Return'].std() * np.sqrt(t * 252) * 100
-    SPY_estd = df['Daily Excess Return'].std() * np.sqrt(t * 252) * 100
+    SPY_std = df['Daily Return'].std() * np.sqrt(t) * 100
+    SPY_estd = df['Daily Excess Return'].std() * np.sqrt(t) * 100
     SPY_sharpe = SPY_ereturn / SPY_estd
     
     return sector_returns_df, subIndustry_returns, ticker_cols, sector_vols_df, subIndustry_vols, \

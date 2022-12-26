@@ -252,7 +252,6 @@ def get_TTM_financial_ratios(i=0, n=1, d={}):
 
     Parameters
     ----------
-
     i : int
         A counter of the tickers whose ratios have been downloaded
     n : int
@@ -350,13 +349,11 @@ def get_multi_factor_model_data():
                                     start=start_date)[0]
     df_three_factor.index = df_three_factor.index.format()
 
-    df_mom = web.DataReader('F-F_Momentum_Factor', 'famafrench', 
-                            start=start_date)[0]
+    df_mom = web.DataReader('F-F_Momentum_Factor', 'famafrench', start=start_date)[0]
     df_mom.index = df_mom.index.format()
     df_four_factor = df_three_factor.join(df_mom)
     df_five_factor = web.DataReader('F-F_Research_Data_5_Factors_2x3', 
-                                    'famafrench', 
-                                    start=start_date)[0]
+                                    'famafrench', start=start_date)[0]
     df_five_factor.index = df_five_factor.index.format()
 
     df_three_factor.to_csv('data/multi-factor_models/F-F_Research_Data_Factors.csv')
@@ -367,11 +364,11 @@ def get_multi_factor_model_data():
 
 
 if __name__ == "__main__":           
-    # get_SPY_companies()
-    # get_SPY_weights()
-    # get_risk_free_rates()
-    # get_multi_factor_model_data()
+    get_SPY_companies()
+    get_SPY_weights()
+    get_risk_free_rates()
+    get_multi_factor_model_data()
     get_market_data()
-    # remove_replaced_tickers()
-    # save_TTM_financial_ratios()
-    # get_financial_ratios()
+    remove_replaced_tickers()
+    save_TTM_financial_ratios()
+    get_financial_ratios()
