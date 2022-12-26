@@ -33,7 +33,7 @@ nltk.download([
       ])
       
 
-st.title('S&P 500 Dashboards')
+st.title('S&P 500 Dashboard')
 
 options = ('S&P 500 Information', 'Stock Information',
            'Stock Comparisons By Sector', 'Technical Analysis',
@@ -52,7 +52,7 @@ if option == 'S&P 500 Information':
         end_date = st.date_input('End Date', last_date, max_value=last_date)
         submit_btn = st.form_submit_button(label='Submit')
     
-    SPY_df = SPY_df[start_date: end_date]
+    SPY_df = SPY_df[start_date : end_date]
     SPY_df['Daily Return'] = SPY_df['Close'].pct_change() * 100
     pos = SPY_df[SPY_df['Daily Return'] >= 0]
     neg = SPY_df[SPY_df['Daily Return'] < 0]
@@ -62,7 +62,7 @@ if option == 'S&P 500 Information':
     s = f'Positive Daily Returns: {(len(pos) / len(SPY_df)) * 100:.2f}%'
     s1 = f'Negative Daily Returns: {(len(neg) / len(SPY_df)) * 100:.2f}%'
     s2 = f'CAGR is {rtn:.2f}%'
-    s3 = f'Annualised Volatility is {std * (252)**0.5:.2f}%'
+    s3 = f'Annualised Volatility is {std * (t * 252)**0.5:.2f}%'
     s4 = f'{s1} | {s}'
 
     # Candlestick chart
@@ -82,17 +82,15 @@ if option == 'Stock Information':
 
     ticker_df = get_ticker_data(tickerSymbol)
     first_date = ticker_df.iloc[0].name.date()
-    ticker_df = ticker_df[start_date: end_date]
+    ticker_df = ticker_df[start_date : end_date]
     ticker_df.rename(columns={'volume': 'Volume'}, inplace=True)
     
     if start_date > end_date:
         st.error('*Start Date* must be before *End Date*')
     if start_date < first_date:
-        st.error(f"Market data before {first_date.strftime('%B %d, %Y')} \
-                    is unavailable.")
+        st.error(f"Market data before {first_date.strftime('%B %d, %Y')} is unavailable.")
     if end_date > last_date:
-        st.error(f"Market data after {last_date.strftime('%B %d, %Y')} \
-                    is unavailable.")
+        st.error(f"Market data after {last_date.strftime('%B %d, %Y')} is unavailable.")
     
     st.info(f"**{tickerSymbol}** market data is available from \
         {first_date.strftime('%B %d, %Y')} to {last_date.strftime('%B %d, %Y')}.")
@@ -117,7 +115,7 @@ if option == 'Stock Information':
         summary = 'N/A'
 
     else:
-        name = tickerData.info['longName']
+        # name = tickerData.info['longName']
         sector = SPY_info_df[SPY_info_df['Symbol'] == tickerSymbol]['GICS Sector'].item()
         subIndustry = SPY_info_df[SPY_info_df['Symbol'] == tickerSymbol]['GICS Sub-Industry'].item()
         city = tickerData.info['city']
@@ -142,12 +140,12 @@ if option == 'Stock Information':
         summary = tickerData.info['longBusinessSummary']
     
     st.header(f'**{name}**')
-    st.info(f'**Sector:** {sector}  \
-            \n**Sub-Industry:** {subIndustry}  \
-            \n**Headquarters:** {location}  \
-            \n**Founded:** {founded}  \
-            \n**First Added To S&P 500:** {date_added}  \
-            \n**Website:** {website}')
+    st.info(f'''**Sector:** {sector}
+            **Sub-Industry:** {subIndustry}
+            **Headquarters:** {location}
+            **Founded:** {founded}
+            **First Added To S&P 500:** {date_added}
+            **Website:** {website}''')
     st.subheader('**Company Bio**')
     st.info(summary)
     st.subheader('Market Data')
@@ -199,7 +197,7 @@ if option == 'Stock Information':
     st.plotly_chart(fig)
 
     # Comparison to S&P500 daily returns
-    SPY_df = SPY_df[start_date: end_date]
+    SPY_df = SPY_df[start_date : end_date]
     SPY_df['Daily Return'] = SPY_df['Close'].pct_change() * 100
     beta = calculate_beta(combined_returns_df, tickerSymbol, start_date, end_date)
 
@@ -240,7 +238,7 @@ if option == 'Stock Information':
 
     for ticker in sector_tickers:
         df = get_ticker_data(ticker)
-        df = df[start_date: end_date]
+        df = df[start_date : end_date]
         df['Daily Return'] = df['adjclose'].pct_change() * 100
         df_return = ((1 + df['Daily Return'].mean() / 100)**(len(df) - 1) - 1) * 100
         sector_returns.append((ticker, df_return))
@@ -259,7 +257,7 @@ if option == 'Stock Information':
 
     for ticker in subIndustry_tickers:
         df = get_ticker_data(ticker)
-        df = df[start_date: end_date]
+        df = df[start_date : end_date]
         t = len(df) / 252
         df['Daily Return'] = df['adjclose'].pct_change() * 100
         df_return = ((df.iloc[-1]['close'] / df.iloc[0]['open'])**(1 / t) - 1) * 100
@@ -339,13 +337,13 @@ if option == 'Stock Information':
 
 
 if option == 'Stock Comparisons By Sector':
-    # Metrics to display graph of
-    metrics = ['Returns', 'Returns Volatility', 'Sharpe Ratio', 'Betas', 'Financial Ratios']
+    # Metrics to display graphs of
+    metrics = ['Returns', 'Volatility', 'Sharpe Ratio', 'Betas', 'Financial Ratios']
     metric = st.selectbox('Display Graphs of', metrics)
 
     # Additional info about metrics
-    if metric == 'Returns Volatility':
-        st.info('**Returns Volatility** is calculated as the standard deviation of returns.')
+    if metric == 'Volatility':
+        st.info('**Volatility** is calculated as the standard deviation of returns.')
     
     if metric == 'Sharpe Ratio':
         st.info('''
@@ -406,7 +404,7 @@ if option == 'Stock Comparisons By Sector':
         fig.update_layout(title='Sector Returns', xaxis_title='')
         st.plotly_chart(fig)
 
-    if metric == 'Returns Volatility':       
+    if metric == 'Volatility':       
         # Charts of sector volatilities
         fig = px.bar(sector_vols_df,
                      x=sector_vols_df.index,
@@ -414,10 +412,10 @@ if option == 'Stock Comparisons By Sector':
                      opacity=0.65)
         fig.add_hline(y=SPY_vol, line_color='red',
                       line_width=0.75,
-                      annotation_text=f'S&P 500 Returns Volatility ({SPY_vol:,.2f}%)', 
+                      annotation_text=f'S&P 500 Volatility ({SPY_vol:,.2f}%)', 
                       annotation_bgcolor='#FF7F7F',
                       annotation_bordercolor='red')
-        fig.update_layout(title='Sector Returns Volatility', xaxis_title='')
+        fig.update_layout(title='Sector Volatility', xaxis_title='')
         st.plotly_chart(fig)
 
     if metric == 'Sharpe Ratio':        
@@ -604,7 +602,7 @@ if option == 'Stock Comparisons By Sector':
         fig.update_layout(title=f'{sector} Sub-Industry Returns', xaxis_title='')
         st.plotly_chart(fig)
 
-    if metric == 'Returns Volatility':
+    if metric == 'Volatility':
         # Make dataframe of sub-industries
         d = {si: subIndustry_vols_dict[si] for si in subIndustry_list} 
         subIndustry_vols_df = pd.DataFrame.from_dict(d, orient='index', columns=['Volatility (%)'])
@@ -623,14 +621,14 @@ if option == 'Stock Comparisons By Sector':
         fig = px.bar(subIndustry_vols_df, x=subIndustry_vols_df.index,
                      y='Volatility (%)', opacity=0.65)
         fig.add_hline(y=SPY_vol, line_color='red', line_width=0.75,
-                      annotation_text=f'S&P 500 Returns Volatility ({SPY_vol:,.2f}%)',
+                      annotation_text=f'S&P 500 Volatility ({SPY_vol:,.2f}%)',
                       annotation_position=pos, annotation_bgcolor='#FF7F7F',
                       annotation_bordercolor='red')
         fig.add_hline(y=sector_vol, line_color='green', line_width=0.75,
-                      annotation_text=f'{sector} Returns Volatility ({sector_vol:,.2f}%)',
+                      annotation_text=f'{sector} Volatility ({sector_vol:,.2f}%)',
                       annotation_position=pos1, annotation_bgcolor='#90ee90',
                       annotation_bordercolor='green')
-        fig.update_layout(title=f'{sector} Sub-Industry Returns Volatility', xaxis_title='')
+        fig.update_layout(title=f'{sector} Sub-Industry Volatility', xaxis_title='')
         st.plotly_chart(fig)
 
     if metric == 'Sharpe Ratio':
@@ -787,7 +785,7 @@ if option == 'Stock Comparisons By Sector':
 
         st.dataframe(all_returns_df)
 
-    if metric == 'Returns Volatility':
+    if metric == 'Volatility':
         subIndustry_vol = subIndustry_vols_df.loc[subIndustry].item()
 
         # Make dataframe of tickers
@@ -816,22 +814,22 @@ if option == 'Stock Comparisons By Sector':
         fig = px.bar(ticker_vols_df, x=ticker_vols_df.index, y=y,
                      opacity=0.65, hover_data={y:True, 'Company':True})
         fig.add_hline(y=SPY_vol, line_color='red', line_width=0.75,
-                      annotation_text=f'S&P 500 Returns Volatility ({SPY_vol:,.2f}%)',
+                      annotation_text=f'S&P 500 Volatility ({SPY_vol:,.2f}%)',
                       annotation_position=pos, annotation_bgcolor='#FF7F7F',
                       annotation_bordercolor='red')
         fig.add_hline(y=sector_vol, line_color='purple', line_width=0.75,
-                      annotation_text=f'{sector} Returns Volatility ({sector_vol:,.2f}%)',
+                      annotation_text=f'{sector} Volatility ({sector_vol:,.2f}%)',
                       annotation_position=pos1, annotation_bgcolor='#CBC3E3',
                       annotation_bordercolor='purple')
         fig.add_hline(y=subIndustry_vol, line_color='green', line_width=0.75,
-                      annotation_text=f'{subIndustry} Returns Volatility ({subIndustry_vol:,.2f}%)',
+                      annotation_text=f'{subIndustry} Volatility ({subIndustry_vol:,.2f}%)',
                       annotation_position=pos2, annotation_bgcolor='#90ee90',
                       annotation_bordercolor='green')
-        fig.update_layout(title=f'{subIndustry} Company Returns Volatility', xaxis_title='')
+        fig.update_layout(title=f'{subIndustry} Company Volatility', xaxis_title='')
         st.plotly_chart(fig)
 
-        # Dataframe of stocks ranked by returns volatility
-        st.subheader('Stocks Ranked By Returns Volatility')
+        # Dataframe of stocks ranked by Volatility
+        st.subheader('Stocks Ranked By Volatility')
         st.markdown('For top *n* volatile returns enter a positive integer, \
                      and for bottom *n* volatile returns enter a negative integer')
         n = st.text_input(label='Number of Stocks to Show', value='25')

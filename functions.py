@@ -62,7 +62,7 @@ def get_first_dates():
 
 
 @st.cache
-def make_combined_returns_df():
+def make_combined_returns():
     '''Make dataframe of returns for all SPY stocks, as well as SPY index'''
 
     combined = SPY_df.copy()
@@ -179,7 +179,7 @@ def get_current_ratios(ratios, ratio):
 
 @st.cache
 def calculate_beta(df, ticker, start_date, end_date):
-    df = df[start_date: end_date]
+    df = df[start_date : end_date]
     SPY_std = df['SPY'].std()
     ticker_std = df[ticker].std()
     correlation_df = df.corr()
@@ -280,9 +280,10 @@ def get_returns_and_volatility(start_date, end_date):
             t_subIndustry = SPY_info_df[SPY_info_df['Symbol'] == ticker] \
                             ['GICS Sub-Industry'].item()
             df = get_ticker_data(ticker)
-            df = df[start_date: end_date]
+            df = df[start_date : end_date]
             df = pd.concat([df, rf_rates.DTB3], axis=1, join='inner')
             df.ffill(inplace=True)
+            t = len(df) / 252
             df['Daily T-Bill Rate'] = (1 / (1 - df['DTB3'] / 100 * (90 / 360)))**(1 / 90) - 1
             df['Daily Return'] = df['adjclose'].pct_change()
             df['Daily Excess Return'] = df['Daily Return'] - df['Daily T-Bill Rate']
@@ -290,8 +291,8 @@ def get_returns_and_volatility(start_date, end_date):
             df['Cumulative Excess Return'] = (1 + df['Daily Excess Return']).cumprod() - 1 
             df_return = df['Cumulative Return'][-1] * 100
             df_ereturn = df['Cumulative Excess Return'][-1] * 100
-            df_std = df['Daily Return'].std() * 100
-            df_estd = df['Daily Excess Return'].std() * 100
+            df_std = df['Daily Return'].std() * np.sqrt(t * 252) * 100
+            df_estd = df['Daily Excess Return'].std() * np.sqrt(t * 252) * 100
             df_sharpe = df_ereturn / df_estd
 
             # Get weight to use in weighted average calculation
@@ -334,9 +335,10 @@ def get_returns_and_volatility(start_date, end_date):
     sector_returns_df.index.names = ['Sector']
     sector_vols_df.index.names = ['Sector']
     sector_sharpes_df.index.names = ['Sector']
-    df = SPY_df[start_date: end_date]
+    df = SPY_df[start_date : end_date]
     df = pd.concat([df, rf_rates.DTB3], axis=1, join='inner')
     df.ffill(inplace=True)
+    t = len(df) / 252
     df['Daily T-Bill Rate'] = (1 / (1 - df['DTB3'] / 100 * (90 / 360)))**(1 / 90) - 1      
     df['Daily Return'] = df['Close'].pct_change()
     df['Daily Excess Return'] = df['Daily Return'] - df['Daily T-Bill Rate']
@@ -344,8 +346,8 @@ def get_returns_and_volatility(start_date, end_date):
     df['Cumulative Excess Return'] = (1 + df['Daily Excess Return']).cumprod() - 1 
     SPY_return = df['Cumulative Return'][-1] * 100
     SPY_ereturn = df['Cumulative Excess Return'][-1] * 100
-    SPY_std = df['Daily Return'].std() * 100
-    SPY_estd = df['Daily Excess Return'].std() * 100
+    SPY_std = df['Daily Return'].std() * np.sqrt(t * 252) * 100
+    SPY_estd = df['Daily Excess Return'].std() * np.sqrt(t * 252) * 100
     SPY_sharpe = SPY_ereturn / SPY_estd
     
     return sector_returns_df, subIndustry_returns, ticker_cols, sector_vols_df, subIndustry_vols, \
@@ -488,7 +490,7 @@ def make_TTM_squeeze_charts(lst):
 
 def plot_fibonacci_levels(ticker, start_date, end_date):
     df = get_ticker_data(ticker)
-    df = df[start_date: end_date]
+    df = df[start_date : end_date]
     df.reset_index(inplace=True)
     df.rename(columns={'index': 'date'}, inplace=True)
     highest_swing = -1
@@ -615,7 +617,7 @@ sector_list = SPY_info_df['GICS Sector'].unique()
 first_date, last_date = SPY_df.iloc[0].name, SPY_df.iloc[-1].name
 yr_ago = last_date - timedelta(days=365)
 first_dates = get_first_dates()
-combined_returns_df = make_combined_returns_df()
+combined_returns_df = make_combined_returns()
 current_ratios, ratios_data_report = get_all_current_ratios()
 sector_weights, subIndustry_weights, ticker_weights = get_weights()
 coming_out = TTM_Squeeze()
