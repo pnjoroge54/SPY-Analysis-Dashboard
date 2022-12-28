@@ -51,16 +51,16 @@ def get_SPY_companies():
     o_hist = pd.read_csv('data/SPY-Historical.csv')
 
     if o_current.equals(current):
-        print('\nSPY-Info is up to date!\n')
+        print('SPY-Info is up to date!\n')
     else: 
         current.to_csv('data/SPY-Info.csv', index=False)
-        print('\nSPY-Info updated!\n')
+        print('SPY-Info updated!\n')
 
     if o_hist.equals(hist):
-        print('\nSPY-Historical is up to date!\n')
+        print('SPY-Historical is up to date!\n')
     else: 
         hist.to_csv('data/SPY-Historical.csv', index=False)
-        print('\nSPY-Historical updated!\n')
+        print('SPY-Historical updated!\n')
 
 
 def get_tickers():
@@ -75,8 +75,11 @@ def get_tickers():
 
 
 def url_get_contents(url):
-    # Opens a website and read its binary contents (HTTP Response Body)
-    # making request to the website
+    '''
+    Opens a website and reads its binary contents 
+    (HTTP Response Body) making request to the website
+    '''
+
     req = Request(url=url, headers={'User-Agent': 'Mozilla/5.0'})
     f = urlopen(req)
     
@@ -106,13 +109,9 @@ def get_SPY_weights():
 
 
 def get_market_data():  
-    '''
-    Get historical price & volume data for each stock in the SPY,
-    as well as SPY data
-    '''
+    '''Get historical data for S&P 500 & for each stock in S&P 500'''
 
-    # download index data
-    SPY = yf.Ticker('^GSPC').history(period='max')
+    SPY = yf.Ticker('^GSPC').history(period='max') # download index data
     SPY.to_csv('data/SPY.csv')
 
     tickers = get_tickers()[0]
@@ -363,6 +362,46 @@ def get_multi_factor_model_data():
     print('Multi-factor model data downloaded\n')
 
 
+def get_financial_statements():
+    statements = {}
+    tickers = get_tickers()[0]
+    i = 0
+    n = len(tickers)
+
+    for ticker in tickers:
+        base_url = f"https://stockrow.com/api/companies/{ticker}/financials.xlsx?dimension=A&section="
+        sofp = f"{base_url}Balance%20Sheet&sort=desc"
+        soci = f"{base_url}Income%20Statement&sort=desc"
+        socf = f"{base_url}Cash%20Flow&sort=desc"
+        try:        
+            df1 = pd.read_excel(sofp) # balance sheet data           
+            df2 = pd.read_excel(soci) # income statement data
+            df3 = pd.read_excel(socf) # cashflow statement data  
+            df = pd.concat([df1, df2, df3]) # combining all extracted information
+            columns = df.columns.values
+            
+            for i in range(len(columns)):
+                if columns[i] == "Unnamed: 0":
+                    columns[i] = "Item"
+                else:
+                    columns[i] = columns[i].strftime("%Y-%m-%d")
+            
+            df.columns = columns
+            df.set_index("Item", inplace=True)
+            statements[ticker] = df
+            
+            i += 1
+            sys.stdout.write("\r")
+            sys.stdout.write(f"{i}/{n} ({i / n * 100:.2f}%) statements downloaded")
+            sys.stdout.flush()
+
+        except Exception as e:
+            print(f'i: {ticker} - {e}')
+
+    with open('data/financial_statements.pickle', 'wb') as f:
+        pickle.dump(statements, f)
+
+
 if __name__ == "__main__":           
     get_SPY_companies()
     get_SPY_weights()
@@ -372,3 +411,4 @@ if __name__ == "__main__":
     remove_replaced_tickers()
     save_TTM_financial_ratios()
     get_financial_ratios()
+    get_financial_statements()

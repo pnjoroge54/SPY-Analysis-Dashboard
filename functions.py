@@ -12,6 +12,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 
+@st.cache
 def get_ticker_data(ticker):
     file = os.path.join(r'data\market_data', f'{ticker}.csv')
     ticker_df = pd.read_csv(file, index_col=0, parse_dates=True)
@@ -608,6 +609,13 @@ def get_news(ticker, date):
     data = r.json()
     
     return data
+
+
+def get_financial_statements():
+    with open(r'data\financial_statements.pickle', 'rb') as f:
+        d = pickle.load(f)
+    
+    return d
 
 
 SPY_df = get_SPY_data()
