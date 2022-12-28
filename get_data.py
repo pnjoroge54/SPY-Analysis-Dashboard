@@ -16,7 +16,7 @@ import streamlit as st
 
 
 def get_SPY_companies():
-    '''Get a list of the companies comprising the SPY'''
+    '''Get a list of the companies comprising the S&P 500'''
 
     table = pd.read_html('https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')
     current = table[0]
@@ -76,7 +76,7 @@ def get_tickers():
 
 def url_get_contents(url):
     '''
-    Opens a website and reads its binary contents 
+    Opens a website and reads the binary contents 
     (HTTP Response Body) making request to the website
     '''
 
@@ -109,7 +109,7 @@ def get_SPY_weights():
 
 
 def get_market_data():  
-    '''Get historical data for S&P 500 & for each stock in S&P 500'''
+    '''Get historical data for S&P 500 & for each constituent stock'''
 
     SPY = yf.Ticker('^GSPC').history(period='max') # download index data
     SPY.to_csv('data/SPY.csv')
@@ -122,14 +122,6 @@ def get_market_data():
     # download stock data
     for ticker in tickers:
         path = f'data/market_data/{ticker}.csv'
-        # if os.path.exists(path):
-        #     ts = int(os.stat(path).st_mtime)
-        #     last_changed = dt.now() - dt.utcfromtimestamp(ts)
-        #     last_changed = last_changed.days
-        # else:
-        #     last_changed = -1
-
-        # if last_changed > 0:
         try:
             data = si.get_data(ticker)
             data.to_csv(path)
@@ -139,13 +131,14 @@ def get_market_data():
             sys.stdout.flush()
         except Exception as e:
             print(e)
-            not_downloaded.append(ticker)            
+            not_downloaded.append(ticker)   
+
     if not_downloaded:
-        print('\n', not_downloaded, '\n')
+        print(f'\n {len(not_downloaded)} stocks not downloaded \n')
 
 
 def remove_replaced_tickers():
-    '''Move tickers that have been removed from the SPY to their own folder'''
+    '''Move tickers that have been removed from the S&P 500 to their own folder'''
 
     tickers = get_tickers()[0]
     mkt_path = r'data\market_data'
@@ -400,6 +393,8 @@ def get_financial_statements():
 
     with open('data/financial_statements.pickle', 'wb') as f:
         pickle.dump(statements, f)
+
+    print(f'{len(statements)}/{n} statements saved')
 
 
 if __name__ == "__main__":           
