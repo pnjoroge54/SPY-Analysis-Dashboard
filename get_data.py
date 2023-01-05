@@ -356,54 +356,65 @@ def get_multi_factor_model_data():
 
 
 def get_financial_statements():
-    statements = {}
     tickers = get_tickers()[0]
-    i = 0
     n = len(tickers)
+    # i = 0
+
+    try:
+        with open('data/financial_statements.pickle', 'rb') as f:
+            statements = pickle.load(f)
+    except:
+        statements = {}
 
     for ticker in tickers:
-        base_url = f"https://stockrow.com/api/companies/{ticker}/financials.xlsx?dimension=A&section="
-        sofp = f"{base_url}Balance%20Sheet&sort=desc"
-        soci = f"{base_url}Income%20Statement&sort=desc"
-        socf = f"{base_url}Cash%20Flow&sort=desc"
-        try:        
-            df1 = pd.read_excel(sofp) # balance sheet data           
-            df2 = pd.read_excel(soci) # income statement data
-            df3 = pd.read_excel(socf) # cashflow statement data  
-            df = pd.concat([df1, df2, df3]) # combining all extracted information
-            columns = df.columns.values
-            
-            for i in range(len(columns)):
-                if columns[i] == "Unnamed: 0":
-                    columns[i] = "Item"
-                else:
-                    columns[i] = columns[i].strftime("%Y-%m-%d")
-            
-            df.columns = columns
-            df.set_index("Item", inplace=True)
-            statements[ticker] = df
-            
-            i += 1
-            sys.stdout.write("\r")
-            sys.stdout.write(f"{i}/{n} ({i / n * 100:.2f}%) statements downloaded")
-            sys.stdout.flush()
+        if ticker not in statements:
+            ticker = ticker.replace('-', '.')
+            base_url = f"https://stockrow.com/api/companies/{ticker}/financials.xlsx?dimension=A&section="
+            sofp = f"{base_url}Balance%20Sheet&sort=desc"
+            soci = f"{base_url}Income%20Statement&sort=desc"
+            socf = f"{base_url}Cash%20Flow&sort=desc"
+            try:        
+                df1 = pd.read_excel(sofp) # balance sheet data           
+                df2 = pd.read_excel(soci) # income statement data
+                df3 = pd.read_excel(socf) # cashflow statement data  
+                df = pd.concat([df1, df2, df3]) # combining all extracted information
+                columns = df.columns.values
+                
+                for i in range(len(columns)):
+                    if columns[i] == "Unnamed: 0":
+                        columns[i] = "Item"
+                    else:
+                        columns[i] = columns[i].strftime("%Y-%m-%d")
+                
+                df.columns = columns
+                df.set_index("Item", inplace=True)
+                
+                if ticker == 'FB':
+                    ticker = 'META'
 
-        except Exception as e:
-            print(f'i: {ticker} - {e}')
+                statements[ticker] = df
+                
+                # i += 1
+                # sys.stdout.write("\r")
+                # sys.stdout.write(f"{i}/{n} ({i / n * 100:.2f}%) statements downloaded")
+                # sys.stdout.flush()
+
+            except Exception as e:
+                print(f'{ticker} - {e}')
 
     with open('data/financial_statements.pickle', 'wb') as f:
         pickle.dump(statements, f)
 
-    print(f'{len(statements)}/{n} statements saved')
+    print(f'\nFinancial statements saved\n')
 
 
 if __name__ == "__main__":           
-    get_SPY_companies()
-    get_SPY_weights()
-    get_risk_free_rates()
-    get_multi_factor_model_data()
-    get_market_data()
-    remove_replaced_tickers()
-    save_TTM_financial_ratios()
-    get_financial_ratios()
+    # get_SPY_companies()
+    # get_SPY_weights()
+    # get_risk_free_rates()
+    # get_multi_factor_model_data()
+    # get_market_data()
+    # remove_replaced_tickers()
+    # save_TTM_financial_ratios()
+    # get_financial_ratios()
     get_financial_statements()
