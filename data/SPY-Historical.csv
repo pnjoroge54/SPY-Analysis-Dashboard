@@ -1,26 +1,28 @@
 Date,Ticker,Security,inSPY
-2022-12-22,STLD,Steel Dynamics,True
+2023-01-05,VNO,Vornado Realty Trust,False
+2023-01-04,GEHC,GE HealthCare,True
 2022-12-22,ABMD,Abiomed,False
-2022-12-19,FSLR,First Solar,True
-2022-12-19,MBC,MasterBrand,False
+2022-12-22,STLD,Steel Dynamics,True
 2022-12-19,FBHS,Fortune Brands Home & Security,False
+2022-12-19,MBC,MasterBrand,False
+2022-12-19,FSLR,First Solar,True
 2022-12-15,MBC,MasterBrand,True
 2022-11-01,TWTR,Twitter,False
 2022-11-01,ACGL,Arch Capital Group,True
-2022-10-12,TRGP,Targa Resources,True
 2022-10-12,NLSN,Nielsen Holdings,False
+2022-10-12,TRGP,Targa Resources,True
 2022-10-03,DRE,Duke Realty,False
 2022-10-03,CTXS,Citrix Systems,False
-2022-10-03,EQT,EQT,True
 2022-10-03,PCG,PG&E,True
-2022-09-19,PVH,PVH,False
-2022-09-19,INVH,Invitation Homes,True
-2022-09-19,CSGP,CoStar Group,True
+2022-10-03,EQT,EQT,True
 2022-09-19,PENN,Penn Entertainment,False
-2022-06-21,IPGP,IPG Photonics,False
+2022-09-19,PVH,PVH,False
+2022-09-19,CSGP,CoStar Group,True
+2022-09-19,INVH,Invitation Homes,True
 2022-06-21,ON,ON Semiconductor,True
-2022-06-21,KDP,Keurig Dr Pepper,True
+2022-06-21,IPGP,IPG Photonics,False
 2022-06-21,UA/UAA,Under Armour,False
+2022-06-21,KDP,Keurig Dr Pepper,True
 2022-06-08,CERN,Cerner,False
 2022-06-08,VICI,Vici Properties,True
 2022-04-04,PBCT,People's United Financial,False
@@ -32,243 +34,243 @@ Date,Ticker,Security,inSPY
 2022-02-03,GPS,Gap Inc.,False
 2022-02-02,CEG,Constellation Energy,True
 2021-12-20,WU,Western Union,False
+2021-12-20,HBI,Hanesbrands,False
+2021-12-20,LEG,Leggett & Platt,False
 2021-12-20,FDS,FactSet,True
 2021-12-20,SEDG,SolarEdge,True
 2021-12-20,SBNY,Signature Bank,True
-2021-12-20,LEG,Leggett & Platt,False
-2021-12-20,HBI,Hanesbrands,False
-2021-12-14,KSU,Kansas City Southern,False
 2021-12-14,EPAM,EPAM Systems,True
-2021-09-20,MTCH,Match Group,True
+2021-12-14,KSU,Kansas City Southern,False
+2021-09-20,CDAY,Ceridian,True
 2021-09-20,NOV,Nov,False
 2021-09-20,UNM,Unum,False
-2021-09-20,PRGO,Perrigo,False
 2021-09-20,BRO,Brown & Brown,True
-2021-09-20,CDAY,Ceridian,True
-2021-08-30,MXIM,Maxim Integrated,False
+2021-09-20,MTCH,Match Group,True
+2021-09-20,PRGO,Perrigo,False
 2021-08-30,TECH,Bio-Techne,True
+2021-08-30,MXIM,Maxim Integrated,False
 2021-07-21,MRNA,Moderna,True
 2021-07-21,ALXN,Alexion Pharmaceuticals,False
 2021-06-04,HFC,HollyFrontier,False
 2021-06-03,OGN,Organon & Co.,True
-2021-05-14,CRL,Charles River Laboratories,True
 2021-05-14,FLIR,FLIR Systems,False
+2021-05-14,CRL,Charles River Laboratories,True
 2021-04-20,PTC,PTC,True
 2021-04-20,VAR,Varian Medical Systems,False
-2021-03-22,NXPI,NXP,True
-2021-03-22,XRX,Xerox,False
 2021-03-22,VNT,Vontier,False
-2021-03-22,SLG,SL Green Realty,False
-2021-03-22,FLS,Flowserve,False
+2021-03-22,CZR,Caesars Entertainment,True
 2021-03-22,GNRC,Generac Holdings,True
 2021-03-22,PENN,Penn National Gaming,True
-2021-03-22,CZR,Caesars Entertainment,True
+2021-03-22,NXPI,NXP,True
+2021-03-22,SLG,SL Green Realty,False
+2021-03-22,XRX,Xerox,False
+2021-03-22,FLS,Flowserve,False
 2021-02-12,FTI,TechnipFMC,False
 2021-02-12,MPWR,Monolithic Power Systems,True
 2021-01-21,CXO,Concho Resources,False
 2021-01-21,TRMB,Trimble Inc,True
-2021-01-07,ENPH,Enphase Energy,True
 2021-01-07,TIF,Tiffany & Co,False
-2020-12-21,AIV,Apartment Investment & Management,False
+2021-01-07,ENPH,Enphase Energy,True
 2020-12-21,TSLA,Tesla Inc,True
+2020-12-21,AIV,Apartment Investment & Management,False
 2020-10-12,NBL,Noble Energy,False
 2020-10-09,VNT,Vontier,True
-2020-10-07,POOL,Pool Corporation,True
 2020-10-07,ETFC,E-Trade,False
-2020-09-21,KSS,Kohl's,False
-2020-09-21,CTLT,Catalent,True
+2020-10-07,POOL,Pool Corporation,True
 2020-09-21,TER,Teradyne,True
 2020-09-21,ETSY,Etsy,True
+2020-09-21,CTLT,Catalent,True
 2020-09-21,HRB,H&R Block,False
 2020-09-21,COTY,Coty,False
+2020-09-21,KSS,Kohl's,False
 2020-06-22,ADS,Alliance Data Systems,False
-2020-06-22,TYL,Tyler Technologies,True
+2020-06-22,BIO,Bio-Rad Laboratories,True
 2020-06-22,JWN,Nordstrom,False
+2020-06-22,TYL,Tyler Technologies,True
 2020-06-22,TDY,Teledyne,True
 2020-06-22,HOG,Harley-Davidson,False
-2020-06-22,BIO,Bio-Rad Laboratories,True
 2020-05-22,WST,West Pharmaceutical Services,True
 2020-05-22,HP,Helmerich & Payne,False
 2020-05-12,AGN,Allergan,False
-2020-05-12,DXCM,Dexcom,True
 2020-05-12,CPRI,Capri Holdings,False
 2020-05-12,DPZ,Domino's Pizza,True
+2020-05-12,DXCM,Dexcom,True
 2020-04-06,RTN,Raytheon Company,False
 2020-04-06,M,Macy's,False
 2020-04-03,OTIS,Otis Worldwide,True
 2020-04-03,CARR,Carrier,True
-2020-04-01,ARNC,Arconic,False
 2020-04-01,HWM,Howmet Aerospace,True
-2020-03-02,XEC,Cimarex Energy,False
+2020-04-01,ARNC,Arconic,False
 2020-03-02,IR,Ingersoll Rand,True
-2020-01-28,WCG,WellCare,False
+2020-03-02,XEC,Cimarex Energy,False
 2020-01-28,PAYC,Paycom,True
-2019-12-23,LYV,Live Nation Entertainment,True
-2019-12-23,ZBRA,Zebra Technologies,True
-2019-12-23,STE,Steris,True
-2019-12-23,AMG,Affiliated Managers Group,False
+2020-01-28,WCG,WellCare,False
 2019-12-23,TRIP,TripAdvisor,False
 2019-12-23,MAC,Macerich,False
-2019-12-09,ODFL,Old Dominion Freight Line,True
+2019-12-23,AMG,Affiliated Managers Group,False
+2019-12-23,ZBRA,Zebra Technologies,True
+2019-12-23,LYV,Live Nation Entertainment,True
+2019-12-23,STE,Steris,True
 2019-12-09,STI,SunTrust Banks,False
+2019-12-09,ODFL,Old Dominion Freight Line,True
 2019-12-05,VIAB,Viacom,False
 2019-12-05,WRB,W. R. Berkley Corporation,True
 2019-11-21,NOW,ServiceNow,True
 2019-11-21,CELG,Celgene,False
-2019-10-03,LVS,Las Vegas Sands,True
 2019-10-03,NKTR,Nektar Therapeutics,False
-2019-09-26,JEF,Jefferies Financial Group,False
+2019-10-03,LVS,Las Vegas Sands,True
 2019-09-26,NVR,NVR Inc,True
-2019-09-23,TSS,TSYS,False
+2019-09-26,JEF,Jefferies Financial Group,False
 2019-09-23,CDW,CDW,True
-2019-08-09,LDOS,Leidos,True
+2019-09-23,TSS,TSYS,False
 2019-08-09,IEX,IDEX Corporation,True
-2019-08-09,FL,Foot Locker,False
+2019-08-09,LDOS,Leidos,True
 2019-08-09,APC,Anadarko Petroleum,False
+2019-08-09,FL,Foot Locker,False
 2019-07-15,TMUS,T-Mobile US,True
 2019-07-15,RHT,Red Hat,False
 2019-07-01,LLL,L3 Technologies,False
 2019-07-01,MKTX,MarketAxess,True
-2019-06-07,MAT,Mattel,False
 2019-06-07,AMCR,Amcor,True
+2019-06-07,MAT,Mattel,False
 2019-06-03,DWDP,DuPont,False
-2019-06-03,CTVA,Corteva,True
 2019-06-03,DD,DuPont,True
 2019-06-03,FLR,Fluor Corporation,False
-2019-04-02,BHF,Brighthouse Financial,False
+2019-06-03,CTVA,Corteva,True
 2019-04-02,DOW,Dow Inc,True
-2019-02-27,GT,The Goodyear Tire & Rubber Company,False
+2019-04-02,BHF,Brighthouse Financial,False
 2019-02-27,WAB,Wabtec,True
-2019-02-15,NFX,Newfield Exploration,False
+2019-02-27,GT,The Goodyear Tire & Rubber Company,False
 2019-02-15,ATO,Atmos Energy,True
+2019-02-15,NFX,Newfield Exploration,False
 2019-01-18,TFX,Teleflex,True
 2019-01-18,PCG,Pacific Gas & Electric Company,False
-2019-01-02,FRC,First Republic Bank,True
 2019-01-02,SCG,SCANA,False
+2019-01-02,FRC,First Republic Bank,True
 2018-12-24,CE,Celanese,True
 2018-12-24,ESRX,Express Scripts,False
-2018-12-03,SRCL,Stericycle,False
-2018-12-03,LW,Lamb Weston,True
-2018-12-03,MXIM,Maxim Integrated,True
-2018-12-03,FANG,Diamondback Energy,True
 2018-12-03,COL,Rockwell Collins,False
+2018-12-03,MXIM,Maxim Integrated,True
+2018-12-03,LW,Lamb Weston,True
+2018-12-03,SRCL,Stericycle,False
 2018-12-03,AET,Aetna,False
-2018-11-13,JKHY,Jack Henry & Associates,True
+2018-12-03,FANG,Diamondback Energy,True
 2018-11-13,EQT,EQT,False
+2018-11-13,JKHY,Jack Henry & Associates,True
 2018-11-06,CA,CA Technologies,False
 2018-11-06,KEYS,Keysight,True
-2018-10-11,EVHC,Envision Healthcare,False
 2018-10-11,FTNT,Fortinet,True
-2018-10-01,ROL,Rollins Inc,True
+2018-10-11,EVHC,Envision Healthcare,False
 2018-10-01,ANDV,Andeavor,False
-2018-09-14,WCG,WellCare,True
+2018-10-01,ROL,Rollins Inc,True
 2018-09-14,XL,XL Group,False
+2018-09-14,WCG,WellCare,True
 2018-08-28,ANET,Arista Networks,True
 2018-08-28,GGP,GGP,False
-2018-07-02,CPRT,Copart,True
 2018-07-02,DPS,Dr Pepper Snapple Group,False
-2018-06-20,FLT,FleetCor Technologies,True
+2018-07-02,CPRT,Copart,True
 2018-06-20,TWX,Time Warner,False
+2018-06-20,FLT,FleetCor Technologies,True
+2018-06-18,HFC,HollyFrontier,True
+2018-06-18,RRC,Range Resources,False
 2018-06-18,AYI,Acuity Brands,False
 2018-06-18,BR,Broadridge Financial Solutions,True
-2018-06-18,RRC,Range Resources,False
-2018-06-18,HFC,HollyFrontier,True
-2018-06-07,MON,Monsanto,False
 2018-06-07,TWTR,Twitter,True
-2018-06-05,EVRG,Evergy,True
+2018-06-07,MON,Monsanto,False
 2018-06-05,NAVI,Navient,False
-2018-05-31,ABMD,Abiomed,True
+2018-06-05,EVRG,Evergy,True
 2018-05-31,WYN,Wyndham Worldwide,False
+2018-05-31,ABMD,Abiomed,True
 2018-04-04,CSRA,CSRA,False
 2018-04-04,MSCI,MSCI,True
-2018-03-19,NKTR,Nektar Therapeutics,True
-2018-03-19,SIVB,SVB Financial,True
-2018-03-19,TTWO,Take-Two Interactive,True
-2018-03-19,CHK,Chesapeake Energy,False
 2018-03-19,SIG,Signet Jewelers,False
 2018-03-19,PDCO,Patterson Companies,False
+2018-03-19,CHK,Chesapeake Energy,False
+2018-03-19,NKTR,Nektar Therapeutics,True
+2018-03-19,TTWO,Take-Two Interactive,True
+2018-03-19,SIVB,SVB Financial,True
 2018-03-07,IPGP,IPG Photonics,True
 2018-03-07,SNI,Scripps Networks Interactive,False
-2018-01-03,BCR,CR Bard,False
 2018-01-03,HII,Huntington Ingalls Industries,True
-2017-10-13,LVLT,Level 3 Communications,False
+2018-01-03,BCR,CR Bard,False
 2017-10-13,NCLH,Norwegian Cruise Line Holdings,True
+2017-10-13,LVLT,Level 3 Communications,False
 2017-09-18,SPLS,Staples,False
 2017-09-18,CDNS,Cadence Design Systems,True
-2017-09-01,DD,DuPont,False
-2017-09-01,SBAC,SBA Communications,True
 2017-09-01,DOW,Dow Chemical Company,False
 2017-09-01,DWDP,DuPont,True
+2017-09-01,DD,DuPont,False
+2017-09-01,SBAC,SBA Communications,True
 2017-08-29,Q,QuintilesIMS,True
 2017-08-29,WFM,Whole Foods Market,False
 2017-08-08,BHF,Brighthouse Financial,True
 2017-08-08,AN,AutoNation,False
-2017-07-26,RIG,Transocean,False
-2017-07-26,RAI,Reynolds American,False
-2017-07-26,MUR,Murphy Oil,False
-2017-07-26,BBBY,Bed Bath & Beyond,False
-2017-07-26,MGM,MGM Resorts International,True
-2017-07-26,RMD,ResMed,True
-2017-07-26,PKG,Packaging Corporation of America,True
 2017-07-26,AOS,A. O. Smith,True
 2017-07-26,DRE,Duke Realty Corp,True
+2017-07-26,RAI,Reynolds American,False
 2017-07-26,MNK,Mallinckrodt,False
-2017-06-19,TDC,Teradata,False
+2017-07-26,RMD,ResMed,True
+2017-07-26,MUR,Murphy Oil,False
+2017-07-26,BBBY,Bed Bath & Beyond,False
+2017-07-26,RIG,Transocean,False
+2017-07-26,PKG,Packaging Corporation of America,True
+2017-07-26,MGM,MGM Resorts International,True
+2017-06-19,RE,Everest Re,True
+2017-06-19,ANSS,Ansys,True
+2017-06-19,ALGN,Align Technology,True
 2017-06-19,YHOO,Yahoo!,False
+2017-06-19,TDC,Teradata,False
 2017-06-19,R,Ryder System,False
 2017-06-19,MJN,Mead Johnson,False
 2017-06-19,HLT,Hilton,True
-2017-06-19,ANSS,Ansys,True
-2017-06-19,ALGN,Align Technology,True
-2017-06-19,RE,Everest Re,True
 2017-06-02,INFO,IHS Markit,True
 2017-06-02,TGNA,Tegna,False
-2017-04-05,DNB,Dun & Bradstreet,False
 2017-04-05,IT,Gartner,True
+2017-04-05,DNB,Dun & Bradstreet,False
 2017-04-04,SWN,Southwestern Energy,False
 2017-04-04,DXC,DXC Technology,True
-2017-03-20,AMD,Advanced Micro Devices,True
-2017-03-20,ARE,Alexandria Real Estate Equities,True
-2017-03-20,RJF,Raymond James Financial,True
 2017-03-20,URBN,Urban Outfitters,False
-2017-03-20,FTR,Frontier Communications,False
+2017-03-20,AMD,Advanced Micro Devices,True
+2017-03-20,RJF,Raymond James Financial,True
+2017-03-20,ARE,Alexandria Real Estate Equities,True
 2017-03-20,FSLR,First Solar,False
+2017-03-20,FTR,Frontier Communications,False
 2017-03-16,SNPS,Synopsys,True
 2017-03-16,HAR,Harman International,False
 2017-03-13,LLTC,Linear Technology,False
 2017-03-13,DISH,Dish Network,True
-2017-03-02,REG,Regency Centers,True
 2017-03-02,ENDP,Endo International,False
-2017-03-01,PBI,Pitney Bowes,False
+2017-03-02,REG,Regency Centers,True
 2017-03-01,CBOE,Cboe Holdings,True
-2017-02-28,INCY,Incyte,True
+2017-03-01,PBI,Pitney Bowes,False
 2017-02-28,SE,Spectra Energy,False
-2017-01-05,STJ,St Jude Medical,False
+2017-02-28,INCY,Incyte,True
 2017-01-05,IDXX,Idexx Laboratories,True
-2016-12-02,MAA,Mid-America Apartments,True
-2016-12-02,EVHC,Envision Healthcare,True
-2016-12-02,OI,Owens-Illinois,False
+2017-01-05,STJ,St Jude Medical,False
 2016-12-02,LM,Legg Mason,False
-2016-11-01,ARNC,Arconic Inc,True
+2016-12-02,EVHC,Envision Healthcare,True
+2016-12-02,MAA,Mid-America Apartments,True
+2016-12-02,OI,Owens-Illinois,False
 2016-11-01,AA,Alcoa Inc,False
-2016-09-30,COTY,Coty Inc,True
+2016-11-01,ARNC,Arconic Inc,True
 2016-09-30,DO,Diamond Offshore Drilling,False
+2016-09-30,COTY,Coty Inc,True
 2016-09-22,COO,The Cooper Companies,True
 2016-09-22,HOT,Starwood,False
 2016-09-08,CHTR,Charter Communications,True
 2016-09-08,EMC,EMC Corporation,False
-2016-09-06,TYC,Tyco International,False
 2016-09-06,MTD,Mettler Toledo,True
+2016-09-06,TYC,Tyco International,False
 2016-07-05,FTV,Fortive Corp,True
 2016-07-05,CPGX,Columbia Pipeline Group,False
-2016-07-01,TE,TECO Energy,False
 2016-07-01,LNT,Alliant Energy Corp,True
-2016-07-01,GAS,AGL Resources,False
 2016-07-01,ALB,Albemarle Corporation,True
+2016-07-01,GAS,AGL Resources,False
+2016-07-01,TE,TECO Energy,False
 2016-06-22,FBHS,Fortune Brands Home & Security,True
 2016-06-22,CVC,Cablevision Systems,False
-2016-06-03,TDG,TransDigm Group,True
 2016-06-03,BXLT,Baxalta,False
+2016-06-03,TDG,TransDigm Group,True
 2016-05-31,AJG,Arthur J. Gallagher & Co.,True
 2016-05-31,CCE,Coca-Cola Enterprises,False
 2016-05-23,ARG,Airgas,False
@@ -279,171 +281,171 @@ Date,Ticker,Security,inSPY
 2016-05-13,SNDK,SanDisk,False
 2016-05-03,AYI,Acuity Brands,True
 2016-05-03,ADT,ADT,False
-2016-04-25,GME,GameStop,False
 2016-04-25,GPN,Global Payments,True
+2016-04-25,GME,GameStop,False
 2016-04-18,ULTA,Ulta Beauty,True
 2016-04-18,THC,Tenet Healthcare,False
 2016-04-08,UA,Under Armour (Class C),True
 2016-04-04,FL,Foot Locker,True
 2016-04-04,CAM,Cameron International,False
-2016-03-30,POM,Pepco Holdings,False
-2016-03-30,CNC,Centene Corporation,True
 2016-03-30,HOLX,Hologic,True
 2016-03-30,ESV,Ensco,False
+2016-03-30,CNC,Centene Corporation,True
+2016-03-30,POM,Pepco Holdings,False
 2016-03-07,GMCR,Keurig Green Mountain,False
 2016-03-07,UDR,UDR Inc,True
-2016-03-04,AWK,American Water Works,True
 2016-03-04,CNX,Consol Energy,False
+2016-03-04,AWK,American Water Works,True
 2016-02-22,PCL,Plum Creek Timber,False
 2016-02-22,CXO,Concho Resources,True
-2016-02-01,BRCM,Broadcom Corporation,False
+2016-02-01,FRT,Federal Realty Investment Trust,True
 2016-02-01,PCP,Precision Castparts Corporation,False
 2016-02-01,CFG,Citizens,True
-2016-02-01,FRT,Federal Realty Investment Trust,True
-2016-01-19,EXR,Extra Space Storage,True
+2016-02-01,BRCM,Broadcom Corporation,False
 2016-01-19,ACE,Chubb,False
-2016-01-05,FOSL,Fossil Group,False
+2016-01-19,EXR,Extra Space Storage,True
 2016-01-05,WLTW,Willis Towers Watson,True
+2016-01-05,FOSL,Fossil Group,False
 2015-12-29,CHD,Church & Dwight,True
 2015-12-29,ALTR,Altera,False
 2015-12-15,CMCSK,Comcast K Corp,False
-2015-12-01,CSC,Computer Sciences Corporation,False
 2015-12-01,CSRA,CSRA,True
-2015-11-19,SIAL,Sigma-Aldrich,False
+2015-12-01,CSC,Computer Sciences Corporation,False
 2015-11-19,ILMN,Illumina,True
+2015-11-19,SIAL,Sigma-Aldrich,False
 2015-11-18,GNW,Genworth Financial,False
 2015-11-18,SYF,Synchrony Financial,True
 2015-11-02,HPE,Hewlett Packard Enterprise,True
 2015-11-02,HCBK,Hudson City Bancorp,False
-2015-10-07,VRSK,Verisk Analytics,True
 2015-10-07,JOY,Joy Global,False
+2015-10-07,VRSK,Verisk Analytics,True
 2015-09-18,CMCSK,Comcast Class K Special,True
 2015-09-18,FOX,Twenty-First Century Fox Class B,True
 2015-09-18,NWS,News Corporation Class B,True
-2015-09-02,HSP,Hospira,False
 2015-09-02,UAL,United Continental Holdings,True
-2015-08-28,ATVI,Activision Blizzard,True
+2015-09-02,HSP,Hospira,False
 2015-08-28,PLL,Pall Corporation,False
-2015-07-29,DTV,DirecTV,False
+2015-08-28,ATVI,Activision Blizzard,True
 2015-07-29,SIG,Signet Jewelers,True
-2015-07-20,PYPL,PayPal,True
+2015-07-29,DTV,DirecTV,False
 2015-07-20,NE,Noble Corporation,False
-2015-07-08,FDO,Family Dollar,False
+2015-07-20,PYPL,PayPal,True
 2015-07-08,AAP,Advance Auto Parts,True
-2015-07-06,KRFT,Kraft Foods,False
+2015-07-08,FDO,Family Dollar,False
 2015-07-06,KHC,Kraft Heinz,True
+2015-07-06,KRFT,Kraft Foods,False
 2015-07-02,CPGX,Columbia Pipeline Group,True
 2015-07-02,ATI,Allegheny Technologies,False
-2015-07-01,TEG,Integrys Energy Group,False
 2015-07-01,BXLT,Baxalta,True
 2015-07-01,JBHT,J.B. Hunt,True
+2015-07-01,TEG,Integrys Energy Group,False
 2015-07-01,QEP,QEP Resources,False
 2015-06-11,QRVO,Qorvo,True
 2015-06-11,LO,Lorillard Tobacco Company,False
-2015-04-07,O,Realty Income Corporation,True
 2015-04-07,WIN,Windstream Communications,False
-2015-03-23,HBI,Hanesbrands,True
+2015-04-07,O,Realty Income Corporation,True
 2015-03-23,AAL,American Airlines Group,True
 2015-03-23,EQIX,Equinix,True
+2015-03-23,AVP,Avon Products,False
+2015-03-23,NBR,Nabors Industries,False
+2015-03-23,HBI,Hanesbrands,True
+2015-03-23,DNR,Denbury Resources,False
 2015-03-23,SLG,SL Green Realty,True
 2015-03-23,AGN,Allergan,False
-2015-03-23,DNR,Denbury Resources,False
-2015-03-23,NBR,Nabors Industries,False
-2015-03-23,AVP,Avon Products,False
 2015-03-18,HSIC,Henry Schein,True
 2015-03-18,CFN,Carefusion,False
-2015-03-12,PETM,PetSmart,False
 2015-03-12,SWKS,Skyworks,True
-2015-01-27,SWY,Safeway,False
+2015-03-12,PETM,PetSmart,False
 2015-01-27,HCA,HCA Holdings,True
 2015-01-27,ENDP,Endo International,True
+2015-01-27,SWY,Safeway,False
 2015-01-27,COV,Covidien,False
-2014-12-05,BMS,Bemis Company,False
 2014-12-05,RCL,Royal Caribbean Cruises,True
+2014-12-05,BMS,Bemis Company,False
 2014-11-05,LVLT,Level 3 Communications,True
 2014-11-05,JBL,Jabil Circuit,False
+2014-09-20,BTU,Peabody Energy,False
 2014-09-20,UHS,Universal Health Services,True
 2014-09-20,GHC,Graham Holdings,False
-2014-09-20,BTU,Peabody Energy,False
 2014-09-20,URI,United Rentals,True
 2014-08-18,RDC,Rowan Companies,False
 2014-08-18,MNK,Mallinckrodt,True
 2014-08-06,DISCK,Discovery Communications,True
-2014-07-02,MLM,Martin Marietta,True
 2014-07-02,X,United States Steel,False
-2014-07-01,FRX,Forest Laboratories,False
+2014-07-02,MLM,Martin Marietta,True
 2014-07-01,AMG,Affiliated Managers Group,True
+2014-07-01,FRX,Forest Laboratories,False
 2014-06-20,IGT,International Game Technology,False
 2014-06-20,XEC,Cimarex Energy,True
 2014-05-08,AVGO,Avago Technologies,True
 2014-05-08,LSI,LSI Corporation,False
-2014-05-01,SLM,SLM Corporation,False
-2014-05-01,BEAM,Beam Inc,False
-2014-05-01,NAVI,Navient,True
 2014-05-01,UAA,Under Armour (Class A),True
+2014-05-01,BEAM,Beam Inc,False
+2014-05-01,SLM,SLM Corporation,False
+2014-05-01,NAVI,Navient,True
 2014-04-03,GOOGL,Google,True
-2014-04-02,ESS,Essex Property Trust,True
 2014-04-02,CLF,Cliffs Natural Resources,False
-2014-03-21,GMCR,Keurig Green Mountain,True
+2014-04-02,ESS,Essex Property Trust,True
 2014-03-21,WPX,WPX Energy,False
+2014-03-21,GMCR,Keurig Green Mountain,True
 2014-01-24,TSCO,Tractor Supply,True
 2014-01-24,LIFE,Life Technologies,False
-2013-12-23,ANF,Abercrombie & Fitch,False
-2013-12-23,MHK,Mohawk Industries,True
-2013-12-23,FB,Facebook,True
 2013-12-23,JDSU,JDS Uniphase,False
+2013-12-23,ANF,Abercrombie & Fitch,False
 2013-12-23,TER,Teradyne,False
 2013-12-23,ADS,Alliance Data Systems,True
-2013-12-10,MOLX,Molex,False
+2013-12-23,MHK,Mohawk Industries,True
+2013-12-23,FB,Facebook,True
 2013-12-10,GGP,General Growth Properties,True
-2013-12-02,ALLE,Allegion,True
+2013-12-10,MOLX,Molex,False
 2013-12-02,JCP,JCPenney,False
-2013-11-13,NYX,NYSE Euronext,False
+2013-12-02,ALLE,Allegion,True
 2013-11-13,KORS,Michael Kors,True
-2013-10-29,RIG,Transocean,True
+2013-11-13,NYX,NYSE Euronext,False
 2013-10-29,DELL,Dell,False
+2013-10-29,RIG,Transocean,True
 2013-09-20,AME,Ametek,True
 2013-09-20,VRTX,Vertex Pharmaceuticals,True
 2013-09-20,SAI,SAIC,False
 2013-09-20,AMD,Advanced Micro Devices,False
 2013-09-10,DAL,Delta Air Lines,True
 2013-09-10,BMC,BMC Software,False
-2013-07-08,S,Sprint Nextel,False
 2013-07-08,NLSN,Nielsen Holdings,True
-2013-06-28,FOXA,21st Century Fox,True
+2013-07-08,S,Sprint Nextel,False
 2013-06-28,APOL,Apollo Education Group,False
-2013-06-21,ZTS,Zoetis,True
+2013-06-28,FOXA,21st Century Fox,True
 2013-06-21,FHN,First Horizon,False
-2013-06-06,GM,General Motors,True
+2013-06-21,ZTS,Zoetis,True
 2013-06-06,HNZ,Heinz,False
-2013-05-23,KSU,Kansas City Southern,True
+2013-06-06,GM,General Motors,True
 2013-05-23,DF,Dean Foods,False
-2013-05-08,MAC,Macerich,True
+2013-05-23,KSU,Kansas City Southern,True
 2013-05-08,CVH,Coventry Health Care,False
+2013-05-08,MAC,Macerich,True
 2013-04-30,REGN,Regeneron Pharmaceuticals,True
 2013-04-30,PCS,MetroPCS,False
-2013-02-15,BIG,Big Lots,False
 2013-02-15,PVH,PVH,True
-2012-12-31,ABBV,AbbVie,True
+2013-02-15,BIG,Big Lots,False
 2012-12-31,FII,Federated Investors,False
-2012-12-21,DLPH,Delphi Automotive,True
+2012-12-31,ABBV,AbbVie,True
 2012-12-21,TIE,Titanium Metals,False
+2012-12-21,DLPH,Delphi Automotive,True
 2012-12-11,GRMN,Garmin,True
 2012-12-11,RRD,RR Donnelley,False
-2012-12-03,DG,Dollar General,True
 2012-12-03,CBE,Cooper Industries,False
+2012-12-03,DG,Dollar General,True
 2012-10-10,SUN,Sunoco,False
 2012-10-10,PETM,PetSmart,True
-2012-10-02,KRFT,Kraft Foods,True
 2012-10-02,ANR,Alpha Natural Resources,False
-2012-10-01,ADT,ADT,True
+2012-10-02,KRFT,Kraft Foods,True
+2012-10-01,LXK,Lexmark,False
 2012-10-01,PNR,Pentair,True
 2012-10-01,DV,DeVry,False
-2012-10-01,LXK,Lexmark,False
-2012-09-05,LYB,LyondellBasell,True
+2012-10-01,ADT,ADT,True
 2012-09-05,SHLD,Sears Holdings,False
-2012-07-31,ESV,Ensco,True
+2012-09-05,LYB,LyondellBasell,True
 2012-07-31,GR,Goodrich Corporation,False
+2012-07-31,ESV,Ensco,True
 2012-07-02,STX,Seagate Technology,True
 2012-07-02,PGN,Progress Energy,False
 2012-06-29,MNST,Monster Beverage,True
@@ -452,112 +454,112 @@ Date,Ticker,Security,inSPY
 2012-06-05,LRCX,Lam Research,True
 2012-05-21,MMI,Motorola Mobility,False
 2012-05-21,ALXN,Alexion Pharmaceuticals,True
-2012-05-17,EP,El Paso Corporation,False
 2012-05-17,KMI,Kinder Morgan,True
-2012-04-23,PSX,Phillips 66,True
+2012-05-17,EP,El Paso Corporation,False
 2012-04-23,SVU,Supervalu,False
-2012-04-03,FOSL,Fossil,True
+2012-04-23,PSX,Phillips 66,True
 2012-04-03,MHS,Medco Health Solutions,False
+2012-04-03,FOSL,Fossil,True
 2012-03-13,CCI,Crown Castle,True
 2012-03-13,CEG,Constellation Energy Group,False
-2011-12-31,WPX,WPX Energy,True
 2011-12-31,CPWR,Compuware,False
+2011-12-31,WPX,WPX Energy,True
 2011-12-20,TRIP,TripAdvisor,True
 2011-12-20,TLAB,Tellabs,False
-2011-12-16,PRGO,Perrigo,True
+2011-12-16,AKS,AK Steel,False
 2011-12-16,WFR,MEMC Electronic Materials,False
 2011-12-16,MWW,Monster Worldwide,False
-2011-12-16,AKS,AK Steel,False
 2011-12-16,DLTR,Dollar Tree,True
+2011-12-16,PRGO,Perrigo,True
 2011-12-16,BWA,BorgWarner,True
 2011-12-12,GAS,Nicor Gas,False
 2011-12-12,GAS,AGL Resources.,True
 2011-11-18,JNS,Janus Capital Group,False
 2011-11-18,CBE,Cooper Industries,True
-2011-10-31,XYL,Xylem,True
 2011-10-31,ITT,ITT,False
+2011-10-31,XYL,Xylem,True
 2011-10-14,CEPH,Cephalon,False
 2011-10-14,TEL,TE Connectivity,True
 2011-09-23,NSM,National Semiconductor,False
 2011-09-23,MOS,The Mosaic Company,True
-2011-07-05,ACN,Accenture,True
 2011-07-05,MI,Marshall & Ilsley,False
+2011-07-05,ACN,Accenture,True
 2011-06-30,RSH,RadioShack,False
 2011-06-30,MPC,Marathon Oil,True
-2011-06-01,ANR,Alpha Natural Resources,True
 2011-06-01,MEE,Massey Energy,False
+2011-06-01,ANR,Alpha Natural Resources,True
 2011-04-27,CMG,Chipotle Mexican Grill,True
 2011-04-27,NOVL,Novell,False
-2011-04-01,BLK,BlackRock,True
 2011-04-01,GENZ,Genzyme,False
+2011-04-01,BLK,BlackRock,True
 2011-03-31,Q,Qwest Communications,False
 2011-03-31,EW,Edwards Lifesciences,True
-2011-02-28,MFE,McAfee,False
 2011-02-28,COV,Covidien,True
-2011-02-25,JOY,Joy Global,True
+2011-02-28,MFE,McAfee,False
 2011-02-25,AYE,Allegheny Energy,False
+2011-02-25,JOY,Joy Global,True
 2010-12-17,NYT,The New York Times Company,False
+2010-12-17,ODP,Office Depot,False
+2010-12-17,EK,Eastman Kodak,False
+2010-12-17,KG,King Pharmaceuticals,False
 2010-12-17,CVC,Cablevision,True
 2010-12-17,FFIV,F5 Networks,True
 2010-12-17,NFLX,Netflix,True
 2010-12-17,NFX,Newfield Exploration,True
-2010-12-17,EK,Eastman Kodak,False
-2010-12-17,ODP,Office Depot,False
-2010-12-17,KG,King Pharmaceuticals,False
 2010-11-17,IR,Ingersoll-Rand,True
 2010-11-17,PTV,Pactiv,False
 2010-08-26,SII,Smith International,False
 2010-08-26,TYC,Tyco International,True
-2010-07-14,MIL,Millipore,False
 2010-07-14,CB,Chubb,True
+2010-07-14,MIL,Millipore,False
 2010-06-30,STR,Questar,False
 2010-06-30,QEP,QEP Resources,True
 2010-06-28,XTO,XTO Energy,False
 2010-06-28,KMX,CarMax,True
-2010-04-29,BJS,BJ Services,False
 2010-04-29,CERN,Cerner,True
+2010-04-29,BJS,BJ Services,False
 2010-02-26,RX,IMS Health,False
 2010-02-26,HP,Helmerich & Payne,True
-2009-12-18,SAI,SAIC,True
 2009-12-18,CLF,Cliffs Natural Resources,True
-2009-12-18,ROST,Ross Stores,True
-2009-12-18,CVG,Convergys,False
 2009-12-18,MJN,Mead Johnson Nutrition,True
+2009-12-18,V,Visa,True
 2009-12-18,MBI,MBIA,False
+2009-12-18,CVG,Convergys,False
+2009-12-18,ROST,Ross Stores,True
 2009-12-18,CIEN,Ciena,False
 2009-12-18,DYN,Dynegy,False
+2009-12-18,SAI,SAIC,True
 2009-12-18,KBH,KB Home,False
-2009-12-18,V,Visa,True
 2009-11-03,PCLN,Priceline.com,True
 2009-11-03,SGP,Schering-Plough,False
 2009-09-28,CBE,Cooper Industries,False
 2009-09-28,ARG,Airgas,True
-2009-08-19,CTX,Centex Corp.,False
 2009-08-19,FMC,FMC Corporation,True
-2009-06-05,COV,Covidien,False
+2009-08-19,CTX,Centex Corp.,False
 2009-06-05,FTI,FMC Technologies,True
+2009-06-05,COV,Covidien,False
 2009-03-03,HRL,Hormel Foods,True
 2009-03-03,VTR,Ventas,True
-2009-03-03,JNY,Jones Apparel Group,False
 2009-03-03,ACAS,American Capital,False
+2009-03-03,JNY,Jones Apparel Group,False
 2008-12-31,OI,Owens-Illinois,True
 2008-12-31,WB,Wachovia Bank,False
 2008-09-16,HRS,Harris Corporation,True
 2008-09-16,LEH,Lehman Brothers,False
-2008-09-12,CRM,Salesforce,True
-2008-09-12,FRE,Freddie Mac,False
 2008-09-12,FNM,Fannie Mae,False
+2008-09-12,FRE,Freddie Mac,False
 2008-09-12,FAST,Fastenal,True
+2008-09-12,CRM,Salesforce,True
 2008-07-01,AKS,AK Steel,True
 2008-07-01,CFC,Countrywide Financial Corp,False
-2008-06-23,BC,Brunswick,False
-2008-06-23,OMX,OfficeMax,False
 2008-06-23,MEE,Massey Energy,True
+2008-06-23,OMX,OfficeMax,False
 2008-06-23,COG,Cabot Oil & Gas,True
-2008-06-10,LO,Lorillard Tobacco Company,True
+2008-06-23,BC,Brunswick,False
 2008-06-10,ABK,Ambac Financial,False
-2007-12-20,TRB,Tribune Media,False
+2008-06-10,LO,Lorillard Tobacco Company,True
 2007-12-20,RRC,Range Resources,True
+2007-12-20,TRB,Tribune Media,False
 2007-12-13,DJ,Dow Jones,False
 2007-12-13,GME,GameStop,True
 2007-10-26,JEC,Jacobs Engineering Group,True
@@ -566,48 +568,48 @@ Date,Ticker,Security,inSPY
 2007-10-02,EXPE,Expedia,True
 2007-10-01,NCR,NCR Corporation,False
 2007-10-01,TDC,Teradata,True
-2007-09-27,MXIM,Maxim Integrated Products,False
 2007-09-27,TSO,Tesoro Corporation,True
-2007-09-26,FDC,First Data,False
+2007-09-27,MXIM,Maxim Integrated Products,False
 2007-09-26,ICE,Intercontinental Exchange,True
+2007-09-26,FDC,First Data,False
 2007-08-24,KSE,KeySpan,False
 2007-08-24,LUK,Leucadia National,True
 2007-07-02,DFS,Discover Financial Services,True
-2007-03-30,KFT,Kraft Foods,True
 2007-03-30,TSG,Sabre Corporation,False
-2007-01-10,AVB,AvalonBay Communities,True
+2007-03-30,KFT,Kraft Foods,True
 2007-01-10,SBL,Symbol Technologies,False
-2006-06-02,JNPR,Juniper Networks,True
+2007-01-10,AVB,AvalonBay Communities,True
 2006-06-02,ABS,Albertsons,False
+2006-06-02,JNPR,Juniper Networks,True
 2005-11-18,AMZN,Amazon,True
 2005-11-18,T,AT&T Corporation,False
 2005-07-01,STZ,Constellation Brands,True
 2005-07-01,GLK,Great Lakes Chemical,False
 2003-09-25,ESRX,Express Scripts,True
 2003-09-25,QTRN,Quintiles Transnational,False
-2000-12-05,ABK,Ambac Financial,True
 2000-12-05,BS,Bethlehem Steel,False
-2000-12-05,GRA,WR Grace,False
-2000-12-05,CCK,Crown Holdings,False
-2000-12-05,AYE,Allegheny Energy,True
 2000-12-05,OI,Owens-Illinois,False
+2000-12-05,CCK,Crown Holdings,False
+2000-12-05,GRA,WR Grace,False
 2000-12-05,INTU,Intuit,True
 2000-12-05,SBL,Symbol Technologies,True
+2000-12-05,AYE,Allegheny Energy,True
+2000-12-05,ABK,Ambac Financial,True
 2000-07-27,RAD,RiteAid,False
 2000-07-27,JDSU,JDS Uniphase,True
-2000-06-12,CVG,Convergys,True
 2000-06-12,TMC,Times Mirror,False
-2000-06-07,SMS,Shared Medical Systems,False
+2000-06-12,CVG,Convergys,True
 2000-06-07,SBUX,Starbucks,True
-1999-12-07,LDW,Laidlaw,False
+2000-06-07,SMS,Shared Medical Systems,False
 1999-12-07,YHOO,Yahoo!,True
+1999-12-07,LDW,Laidlaw,False
 1999-06-09,WLP,Wellpoint,True
 1999-06-09,HFI,Harnischfeger Industries,False
+1998-12-11,SUN,SunAmerica,False
 1998-12-11,LDW,Amoco,False
 1998-12-11,GRE,General Re,False
-1998-12-11,SUN,SunAmerica,False
-1998-12-11,FSR,Firstar,True
 1998-12-11,CPWR,Compuware,True
 1998-12-11,CCL,Carnival Corp.,True
+1998-12-11,FSR,Firstar,True
 1997-06-17,CCI,Countrywide Credit Industries,True
 1997-06-17,USL,USLife,False

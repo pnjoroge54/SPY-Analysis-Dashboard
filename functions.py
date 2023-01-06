@@ -25,15 +25,6 @@ last_date = SPY_df.iloc[-1].name
 yr_ago = last_date - timedelta(days=365)
 
 
-def getIndexOfTuple(lst, index, value):
-    for pos, t in enumerate(lst):
-        if t[index] == value:
-            return pos + 1
-            
-    # Matches behavior of list.index
-    raise ValueError("list.index(x): x not in list")
-
-
 @st.cache
 def get_ticker_data(ticker):
     file = os.path.join(r'data\market_data', f'{ticker}.csv')
@@ -96,7 +87,7 @@ def get_all_current_ratios():
         dates = sorted(dates)
         date = dt.strftime(dates[-1], '%B %d, %Y')
         file = dt.strftime(dates[-1], '%d-%m-%Y') + '.pickle'
-        s = f'The data reported is from {date}.'
+        s = f'Data reported on {date}.'
 
     with open(os.path.join(f, file), 'rb') as f1:
         d = pickle.load(f1)
@@ -107,15 +98,15 @@ def get_all_current_ratios():
 @st.cache
 def get_current_ratios(ratios, ratio):
     r = ratios[ratio]
-    sector_ratios = {}
-    subIndustry_ratios = {}
-    ticker_ratios = {}
+    sectors = {}
+    subIndustries = {}
+    tickers = {}
     sector_weights, subIndustry_weights, ticker_weights = get_weights()
 
     for sector in sector_list:
         sector_tickers = SPY_info_df[SPY_info_df['GICS Sector'] == sector] \
                          ['Symbol'].to_list()
-        sector_ratios[sector] = 0
+        sectors[sector] = 0
         for ticker in sector_tickers:
             # Get sub-industry of ticker
             t_si = SPY_info_df[SPY_info_df['Symbol'] == ticker]['GICS Sub-Industry'].item()
@@ -126,23 +117,24 @@ def get_current_ratios(ratios, ratio):
             ticker_sector_weight = weight / sector_weights[sector]
             ticker_subIndustry_weight = weight / subIndustry_weights[t_si]
             
-            sector_ratios[sector] += (res * ticker_sector_weight)
+            sectors[sector] += (res * ticker_sector_weight)
             
-            subIndustry_ratios.setdefault(t_si, 0)
-            subIndustry_ratios += (res * ticker_subIndustry_weight)
+            subIndustries.setdefault(t_si, 0)
+            subIndustries[t_si] += (res * ticker_subIndustry_weight)
     
-            ticker_ratios[ticker] = {}
-            ticker_ratios[ticker]['Company'] = SPY_info_df[SPY_info_df['Symbol'] == ticker] \
+            tickers[ticker] = {}
+            tickers[ticker]['Company'] = SPY_info_df[SPY_info_df['Symbol'] == ticker] \
                                                 ['Security'].item()
-            ticker_ratios[ticker]['Sector'] = SPY_info_df[SPY_info_df['Symbol'] == ticker] \
+            tickers[ticker]['Sector'] = SPY_info_df[SPY_info_df['Symbol'] == ticker] \
                                                 ['GICS Sector'].item()
-            ticker_ratios[ticker]['Sub-Industry'] = SPY_info_df[SPY_info_df['Symbol'] == ticker] \
+            tickers[ticker]['Sub-Industry'] = SPY_info_df[SPY_info_df['Symbol'] == ticker] \
                                                     ['GICS Sub-Industry'].item()
-            ticker_ratios[ticker][ratio] = res                    
+            tickers[ticker][ratio] = res                    
 
-    sector_ratios_df = pd.DataFrame.from_dict(sector_ratios, orient='index', columns=[ratio])
+    sectors_df = pd.DataFrame.from_dict(sectors, orient='index', columns=[ratio])
+    sectors_df.index.name = 'Sector'
 
-    return sector_ratios_df, subIndustry_ratios, ticker_ratios 
+    return sectors_df, subIndustries, tickers 
 
 
 @st.cache
@@ -163,7 +155,7 @@ def calculate_beta(ticker, start_date, end_date):
 
 @st.cache
 def get_weights():
-    # Assign weights by sectors & sub-industries
+    '''Assign weights by sectors & sub-industries'''
     
     weights_df = pd.read_csv(r'data\SPY Weights.csv', index_col='Symbol')
     sectors, subIndustries, tickers = {}, {}, {}

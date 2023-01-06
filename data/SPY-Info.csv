@@ -206,13 +206,14 @@ FMC,FMC Corporation,reports,Materials,Fertilizers & Agricultural Chemicals,"Phil
 F,Ford Motor Company,reports,Consumer Discretionary,Automobile Manufacturers,"Dearborn, Michigan",1957-03-04,37996,1903
 FTNT,Fortinet,reports,Information Technology,Systems Software,"Sunnyvale, California",2018-10-11,1262039,2000
 FTV,Fortive,reports,Industrials,Industrial Machinery,"Everett, Washington",2016-07-01,1659166,2016
-FOXA,Fox Corporation (Class A),reports,Communication Services,Movies & Entertainment,"New York City, New York",2013-07-01,1754301,2019
+FOXA,Fox Corporation (Class A),reports,Communication Services,Movies & Entertainment,"New York City, New York",2019-11-03,1754301,2019
 FOX,Fox Corporation (Class B),reports,Communication Services,Movies & Entertainment,"New York City, New York",2015-09-18,1754301,2019
 BEN,Franklin Templeton,reports,Financials,Asset Management & Custody Banks,"San Mateo, California",,38777,1947
 FCX,Freeport-McMoRan,reports,Materials,Copper,"Phoenix, Arizona",,831259,1912
 GRMN,Garmin,reports,Consumer Discretionary,Consumer Electronics,"Schaffhausen, Switzerland",2012-12-12,1121788,1989
 IT,Gartner,reports,Information Technology,IT Consulting & Other Services,"Stamford, Connecticut",2017-04-05,749251,1979
-GEN,Gen Digital Inc.,reports,Information Technology,Application Software,"Tempe, Arizona",2003-03-25,849399,1982
+GEHC,GE HealthCare,reports,Health Care,,"Chicago, Illinois",2023-01-04,1932393,1994
+GEN,Gen Digital,reports,Information Technology,Application Software,"Tempe, Arizona",2003-03-25,849399,1982
 GNRC,Generac,reports,Industrials,Electrical Components & Equipment,"Waukesha, Wisconsin",2021-03-22,1474735,1959
 GD,General Dynamics,reports,Industrials,Aerospace & Defense,"Falls Church, Virginia",1957-03-04,40533,1899
 GE,General Electric,reports,Industrials,Industrial Conglomerates,"Boston, Massachusetts",,40545,1892
@@ -234,7 +235,7 @@ HES,Hess Corporation,reports,Energy,Integrated Oil & Gas,"New York City, New Yor
 HPE,Hewlett Packard Enterprise,reports,Information Technology,"Technology Hardware, Storage & Peripherals","Houston, Texas",2015-11-02,1645590,2015
 HLT,Hilton Worldwide,reports,Consumer Discretionary,"Hotels, Resorts & Cruise Lines","Tysons Corner, Virginia",2017-06-19,1585689,1919
 HOLX,Hologic,reports,Health Care,Health Care Equipment,"Marlborough, Massachusetts",2016-03-30,859737,1985
-HD,The Home Depot,reports,Consumer Discretionary,Home Improvement Retail,"Atlanta, Georgia",1988-03-31,354950,1978
+HD,Home Depot (The),reports,Consumer Discretionary,Home Improvement Retail,"Atlanta, Georgia",1988-03-31,354950,1978
 HON,Honeywell,reports,Industrials,Industrial Conglomerates,"Charlotte, North Carolina",1964-03-31,773840,1906
 HRL,Hormel Foods,reports,Consumer Staples,Packaged Foods & Meats,"Austin, Minnesota",2009-03-04,48465,1891
 HST,Host Hotels & Resorts,reports,Real Estate,Hotel & Resort REITs,"Bethesda, Maryland",2007-03-20,1070750,1993
@@ -475,7 +476,6 @@ VFC,VF Corporation,reports,Consumer Discretionary,"Apparel, Accessories & Luxury
 VTRS,Viatris,reports,Health Care,Pharmaceuticals,"Pittsburgh, Pennsylvania",2004-04-23,1792044,1961
 VICI,Vici Properties,reports,Real Estate,Hotel & Resort REITs,"New York City, New York",2022-06-08,1705696,2017
 V,Visa Inc.,reports,Information Technology,Data Processing & Outsourced Services,"San Francisco, California",2009-12-21,1403161,1958
-VNO,Vornado Realty Trust,reports,Real Estate,Office REITs,"New York City, New York",2005,899689,1982
 VMC,Vulcan Materials Company,reports,Materials,Construction Materials,"Birmingham, Alabama",1999-06-30,1396009,1909
 WAB,Wabtec,reports,Industrials,Construction Machinery & Heavy Trucks,"Pittsburgh, Pennsylvania",2019-02-27,943452,1999 (1869)
 WBA,Walgreens Boots Alliance,reports,Consumer Staples,Drug Retail,"Deerfield, Illinois",1979-12-31,1618921,2014

@@ -35,41 +35,32 @@ def get_SPY_companies():
     hist.dropna(inplace=True)
 
     # Change '.' to '-' in ticker before df is written
-    for row in range(len(current)):
-        try:
-            current.loc[row, 'Symbol'] = current.loc[row, 'Symbol'].replace('.', '-')
-        except:
-            pass
-
-    for row in range(len(hist)):
-        try:
-            hist.loc[row, 'Ticker'] = hist.loc[row, 'Ticker'].replace('.', '-')
-        except:
-            pass
+    current.loc[:, 'Symbol'].replace('.', '-', inplace=True)
+    hist.loc[:, 'Ticker'].replace('.', '-', inplace=True)
     
     o_current = pd.read_csv('data/SPY-Info.csv')
     o_hist = pd.read_csv('data/SPY-Historical.csv')
 
     if o_current.equals(current):
-        print('SPY-Info is up to date!\n')
+        print('SPY-Info is up to date\n')
     else: 
         current.to_csv('data/SPY-Info.csv', index=False)
-        print('SPY-Info updated!\n')
+        print('SPY-Info updated\n')
 
     if o_hist.equals(hist):
-        print('SPY-Historical is up to date!\n')
+        print('SPY-Historical is up to date\n')
     else: 
         hist.to_csv('data/SPY-Historical.csv', index=False)
-        print('SPY-Historical updated!\n')
+        print('SPY-Historical updated\n')
 
 
 def get_tickers():
-    df = pd.read_csv('data/SPY-Info.csv')
-    df1 = pd.read_csv('data/SPY-Historical.csv', index_col='Date')
-    df1[:'2015-01-01']
+    df1 = pd.read_csv('data/SPY-Info.csv')
+    df2 = pd.read_csv('data/SPY-Historical.csv', index_col='Date')
+    df2[:'2015-01-01']
     
-    tickers = df['Symbol'].to_list()
-    hist_tickers = list(set(tickers + df1['Ticker'].to_list()))
+    tickers = df1['Symbol'].to_list()
+    hist_tickers = list(set(tickers + df2['Ticker'].to_list()))
 
     return tickers, hist_tickers
 
@@ -105,7 +96,7 @@ def get_SPY_weights():
     
     df.set_index('Symbol', inplace=True)
     df.to_csv('data/SPY Weights.csv')
-    print('SPY weights have been updated!\n')
+    print('S&P 500 weights updated \n')
 
 
 def get_market_data():  
@@ -116,22 +107,21 @@ def get_market_data():
 
     tickers = get_tickers()[0]
     n = len(tickers)
-    i = 0
     not_downloaded = []
 
-    # download stock data
-    for ticker in tickers:
+    for i, ticker in enumerate(tickers, 1):
         path = f'data/market_data/{ticker}.csv'
         try:
-            data = si.get_data(ticker)
+            data = si.get_data(ticker) # download stock data
             data.to_csv(path)
-            i += 1
             sys.stdout.write("\r")
             sys.stdout.write(f"{i}/{n} ({i / n * 100:.2f}%) of SPY market data downloaded")
             sys.stdout.flush()
         except Exception as e:
             print(e)
-            not_downloaded.append(ticker)   
+            not_downloaded.append(ticker)
+
+    print('S&P 500 stock data downloaded \n')
 
     if not_downloaded:
         print(f'\n {len(not_downloaded)} stocks not downloaded \n')
@@ -304,7 +294,6 @@ def save_TTM_financial_ratios():
             cdate -= timedelta(days=1)
     else:
         days = 0
-
         if cdate.weekday() == 5:
             days = 1
         elif cdate.weekday() == 6:
@@ -337,15 +326,13 @@ def get_risk_free_rates():
 
 def get_multi_factor_model_data():
     start_date = '1954-01-01' 
-    df_three_factor = web.DataReader('F-F_Research_Data_Factors', 'famafrench', 
-                                    start=start_date)[0]
+    df_three_factor = web.DataReader('F-F_Research_Data_Factors', 'famafrench', start=start_date)[0]
     df_three_factor.index = df_three_factor.index.format()
 
     df_mom = web.DataReader('F-F_Momentum_Factor', 'famafrench', start=start_date)[0]
     df_mom.index = df_mom.index.format()
     df_four_factor = df_three_factor.join(df_mom)
-    df_five_factor = web.DataReader('F-F_Research_Data_5_Factors_2x3', 
-                                    'famafrench', start=start_date)[0]
+    df_five_factor = web.DataReader('F-F_Research_Data_5_Factors_2x3', 'famafrench', start=start_date)[0]
     df_five_factor.index = df_five_factor.index.format()
 
     df_three_factor.to_csv('data/multi-factor_models/F-F_Research_Data_Factors.csv')
@@ -389,8 +376,8 @@ def get_financial_statements():
                 df.columns = columns
                 df.set_index("Item", inplace=True)
                 
-                if ticker == 'FB':
-                    ticker = 'META'
+                # if ticker == 'FB':
+                #     ticker = 'META'
 
                 statements[ticker] = df
                 
@@ -409,12 +396,12 @@ def get_financial_statements():
 
 
 if __name__ == "__main__":           
-    # get_SPY_companies()
-    # get_SPY_weights()
-    # get_risk_free_rates()
-    # get_multi_factor_model_data()
-    # get_market_data()
-    # remove_replaced_tickers()
-    # save_TTM_financial_ratios()
-    # get_financial_ratios()
+    get_SPY_companies()
+    get_SPY_weights()
+    get_risk_free_rates()
+    get_multi_factor_model_data()
+    get_market_data()
+    remove_replaced_tickers()
+    save_TTM_financial_ratios()
+    get_financial_ratios()
     get_financial_statements()
