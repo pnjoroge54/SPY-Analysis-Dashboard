@@ -1,5 +1,4 @@
 import os
-import sys
 import pickle
 import pandas as pd
 from datetime import datetime as dt
@@ -22,7 +21,7 @@ def get_SPY_companies():
     current = table[0]
     hist = table[1]
 
-    # Create historical df I can use for re-creating index components at different dates
+    # Create historical df for re-creating index components at different dates
     added = hist['Date'].join(hist['Added'])
     added['inSPY'] = True
     added['Date'] = pd.to_datetime(added['Date'])
@@ -34,24 +33,23 @@ def get_SPY_companies():
     hist = pd.concat([added, removed]).sort_values('Date', ascending=False)
     hist.dropna(inplace=True)
 
-    # Change '.' to '-' in ticker before df is written
-    current.loc[:, 'Symbol'].replace('.', '-', inplace=True)
-    hist.loc[:, 'Ticker'].replace('.', '-', inplace=True)
+    current['Symbol'] = current['Symbol'].str.replace('.', '-', regex=False)
+    hist['Ticker'] = hist['Ticker'].str.replace('.', '-', regex=False)
     
     o_current = pd.read_csv('data/SPY-Info.csv')
     o_hist = pd.read_csv('data/SPY-Historical.csv')
 
     if o_current.equals(current):
-        print('SPY-Info is up to date\n')
+        print('\nSPY-Info is up to date\n')
     else: 
         current.to_csv('data/SPY-Info.csv', index=False)
-        print('SPY-Info updated\n')
+        print('\nSPY-Info updated\n')
 
     if o_hist.equals(hist):
-        print('SPY-Historical is up to date\n')
+        print('\nSPY-Historical is up to date\n')
     else: 
         hist.to_csv('data/SPY-Historical.csv', index=False)
-        print('SPY-Historical updated\n')
+        print('\nSPY-Historical updated\n')
 
 
 def get_tickers():
@@ -67,8 +65,7 @@ def get_tickers():
 
 def url_get_contents(url):
     '''
-    Opens a website and reads the binary contents 
-    (HTTP Response Body) making request to the website
+    Opens website and reads the binary contents (HTTP Response Body)
     '''
 
     req = Request(url=url, headers={'User-Agent': 'Mozilla/5.0'})
@@ -90,10 +87,7 @@ def get_SPY_weights():
     df.columns = new_header # set the header row as the df header
     df.drop(['#', 'Price', 'Chg', '% Chg'], axis=1, inplace=True)
     df['Weight'] = pd.to_numeric(df['Weight'])
-    
-    for i in df.index:
-        df.loc[i, 'Symbol'] = df.loc[i, 'Symbol'].replace('.', '-')
-    
+    df['Symbol'] = df['Symbol'].str.replace('.', '-', regex=False)
     df.set_index('Symbol', inplace=True)
     df.to_csv('data/SPY Weights.csv')
     print('S&P 500 weights updated \n')
@@ -114,17 +108,15 @@ def get_market_data():
         try:
             data = si.get_data(ticker) # download stock data
             data.to_csv(path)
-            sys.stdout.write("\r")
-            sys.stdout.write(f"{i}/{n} ({i / n * 100:.2f}%) of SPY market data downloaded")
-            sys.stdout.flush()
+            print(f"\r{i}/{n} ({i / n * 100:.2f}%) of SPY market data downloaded", end='', flush=True)
         except Exception as e:
-            print(e)
-            not_downloaded.append(ticker)
+            print(f'\r {i}/{n}: {ticker} - {e}')
+            not_downloaded.append(ticker)  
 
     print('S&P 500 stock data downloaded \n')
 
     if not_downloaded:
-        print(f'\n {len(not_downloaded)} stocks not downloaded \n')
+        print(f'{len(not_downloaded)} stocks not downloaded \n')
 
 
 def remove_replaced_tickers():
@@ -211,18 +203,16 @@ def get_financial_ratios(i=0, n=1):
                                              period='annual')
                 ratios.to_csv(os.path.join(f, f'{ticker}.csv'))
                 i += 1
-                sys.stdout.write("\r")
-                sys.stdout.write(f"{i}/{len(to_update)} outdated financial ratios downloaded")
-                sys.stdout.flush()
+                print(f"\r{i}/{len(to_update)} outdated financial ratios downloaded", end='', flush=True)
         except Exception as e:
             if e == '<urlopen error [Errno 11001] getaddrinfo failed>':
-                print(e)
+                print('\r', e.ljust(100, ' '), end='', flush=True)
             else:
                 if n < 5:
                     print(f'\nAPI Key {n} has maxed out its requests\n')
                     n += 1
 
-        return get_financial_ratios(i, n)
+        return get_financial_ratios(i, n, end='', flush=True)
 
     else:
         print('\nAnnual financial ratios are up to date!\n')       
@@ -244,28 +234,27 @@ def get_TTM_financial_ratios(i=0, n=1, d={}):
     Returns
     -------
     d : dict
-        Dictionary of all TTM ratios for SPY stocks
+        Dictionary of all TTM ratios for S&P 500 stocks
     '''
     
     tickers = get_tickers()[0]
+    ntickers = len(tickers)
 
     # Use recursion to continue building the dict of TTM ratios when API calls
     # for a key reach the limit (250 requests/day)
-    if i < len(tickers):
+    if i < ntickers:
         try:
             for ticker in tickers[i: i + 250]:
                 ratios = fa.financial_ratios(ticker, 
                                              st.secrets[f'FUNDAMENTAL_ANALYSIS_API_KEY{n}'],
-                                             period='annual', TTM=True)
+                                             period='annual',
+                                             TTM=True)
                 d[ticker] = ratios.to_dict()
                 i += 1
-                sys.stdout.write("\r")
-                sys.stdout.write(f"{i}/{len(tickers)} current financial ratios downloaded")
-                sys.stdout.write("\033[F") # back to previous line 
-                sys.stdout.write("\033[K") # clear line 
+                print(f"\r{i}/{ntickers} TTM financial ratios downloaded", end='', flush=True)
         except Exception as e:
             if e == '<urlopen error [Errno 11001] getaddrinfo failed>':
-                print(e)
+                print('\n', e)
             else:
                 if n < 5:
                     print(f'\nAPI Key {n} has maxed out its requests\n')
@@ -285,36 +274,36 @@ def save_TTM_financial_ratios():
     tz = timezone('EST')
     cdate = dt.now(tz)
     hour = cdate.hour
+    weekday = cdate.weekday()
 
     # Sets the file name to today's date only after the US stock market
     # has closed, otherwise uses the previous day's date. Also sets
     # weekends to Friday's date.
-    if cdate.weekday() != 5 and cdate.weekday() != 6 and cdate.weekday() != 0:
-        if hour < 16:
-            cdate -= timedelta(days=1)
+    if weekday != 5 and weekday != 6 and weekday != 0 and hour < 16:
+        days = 1
+    elif weekday == 5:
+        days = 1
+    elif weekday == 6:
+        days = 2
+    elif weekday == 0 and hour < 16:
+        days = 3
     else:
         days = 0
-        if cdate.weekday() == 5:
-            days = 1
-        elif cdate.weekday() == 6:
-            days = 2
-        elif cdate.weekday() == 0:
-            if hour < 16:
-                days = 3
         
-        cdate -= timedelta(days=days)
-    
+    cdate -= timedelta(days=days)   
     file = cdate.strftime('%d-%m-%Y') + '.pickle'
-    f = 'data/financial_ratios/Current'
+    path = 'data/financial_ratios/Current'
     d = get_TTM_financial_ratios()
+    nd = len(d)
     tickers = get_tickers()[0]
+    ntickers = len(tickers)
 
-    if len(d) == len(tickers):
-        with open(os.path.join(f, file), 'wb') as f1:
-            pickle.dump(d, f1)
+    if nd == ntickers:
+        with open(os.path.join(path, file), 'wb') as f:
+            pickle.dump(d, f)
         print(file, 'saved\n')
     else:
-        print(f'{len(tickers) - len(d)}/{len(tickers)} ratios not downloaded\n')
+        print(f'{ntickers - nd}/{ntickers} ratios not downloaded\n')
 
 
 def get_risk_free_rates():
@@ -328,13 +317,11 @@ def get_multi_factor_model_data():
     start_date = '1954-01-01' 
     df_three_factor = web.DataReader('F-F_Research_Data_Factors', 'famafrench', start=start_date)[0]
     df_three_factor.index = df_three_factor.index.format()
-
     df_mom = web.DataReader('F-F_Momentum_Factor', 'famafrench', start=start_date)[0]
     df_mom.index = df_mom.index.format()
     df_four_factor = df_three_factor.join(df_mom)
     df_five_factor = web.DataReader('F-F_Research_Data_5_Factors_2x3', 'famafrench', start=start_date)[0]
     df_five_factor.index = df_five_factor.index.format()
-
     df_three_factor.to_csv('data/multi-factor_models/F-F_Research_Data_Factors.csv')
     df_four_factor.to_csv('data/multi-factor_models/Carhart_4_Factors.csv')
     df_five_factor.to_csv('data/multi-factor_models/F-F_Research_Data_5_Factors_2x3.csv')
@@ -345,55 +332,83 @@ def get_multi_factor_model_data():
 def get_financial_statements():
     tickers = get_tickers()[0]
     n = len(tickers)
-    # i = 0
+    path = 'data/financial_statements'
+    d_tickers = {'META': 'FB',
+                 'BALL': 'BLL'
+                 }
+    dict_file = os.path.join(path, 'financial_statements.pickle')
 
     try:
-        with open('data/financial_statements.pickle', 'rb') as f:
+        with open(dict_file, 'rb') as f:
             statements = pickle.load(f)
     except:
         statements = {}
 
-    for ticker in tickers:
-        if ticker not in statements:
-            ticker = ticker.replace('-', '.')
-            base_url = f"https://stockrow.com/api/companies/{ticker}/financials.xlsx?dimension=A&section="
-            sofp = f"{base_url}Balance%20Sheet&sort=desc"
-            soci = f"{base_url}Income%20Statement&sort=desc"
-            socf = f"{base_url}Cash%20Flow&sort=desc"
+    for i, ticker in enumerate(tickers, 1):
+        if ticker in d_tickers:
+            d_ticker = d_tickers[ticker]
+        else:
+            d_ticker = ticker.replace('-', '.')
+
+        base_url = f"https://stockrow.com/api/companies/{d_ticker}/financials.xlsx?dimension=Q&section="
+        sofp = f"{base_url}Balance%20Sheet&sort=desc"
+        soci = f"{base_url}Income%20Statement&sort=desc"
+        socf = f"{base_url}Cash%20Flow&sort=desc"
+        download = False
+
+        if d_ticker not in statements:
+            download = True
+        elif dt.strptime(statements[d_ticker].columns[0], "%Y-%m-%d").year < dt.now().year - 2:
+            download = True            
+
+        if download:
             try:        
                 df1 = pd.read_excel(sofp) # balance sheet data           
                 df2 = pd.read_excel(soci) # income statement data
-                df3 = pd.read_excel(socf) # cashflow statement data  
+                df3 = pd.read_excel(socf) # cashflow statement data
                 df = pd.concat([df1, df2, df3]) # combining all extracted information
-                columns = df.columns.values
-                
-                for i in range(len(columns)):
-                    if columns[i] == "Unnamed: 0":
-                        columns[i] = "Item"
-                    else:
-                        columns[i] = columns[i].strftime("%Y-%m-%d")
-                
+                df.set_index("Unnamed: 0", inplace=True)
+                df.index.name = 'Item'
+                columns = [x.strftime("%Y-%m-%d") for x in df.columns]
                 df.columns = columns
-                df.set_index("Item", inplace=True)
-                
-                # if ticker == 'FB':
-                #     ticker = 'META'
-
                 statements[ticker] = df
-                
-                # i += 1
-                # sys.stdout.write("\r")
-                # sys.stdout.write(f"{i}/{n} ({i / n * 100:.2f}%) statements downloaded")
-                # sys.stdout.flush()
-
+                fname = f'{ticker}.xlsx'
+                df1.to_excel(os.path.join(path, 'sofp', fname), index=False)
+                df2.to_excel(os.path.join(path, 'soci', fname), index=False)
+                df3.to_excel(os.path.join(path, 'socf', fname), index=False)
             except Exception as e:
-                print(f'{ticker} - {e}')
+                print(f'\r{i}/{n}: {ticker} - {e}'.ljust(100, ' '))
+        
+        print(f"\r{i}/{n} ({i / n * 100:.2f}%) statements downloaded", end='', flush=True)
 
-    with open('data/financial_statements.pickle', 'wb') as f:
+    with open(dict_file, 'wb') as f:
         pickle.dump(statements, f)
 
     print(f'\nFinancial statements saved\n')
 
+
+def get_russell_2000_info():
+    '''Makes dataframe of Russell 2000 stock names and tickers'''
+
+    url = 'https://bullishbears.com/russell-2000-stocks-list/'
+    xhtml = url_get_contents(url).decode('utf-8')
+    p = HTMLTableParser() # Defining the HTMLTableParser object
+    p.feed(xhtml) # feeding the html contents in the HTMLTableParser object  
+    d = {}
+
+    for i, x in enumerate(p.tables[:-3], 1):
+        if i % 2:
+            d.setdefault('Ticker', []).extend(x)
+        else:
+            d.setdefault('Security', []).extend(x)
+    
+    d['Ticker'] = [x[0] for x in d['Ticker'] if x[0] != '']
+    d['Security'] = [x[0] for x in d['Security'] if x[0] != '']
+
+    df = pd.DataFrame.from_dict(d, orient='columns')
+    df.to_csv('data/Russell 2000 Info.csv')
+    
+    return df
 
 if __name__ == "__main__":           
     get_SPY_companies()
@@ -401,7 +416,7 @@ if __name__ == "__main__":
     get_risk_free_rates()
     get_multi_factor_model_data()
     get_market_data()
-    remove_replaced_tickers()
-    save_TTM_financial_ratios()
-    get_financial_ratios()
-    get_financial_statements()
+    # remove_replaced_tickers()
+    # save_TTM_financial_ratios()
+    # get_financial_ratios()
+    # get_financial_statements()

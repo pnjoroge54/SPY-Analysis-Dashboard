@@ -1,0 +1,2 @@
+In 'Stock Information', replace Sector, subIndustries, Company chart with
+chart of all sector stocks, and chart of subIndustry stocks. Add arrow to show company stock. 
