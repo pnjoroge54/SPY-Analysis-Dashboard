@@ -409,12 +409,12 @@ def get_russell_2000_info():
     return df
 
 if __name__ == "__main__":           
-    # get_SPY_companies()
-    # get_SPY_weights()
-    # get_risk_free_rates()
-    # get_multi_factor_model_data()
-    # get_market_data()
-    # remove_replaced_tickers()
+    get_SPY_companies()
+    get_SPY_weights()
+    get_risk_free_rates()
+    get_multi_factor_model_data()
+    get_market_data()
+    remove_replaced_tickers()
     save_TTM_financial_ratios()
-    # get_financial_ratios()
-    # get_financial_statements()
+    get_financial_ratios()
+    get_financial_statements()
