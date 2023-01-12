@@ -1,31 +1,21 @@
 import numpy as np
-import pandas as pd
-import requests
 from datetime import datetime as dt
+import warnings
 
 import cufflinks as cf
 import plotly.express as px
-import plotly.graph_objects as go
 import yfinance as yf
 import streamlit as st
-import nltk
 from newspaper import Article
 
 from info import SPY_INFO, FINANCIAL_RATIOS
 from functions import *
 
-
-# nltk.download([
-#      "names",
-#      "stopwords",
-#      "averaged_perceptron_tagger",
-#      "vader_lexicon",
-#      "punkt"
-#       ])
+warnings.simplefilter(action='ignore', category=FutureWarning)
       
 
 options = ('S&P 500 Information', 'Stock Information', 'Stock Analysis',
-           'Sector Analysis', 'News', 'Social Media')
+           'Sector Analysis', 'News')
 
 option = st.sidebar.selectbox("Select Dashboard", options)
 st.title(option)
@@ -35,14 +25,15 @@ if option == 'S&P 500 Information':
     st.subheader('Market Data')
     start, end = set_form_dates()
 
-    df = get_SPY_data()[start : end]
+    df = SPY_df[start : end]
+    df['Return'] = np.log1p(df.Close.pct_change())
     t = len(df) / 252
     cagr = ((df['Close'][-1] / df['Open'][0])**(1 / t) - 1)
     std = df['Return'].std() * np.sqrt(252)
     rf = rf_rates.loc[start : end, 'Close'].mean() / 100
     sr = (cagr - rf) / std
 
-    s1 = f'CAGR: {cagr:.2%}'
+    s1 = f'Annualised Return: {cagr:.2%}'
     s2 = f'Annualised Volatility: {std:.2%}'
     s3 = f'Risk-Free Rate: {rf:.2%}'
     s4 = f'Sharpe Ratio: {sr:,.2f}' 
@@ -110,6 +101,7 @@ if option == 'Stock Information':
     start, end = set_form_dates() 
 
     ticker_df = ticker_df[start : end]
+    ticker_df['Return'] = np.log1p(ticker_df['adjclose'].pct_change())
     ticker_df.rename(columns={'volume': 'Volume'}, inplace=True)
   
     if start > end:
@@ -128,122 +120,28 @@ if option == 'Stock Information':
     fig = make_returns_histogram(ticker_df)
     st.plotly_chart(fig)
 
-    SPY_df = get_SPY_data()[start : end]
-    SPY_df['Return'] = np.log1p(SPY_df['Close'].pct_change())
-    beta = calculate_beta(ticker, start, end)
-
-    fig = go.Figure([
-            go.Scatter(
-                x=SPY_df.index,
-                y=SPY_df['Return'].rolling(window=20).mean(),
-                name='S&P 500',
-                mode='lines',
-                line_width=1.25,
-                line_color='red',
-                showlegend=True),
-            go.Scatter(
-                x=ticker_df.index,
-                y=ticker_df['Return'].rolling(window=20).mean(),
-                name=ticker,
-                mode='lines',
-                line_width=1.25,
-                line_color='blue',
-                showlegend=True)     
-            ])
-    fig.layout.yaxis.tickformat = ',.2%'
-    fig.update_layout(title=f'20-Day Moving Average of Returns',
-                      xaxis=dict(title=f'Beta = {beta:,.2f}', showgrid=False), 
-                      yaxis_title='Return')
+    window = st.number_input('Moving Average Window', value=20, min_value=5, max_value=180)
+    fig = plot_sma_returns(ticker, start, end, window)
     st.plotly_chart(fig)
-    
-    t1 = len(ticker_df) / 252
-    t2 = len(SPY_df) / 252
-    ticker_return = ((ticker_df['adjclose'][-1] / ticker_df['open'][0])**(1 / t1) - 1)
-    SPY_return = ((SPY_df['Close'][-1] / SPY_df['Open'][0])**(1 / t2) - 1)    
-    
+
     sectors_df, subIndustries_df, tickers_df, SPY_metrics, rf = calculate_metrics(start, end)
-    
-    sector = tickers_df.loc[ticker, 'Sector']
-    sector_return = sectors_df.loc[sector, 'Return']
-    sector_returns = tickers_df[tickers_df.Sector == sector] \
-                        .sort_values(by='Return', ascending=False).reset_index()
-    ticker_rank1 = sector_returns[sector_returns.Ticker == ticker].index.item() + 1
-    nsector = len(sector_returns)
-    
-    subIndustry = tickers_df.loc[ticker, 'Sub-Industry']
-    subIndustry_return = subIndustries_df.loc[subIndustry, 'Return']
-    subIndustry_returns = tickers_df[tickers_df['Sub-Industry'] == subIndustry] \
-                            .sort_values(by='Return', ascending=False).reset_index()
-    ticker_rank2 = subIndustry_returns[subIndustry_returns.Ticker == ticker].index.item() + 1
-    nsubIndustry = len(subIndustry_returns)
-    
-    returns = [ticker_return, sector_return, subIndustry_return, SPY_return]
-    
-    if SPY_return == max(returns) or SPY_return > subIndustry_return:
-        pos = 'top right'
-    else:
-        pos = 'bottom right'
+    metrics = ('Return', 'Volatility')
+    metric = st.selectbox('Metric', metrics)
 
-    returns_dict = {sector: sector_return, subIndustry: subIndustry_return, ticker: ticker_return}
-    returns_df = pd.DataFrame.from_dict(returns_dict, orient='index', columns=['Return'])
-    
-    fig = px.bar(returns_df, y='Return', opacity=0.65)
-    fig.add_hline(y=SPY_return, 
-                  line_color='red', 
-                  line_width=1,
-                  annotation_text=f'S&P 500 Return ({SPY_return:.2%})', 
-                  annotation_bgcolor='indianred', 
-                  annotation_bordercolor='red',
-                  annotation_position=pos)
-    fig.update_layout(title='Sector, Sub-Industry & Company Returns', xaxis_title='')
-    fig.layout.yaxis.tickformat = ',.0%'
+    # Graph of all tickers in sector
+    plot_btn1 = st.button(f'View {metric} of Sector Companies')
+    fig = plot_sector_tickers_metric(sectors_df, subIndustries_df, tickers_df, 
+                                     SPY_metrics, sector, subIndustry, metric, ticker)
+    if plot_btn1:
+        st.plotly_chart(fig)
 
-    st.plotly_chart(fig)
-
-    if ticker_return > SPY_return:
-        s0 = f'{name} outperforms the S&P 500 by {(ticker_return - SPY_return):.2%}'
-    elif ticker_return < SPY_return:
-        s0 = f'{name} underperforms the S&P 500 by {(SPY_return - ticker_return):.2%}'
-    else:
-        s0 = f'{name} and the S&P 500 have comparable performance'
-    
-    if ticker_return > sector_return:
-        s1 = f'{name} outperforms the {sector} sector by \
-               {(ticker_return - sector_return):.2%}'
-    elif ticker_return < sector_return:
-        s1 = f'{name} underperforms the {sector} sector by \
-               {(sector_return - ticker_return):.2%}'
-    else:
-        s1 = f'{name} and the {sector} sector have comparable performance'
-
-    if ticker_return > subIndustry_return:
-        s2 = f'{name} outperforms the {subIndustry} sub-industry by \
-               {(ticker_return - subIndustry_return):.2%}'
-    elif ticker_return < subIndustry_return:
-        s2 = f'{name} underperforms the {subIndustry} sub-industry by \
-               {(subIndustry_return - ticker_return):.2%}'
-    else:
-        s2 = f'{name} and the {subIndustry} sub-industry have comparable performance'    
-    
-    if nsubIndustry == 1:
-        s3 = f'{name} is the only stock in the {subIndustry} sub-industry'
-    else:
-        s3 = f"- CAGR for the {nsubIndustry} stocks in the {subIndustry} \
-             sub-industry is {subIndustry_return:.2%} \
-             \n- {s2} \
-             \n- {name}'s performance is ranked {ticker_rank2}/{nsubIndustry} \
-             in the sub-industry"
-
-    st.write(f"Period: {start.strftime('%d/%m/%y')} - {end.strftime('%d/%m/%y')}")
-    st.info(f"- {name}'s CAGR is {ticker_return:.2%}")
-    st.info(f"- S&P 500 CAGR is {SPY_return:.2%} \
-              \n- {s0}")
-    st.info(f"- CAGR for the {nsector} stocks in the {sector} sector is \
-              {sector_return:.2%} \
-              \n- {s1} \
-              \n- {name}'s performance is ranked {ticker_rank1}/{nsector} in the sector")
-    st.info(f"{s3}")
-
+    # Graph of all tickers in sub-industry
+    plot_btn2 = st.button(f'View {metric} of Sub-Industry Companies')
+    fig = plot_si_tickers_metric(sectors_df, subIndustries_df, tickers_df, 
+                                 SPY_metrics, sector, subIndustry, metric, ticker)
+    if plot_btn2:
+        st.plotly_chart(fig)
+  
 
 if option == 'Sector Analysis':
     # Metrics to display graphs of
@@ -528,22 +426,22 @@ if option == 'News':
                 ''')
         
 
-if option == 'Social Media':
-    platform = st.selectbox('Platform', ('StockTwits'))
+# if option == 'Social Media':
+#     platform = st.selectbox('Platform', ('StockTwits'))
     
-    if platform == 'StockTwits':
-        ticker = st.selectbox('Ticker', ticker_list)
-        try:
-            url = f'https://api.stocktwits.com/api/2/streams/ticker/{ticker}.json'
-            r = requests.get(url)
-            data = r.json()
+#     if platform == 'StockTwits':
+#         ticker = st.selectbox('Ticker', ticker_list)
+#         try:
+#             url = f'https://api.stocktwits.com/api/2/streams/ticker/{ticker}.json'
+#             r = requests.get(url)
+#             data = r.json()
 
-            for message in data['messages']:
-                st.image(message['user']['avatar_url'])
-                st.info(f'''
-                        {message['user']['username']} \n
-                        {message['created_at']} \n
-                        {message['body']}
-                        ''')
-        except:
-            st.error(f'{platform} API is unavailable')
+#             for message in data['messages']:
+#                 st.image(message['user']['avatar_url'])
+#                 st.info(f'''
+#                         {message['user']['username']} \n
+#                         {message['created_at']} \n
+#                         {message['body']}
+#                         ''')
+#         except:
+#             st.error(f'{platform} API is unavailable')

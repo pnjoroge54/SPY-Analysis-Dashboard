@@ -46,10 +46,10 @@ def get_SPY_companies():
         print('\nSPY-Info updated\n')
 
     if o_hist.equals(hist):
-        print('\nSPY-Historical is up to date\n')
+        print('SPY-Historical is up to date\n')
     else: 
         hist.to_csv('data/SPY-Historical.csv', index=False)
-        print('\nSPY-Historical updated\n')
+        print('SPY-Historical updated\n')
 
 
 def get_tickers():
@@ -64,9 +64,7 @@ def get_tickers():
 
 
 def url_get_contents(url):
-    '''
-    Opens website and reads the binary contents (HTTP Response Body)
-    '''
+    '''Opens website and reads the binary contents (HTTP Response Body)'''
 
     req = Request(url=url, headers={'User-Agent': 'Mozilla/5.0'})
     f = urlopen(req)
@@ -108,12 +106,12 @@ def get_market_data():
         try:
             data = si.get_data(ticker) # download stock data
             data.to_csv(path)
-            print(f"\r{i}/{n} ({i / n * 100:.2f}%) of SPY market data downloaded", end='', flush=True)
+            print(f"\r{i}/{n} ({i / n:.2%}) of SPY market data downloaded", end='', flush=True)
         except Exception as e:
-            print(f'\r {i}/{n}: {ticker} - {e}')
+            print(f'\r{i}/{n}: {ticker} - {e}')
             not_downloaded.append(ticker)  
 
-    print('S&P 500 stock data downloaded \n')
+    print('\nS&P 500 stock data downloaded \n')
 
     if not_downloaded:
         print(f'{len(not_downloaded)} stocks not downloaded \n')
@@ -212,7 +210,7 @@ def get_financial_ratios(i=0, n=1):
                     print(f'\nAPI Key {n} has maxed out its requests\n')
                     n += 1
 
-        return get_financial_ratios(i, n, end='', flush=True)
+        return get_financial_ratios(i, n)
 
     else:
         print('\nAnnual financial ratios are up to date!\n')       
@@ -379,7 +377,7 @@ def get_financial_statements():
             except Exception as e:
                 print(f'\r{i}/{n}: {ticker} - {e}'.ljust(100, ' '))
         
-        print(f"\r{i}/{n} ({i / n * 100:.2f}%) statements downloaded", end='', flush=True)
+        print(f"\r{i}/{n} ({i / n:.2%}) statements downloaded", end='', flush=True)
 
     with open(dict_file, 'wb') as f:
         pickle.dump(statements, f)
@@ -411,12 +409,12 @@ def get_russell_2000_info():
     return df
 
 if __name__ == "__main__":           
-    get_SPY_companies()
-    get_SPY_weights()
-    get_risk_free_rates()
-    get_multi_factor_model_data()
-    get_market_data()
+    # get_SPY_companies()
+    # get_SPY_weights()
+    # get_risk_free_rates()
+    # get_multi_factor_model_data()
+    # get_market_data()
     # remove_replaced_tickers()
-    # save_TTM_financial_ratios()
+    save_TTM_financial_ratios()
     # get_financial_ratios()
     # get_financial_statements()

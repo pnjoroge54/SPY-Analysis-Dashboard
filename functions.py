@@ -9,6 +9,7 @@ from pytz import timezone
 from operator import itemgetter
 
 import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 
 
@@ -34,16 +35,15 @@ def get_SPY_data():
     df = pd.read_csv(r'data\SPY.csv')
     df.index = pd.to_datetime(df['Date'].apply(lambda x: x.split(' ')[0]))
     df.drop(columns='Date', inplace=True)
-    df['Return'] = np.log1p(df['Close'].pct_change())
 
     return df
 
 
 @st.cache
 def get_ticker_data(ticker):
+    '''Load ticker's market data'''
     file = os.path.join(r'data\market_data', f'{ticker}.csv')
     df = pd.read_csv(file, index_col=0, parse_dates=True)
-    df['Return'] = np.log1p(df['adjclose'].pct_change())
     
     return df
 
@@ -99,7 +99,7 @@ def find_stocks_missing_data(start_date, end_date):
 
 
 def load_TTM_ratios():
-    '''Load the latest available TTM ratios in disk'''
+    '''Loads a dict of the latest available Trailing Twelve-Month (TTM) ratios from file'''
 
     tz = timezone('EST')
     cdate = dt.now(tz)  # Set datetime object to EST timezone
@@ -113,7 +113,7 @@ def load_TTM_ratios():
                         for x in os.listdir(path)])
         date = dt.strftime(dates[-1], '%B %d, %Y')
         file = dt.strftime(dates[-1], '%d-%m-%Y') + '.pickle'
-        s = f'Data reported on {date}.'
+        s = f'Data as of {date}'
 
     with open(os.path.join(path, file), 'rb') as f:
         d = pickle.load(f)
@@ -123,7 +123,7 @@ def load_TTM_ratios():
 
 @st.cache
 def get_weights():
-    '''Assign market cap weights to sectors & sub-industries'''
+    '''Assign market cap weights by sector, sub-industry & ticker'''
     
     weights_df = pd.read_csv(r'data\SPY Weights.csv', index_col='Symbol')
     sectors, subIndustries, tickers = {}, {}, {}
@@ -143,6 +143,8 @@ def get_weights():
 
 
 def set_form_dates():
+    '''Creates a streamlit form for selecting date inputs'''
+
     with st.form(key='form1'):
         c1, c2 = st.columns(2)
         start = c1.date_input('Start Date', yr_ago, min_value=first_date)
@@ -182,7 +184,7 @@ def make_returns_histogram(df):
                   line_width=0.65, 
                   annotation_text=f"Median ({df['Return'].median():.2%})",
                   annotation_position=pos2, 
-                  annotation_bgcolor='lightgreen',
+                  annotation_bgcolor='darkgreen',
                   annotation_bordercolor='green')
     fig.update_layout(xaxis_title=xtitle)
     fig.layout.xaxis.tickformat = ',.2%'
@@ -192,9 +194,13 @@ def make_returns_histogram(df):
 
 @st.cache
 def calculate_beta(ticker, start_date, end_date):
-    df1 = SPY_df[start_date : end_date]
+    '''Stock's beta relative to S&P 500'''
+    
+    df1 = get_SPY_data()[start_date : end_date]
+    df1['Return'] = np.log1p(df1['Close'].pct_change())
     df1.rename(columns={'Return': 'SPY'}, inplace=True)
     df2 = get_ticker_data(ticker)[start_date : end_date]
+    df2['Return'] = np.log1p(df2['adjclose'].pct_change())
     df2.rename(columns={'Return': ticker}, inplace=True)
     df = pd.concat([df1['SPY'], df2[ticker]], axis=1, join='inner')
     SPY_std = df['SPY'].std()
@@ -209,12 +215,13 @@ def calculate_beta(ticker, start_date, end_date):
 @st.cache
 def calculate_metrics(start_date, end_date):
     '''
-    Calculate return, volatility, sharpe ratio, beta for stocks, 
-    sectors and sub-industries
+    Calculate return, volatility, sharpe ratio, and beta
+    for stocks, sectors and sub-industries
     '''
     
     rf = rf_rates.loc[start_date : end_date, 'Close'].mean() / 100
     df = SPY_df[start_date : end_date]
+    df['Return'] = np.log1p(df['Close'].pct_change())
     t = len(df) / 252   
     cagr = ((df['Close'][-1] / df['Open'][0])**(1 / t) - 1)
     std = df['Return'].std() * np.sqrt(252) # Annualised std
@@ -231,6 +238,7 @@ def calculate_metrics(start_date, end_date):
             # Get sub-industry of ticker
             t_si = SPY_info_df.loc[ticker, 'Sub-Industry']
             df = get_ticker_data(ticker)[start_date : end_date]
+            df['Return'] = np.log1p(df['adjclose'].pct_change())
             t = len(df) / 252
             cagr = ((df['adjclose'][-1] / df['open'][0])**(1 / t) - 1)
             std = df['Return'].std() * np.sqrt(252) # Annualised std
@@ -275,6 +283,11 @@ def calculate_metrics(start_date, end_date):
 
 @st.cache
 def get_TTM_ratios(ratios, ratio):
+    '''
+    Makes dicts of Trailing Twelve-Month (TTM) financial ratios 
+    by sector, sub-industry, and ticker
+    '''
+
     r = ratios[ratio]
     sectors, subIndustries, tickers = {}, {}, {}
     sector_weights, subIndustry_weights, ticker_weights = get_weights()
@@ -313,7 +326,43 @@ def get_TTM_ratios(ratios, ratio):
     return sectors, subIndustries, tickers 
 
 
-@st.cache
+@st.cache(allow_output_mutation=True)
+def plot_sma_returns(ticker, start_date, end_date, window):
+    '''Creates line charts of Simple Moving Average Returns for ticker and S&P 500'''
+
+    ticker_df = get_ticker_data(ticker)[start_date : end_date]
+    ticker_df['Return'] = np.log1p(ticker_df['adjclose'].pct_change())
+    SPY_df = get_SPY_data()[start_date : end_date]
+    SPY_df['Return'] = np.log1p(SPY_df['Close'].pct_change())
+    beta = calculate_beta(ticker, start_date, end_date)
+
+    fig = go.Figure([
+            go.Scatter(
+                x=SPY_df.index,
+                y=SPY_df['Return'].rolling(window=window).mean(),
+                name='S&P 500',
+                mode='lines',
+                line_width=1.25,
+                line_color='red',
+                showlegend=True),
+            go.Scatter(
+                x=ticker_df.index,
+                y=ticker_df['Return'].rolling(window=window).mean(),
+                name=ticker,
+                mode='lines',
+                line_width=1.25,
+                line_color='blue',
+                showlegend=True)     
+            ])
+    fig.layout.yaxis.tickformat = ',.2%'
+    fig.update_layout(title=f'{window}-Day Moving Average of Returns',
+                      xaxis=dict(title=f'Beta = {beta:,.2f}', showgrid=False), 
+                      yaxis_title='Return')
+
+    return fig
+    
+
+@st.cache(allow_output_mutation=True)
 def plot_sector_metric(df1, df2, metric):
     '''
     Bar chart of S&P 500 sectors by metric
@@ -357,7 +406,7 @@ def plot_sector_metric(df1, df2, metric):
     return fig
 
 
-@st.cache
+@st.cache(allow_output_mutation=True)
 def plot_subIndustry_metric(df1, df2, df3, sector, metric):
     '''
     Bar chart of sub-industries in sector by metric
@@ -411,15 +460,15 @@ def plot_subIndustry_metric(df1, df2, df3, sector, metric):
                   line_width=2,
                   annotation_text=text2,
                   annotation_position=pos2, 
-                  annotation_bgcolor='lightgreen',
+                  annotation_bgcolor='darkgreen',
                   annotation_bordercolor='green')       
     fig.update_layout(title=title, xaxis_title=xtitle)
 
     return fig
 
 
-@st.cache
-def plot_si_tickers_metric(df1, df2, df3, df4, sector, subIndustry, metric):
+@st.cache(allow_output_mutation=True)
+def plot_si_tickers_metric(df1, df2, df3, df4, sector, subIndustry, metric, ticker=None):
     '''
     Bar chart of sub-industries in sector by metric
     
@@ -430,13 +479,18 @@ def plot_si_tickers_metric(df1, df2, df3, df4, sector, subIndustry, metric):
     df3 : dataframe of tickers metrics
     df4 : pd.Series of S&P 500 metrics
     sector : user-selected input
-    metric : selected from [Return, Volatility, Sharpe Ratio, Beta, Financial Ratio] 
+    metric : selected from [Return, Volatility, Sharpe Ratio, Beta, Financial Ratio]
+    ticker : user-selected input
     '''
 
     df3 = df3[df3['Sub-Industry'] == subIndustry].sort_values(by=metric, ascending=False)
     sector_metric = df1.loc[sector, metric]
     subIndustry_metric = df2.loc[subIndustry, metric]
     SPY_metric = df4[metric]
+    rank_df = df3.reset_index()
+    rank_df.index += 1
+    si_rank = rank_df[rank_df['Ticker'] == ticker].index.item()
+
 
     if metric != 'Volatility':
         title = f'{subIndustry} Company {metric}s'
@@ -462,13 +516,20 @@ def plot_si_tickers_metric(df1, df2, df3, df4, sector, subIndustry, metric):
     if metric == 'Return' or metric == 'Volatility':
         fig.layout.yaxis.tickformat = ',.0%'
         text1 = f'S&P 500 ({SPY_metric:.2%})'
-        text2 = f'{sector} ({sector_metric:.2%})'
-        text3 = f'{subIndustry} ({subIndustry_metric:.2%})'
+        text2 = f'{sector} Sector ({sector_metric:.2%})'
+        text3 = f'{subIndustry} Sub-Industry ({subIndustry_metric:.2%})'
     else:
         fig.layout.yaxis.tickformat = ',.2'
         text1 = f'S&P 500 ({SPY_metric:,.2f})'
-        text2 = f'{sector} ({sector_metric:,.2f})'
-        text3 = f'{subIndustry} ({subIndustry_metric:,.2f})'
+        text2 = f'{sector} Sector ({sector_metric:,.2f})'
+        text3 = f'{subIndustry} Sub-Industry ({subIndustry_metric:,.2f})'
+
+    if ticker is not None:
+        if metric != 'Volatility':
+            title = f'{subIndustry} Sub-Industry {metric}s'
+        else:
+            title = f'{subIndustry} Sub-Industry Volatilities'
+
 
     fig.add_hline(y=SPY_metric,
                   line_color='red',
@@ -482,22 +543,122 @@ def plot_si_tickers_metric(df1, df2, df3, df4, sector, subIndustry, metric):
                   line_width=2,
                   annotation_text=text2,
                   annotation_position=pos2, 
-                  annotation_bgcolor='lightgreen',
+                  annotation_bgcolor='darkgreen',
                   annotation_bordercolor='green')
     fig.add_hline(y=subIndustry_metric,
                   line_color='blue',
                   line_width=2,
                   annotation_text=text3,
                   annotation_position=pos3, 
-                  annotation_bgcolor='lightblue',
+                  annotation_bgcolor='darkblue',
                   annotation_bordercolor='blue')
+    fig.add_annotation(x=ticker, 
+                       y=df3.loc[ticker, metric],
+                       text=f'{ticker} is ranked {si_rank}/{len(rank_df)} in Sub-Industry', 
+                       showarrow=True, 
+                       arrowhead=3,
+                       arrowcolor='purple',
+                       bordercolor='purple',
+                       bgcolor='fuchsia',
+                       )
+    fig.update_layout(title=title, xaxis_title=xtitle)
+
+    return fig
+
+
+@st.cache
+def plot_sector_tickers_metric(df1, df2, df3, df4, sector, subIndustry, metric, ticker):
+    '''
+    Bar chart of tickers in sector by metric
+    
+    Parameters
+    ----------  
+    df1 : dataframe of sector metrics
+    df2 : dataframe of sub-industries metrics
+    df3 : dataframe of tickers metrics
+    df4 : pd.Series of S&P 500 metrics
+    sector : user-selected input
+    metric : selected from [Return, Volatility, Sharpe Ratio, Beta, Financial Ratio]
+    ticker : user-selected input
+    '''
+
+    df3 = df3[df3['Sector'] == sector].sort_values(by=metric, ascending=False)
+    sector_metric = df1.loc[sector, metric]
+    subIndustry_metric = df2.loc[subIndustry, metric]
+    SPY_metric = df4[metric]
+    rank_df = df3.reset_index()
+    rank_df.index += 1
+    sector_rank = rank_df[rank_df['Ticker'] == ticker].index.item()
+
+
+    if metric != 'Volatility':
+        title = f'{sector} Sector {metric}s'
+    else:
+        title = f'{sector} Sector Volatilities'
+    
+    if metric == 'Sharpe Ratio':
+        xtitle = f'Risk-Free rate = {df4.RF:.2%}'
+    else:
+        xtitle = ''
+
+    pos1 = 'top right'
+    
+    if sector_metric < subIndustry_metric:
+        pos2 = 'bottom left'
+        pos3 = 'top left'
+    else:
+        pos2 = 'top left'
+        pos3 = 'bottom left'
+    
+    fig = px.bar(df3, x=df3.index, y=metric, opacity=0.65, hover_data={'Company': True})
+
+    if metric == 'Return' or metric == 'Volatility':
+        fig.layout.yaxis.tickformat = ',.0%'
+        text1 = f'S&P 500 ({SPY_metric:.2%})'
+        text2 = f'{sector} Sector ({sector_metric:.2%})'
+        text3 = f'{subIndustry} Sub-Industry ({subIndustry_metric:.2%})'
+    else:
+        fig.layout.yaxis.tickformat = ',.2'
+        text1 = f'S&P 500 ({SPY_metric:,.2f})'
+        text2 = f'{sector} Sector ({sector_metric:,.2f})'
+        text3 = f'{subIndustry} Sub-Industry ({subIndustry_metric:,.2f})'
+
+    fig.add_hline(y=SPY_metric,
+                  line_color='red',
+                  line_width=2,
+                  annotation_text=text1, 
+                  annotation_position=pos1,
+                  annotation_bgcolor='indianred',
+                  annotation_bordercolor='red')
+    fig.add_hline(y=sector_metric,
+                  line_color='green',
+                  line_width=2,
+                  annotation_text=text2,
+                  annotation_position=pos2, 
+                  annotation_bgcolor='darkgreen',
+                  annotation_bordercolor='green')
+    fig.add_hline(y=subIndustry_metric,
+                  line_color='blue',
+                  line_width=2,
+                  annotation_text=text3,
+                  annotation_position=pos3, 
+                  annotation_bgcolor='darkblue',
+                  annotation_bordercolor='blue')
+    fig.add_annotation(x=ticker, 
+                       y=df3.loc[ticker, metric],
+                       text=f'{ticker} is ranked {sector_rank}/{len(rank_df)} in sector', 
+                       arrowhead=3,
+                       arrowcolor='purple',
+                       bordercolor='purple',
+                       bgcolor='fuchsia',
+                       )
     fig.update_layout(title=title, xaxis_title=xtitle)
 
     return fig
 
 
 def get_news(ticker, date):
-    '''Get news about stock on given date'''
+    '''Get news about stock on date using Finnhub API'''
 
     token = st.secrets["FINNHUB_API_KEY"]
     url = f'https://finnhub.io/api/v1/company-news?symbol={ticker}&from={date}&to={date}&token={token}'
