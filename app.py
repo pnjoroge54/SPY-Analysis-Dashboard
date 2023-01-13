@@ -120,13 +120,20 @@ if option == 'Stock Information':
     fig = make_returns_histogram(ticker_df)
     st.plotly_chart(fig)
 
-    window = st.number_input('Moving Average Window', value=20, min_value=5, max_value=180)
+    window = st.number_input('Moving Average Window (Days)', value=20, min_value=3, max_value=180)
     fig = plot_sma_returns(ticker, start, end, window)
     st.plotly_chart(fig)
 
     sectors_df, subIndustries_df, tickers_df, SPY_metrics, rf = calculate_metrics(start, end)
-    metrics = ('Return', 'Volatility')
+    metrics = ('Return', 'Volatility') # Metrics to display graphs of
     metric = st.selectbox('Metric', metrics)
+
+    rank_df = tickers_df.sort_values(by=metric, ascending=False).reset_index()
+    rank_df.index += 1
+    rank = rank_df[rank_df['Ticker'] == ticker].index.item()
+    metric_val = rank_df.loc[rank, metric]
+ 
+    st.info(f"{name}'s {metric.lower()} ({metric_val:,.2%}) is ranked {rank}/{len(tickers_df)} in the S&P 500")
 
     # Graph of all tickers in sector
     plot_btn1 = st.button(f'View {metric} of Sector Companies')
@@ -373,7 +380,7 @@ if option == 'Stock Analysis':
         format = {'Return': lambda x: '{:,.2%}'.format(x),
                   'Volatility': lambda x: '{:,.2%}'.format(x)}
         styler.format(precision=2, formatter=format)
-        styler.set_properties(**{'background-color': 'lightblue'}, subset=[metric])  
+        styler.set_properties(**{'background-color': 'darkblue'}, subset=[metric])  
         return styler
 
     st.write(f'Stocks Ranked by {metric}')
@@ -427,7 +434,7 @@ if option == 'News':
         
 
 # if option == 'Social Media':
-#     platform = st.selectbox('Platform', ('StockTwits'))
+#     platform = st.selectbox('Platform', 'StockTwits')
     
 #     if platform == 'StockTwits':
 #         ticker = st.selectbox('Ticker', ticker_list)

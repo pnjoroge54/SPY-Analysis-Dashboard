@@ -407,6 +407,7 @@ def get_russell_2000_info():
     df.to_csv('data/Russell 2000 Info.csv')
     
     return df
+    
 
 if __name__ == "__main__":           
     get_SPY_companies()

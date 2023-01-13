@@ -328,7 +328,7 @@ def get_TTM_ratios(ratios, ratio):
 
 @st.cache(allow_output_mutation=True)
 def plot_sma_returns(ticker, start_date, end_date, window):
-    '''Creates line charts of Simple Moving Average Returns for ticker and S&P 500'''
+    '''Creates line charts of simple moving average of returns for ticker and S&P 500'''
 
     ticker_df = get_ticker_data(ticker)[start_date : end_date]
     ticker_df['Return'] = np.log1p(ticker_df['adjclose'].pct_change())
@@ -557,7 +557,8 @@ def plot_si_tickers_metric(df1, df2, df3, df4, sector, subIndustry, metric, tick
                        text=f'{ticker} is ranked {si_rank}/{len(rank_df)} in Sub-Industry', 
                        showarrow=True, 
                        arrowhead=3,
-                       arrowcolor='purple',
+                       arrowwidth=2,
+                       arrowcolor='white',
                        bordercolor='purple',
                        bgcolor='fuchsia',
                        )
@@ -648,7 +649,8 @@ def plot_sector_tickers_metric(df1, df2, df3, df4, sector, subIndustry, metric, 
                        y=df3.loc[ticker, metric],
                        text=f'{ticker} is ranked {sector_rank}/{len(rank_df)} in sector', 
                        arrowhead=3,
-                       arrowcolor='purple',
+                       arrowwidth=2,
+                       arrowcolor='white',
                        bordercolor='purple',
                        bgcolor='fuchsia',
                        )
