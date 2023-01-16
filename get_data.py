@@ -373,31 +373,7 @@ def get_financial_statements():
         pickle.dump(statements, f)
 
     print(f'\nFinancial statements saved\n')
-
-
-def get_russell_2000_info():
-    '''Makes dataframe of Russell 2000 stock names and tickers'''
-
-    url = 'https://bullishbears.com/russell-2000-stocks-list/'
-    xhtml = url_get_contents(url).decode('utf-8')
-    p = HTMLTableParser() # Defining the HTMLTableParser object
-    p.feed(xhtml) # feeding the html contents in the HTMLTableParser object  
-    d = {}
-
-    for i, x in enumerate(p.tables[:-3], 1):
-        if i % 2:
-            d.setdefault('Ticker', []).extend(x)
-        else:
-            d.setdefault('Security', []).extend(x)
-    
-    d['Ticker'] = [x[0] for x in d['Ticker'] if x[0] != '']
-    d['Security'] = [x[0] for x in d['Security'] if x[0] != '']
-
-    df = pd.DataFrame.from_dict(d, orient='columns')
-    df.to_csv('data/Russell 2000 Info.csv')
-    
-    return df
-    
+        
 
 if __name__ == "__main__":           
     get_SPY_companies()
