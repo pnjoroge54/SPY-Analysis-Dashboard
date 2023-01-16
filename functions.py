@@ -70,26 +70,23 @@ def find_stocks_missing_data(start_date, end_date):
 
     first_dates = get_first_dates()
     s1, s2, s3 = '', '', ''
+    first_date = first_dates[0][1]
     
-    if start_date < first_dates[0][1]:
-        s1 += f"**The first date for which there is data is {first_dates[0][1].strftime('%B %d, %Y')}**"
+    if start_date < first_date:
+        s1 += f"**The first date for which there is data is {first_date.strftime('%B %d, %Y')}**"
     if end_date > last_date:
         s2 += f"**The last date for which there is data is {last_date.strftime('%B %d, %Y')}**"
     
     missing = filter(lambda x: x[1] > start_date, first_dates)
     missing = [x[0] for x in missing]
 
-    d = {sector: {} for sector in sector_list} # Dict of stocks by sector & sub-industry
-    
+    d = {} # Dict of stocks by sector & sub-industry
+        
     for ticker in missing:
         sector = SPY_info_df.loc[ticker, 'Sector']
         subIndustry = SPY_info_df.loc[ticker, 'Sub-Industry']
+        d.setdefault(sector, {})
         d[sector].setdefault(subIndustry, []).append(ticker)
-
-    # Delete empty dict keys
-    for sector in sector_list:
-        if len(d[sector]) == 0:
-            del d[sector]
 
     if len(missing) > 0:
         s3 += f'''{len(missing)}/{len(ticker_list)} stocks have data that begins after 
