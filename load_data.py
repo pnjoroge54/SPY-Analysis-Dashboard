@@ -13,7 +13,7 @@ def get_rf_data():
 def get_SPY_info():
     '''Make dataframe of info about S&P 500 companies'''
     
-    df = pd.read_csv(r'data\SPY-Info.csv', index_col=0)
+    df = pd.read_csv(r'data\spy_data\SPY_Info.csv', index_col=0)
     cols = {'GICS Sector': 'Sector', 'GICS Sub-Industry': 'Sub-Industry'}
     df.rename(columns=cols, inplace=True)
 
@@ -23,7 +23,7 @@ def get_SPY_info():
 def get_SPY_data():
     '''Make dataframe of S&P 500 market data'''
 
-    df = pd.read_csv(r'data\SPY.csv')
+    df = pd.read_csv(r'data\spy_data\SPY.csv')
     df.index = pd.to_datetime(df['Date'].apply(lambda x: x.split(' ')[0]))
     df.drop(columns='Date', inplace=True)
 

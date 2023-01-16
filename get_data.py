@@ -30,31 +30,32 @@ def get_SPY_companies():
     removed['inSPY'] = False
     removed['Date'] = pd.to_datetime(removed['Date'])
 
-    hist = pd.concat([added, removed]).sort_values('Date', ascending=False)
-    hist.dropna(inplace=True)
+    hist = pd.concat([added, removed]).sort_values('Date', ascending=False).dropna()
 
     current['Symbol'] = current['Symbol'].str.replace('.', '-', regex=False)
     hist['Ticker'] = hist['Ticker'].str.replace('.', '-', regex=False)
     
-    o_current = pd.read_csv('data/SPY-Info.csv')
-    o_hist = pd.read_csv('data/SPY-Historical.csv')
+    current_fname = r'data\spy_data\SPY_Info.csv'
+    hist_fname = r'data\spy_data\SPY_Historical.csv'
+    o_current = pd.read_csv(current_fname)
+    o_hist = pd.read_csv(hist_fname)
 
     if o_current.equals(current):
-        print('\nSPY-Info is up to date\n')
+        print('\nSPY_Info is up to date\n')
     else: 
-        current.to_csv('data/SPY-Info.csv', index=False)
-        print('\nSPY-Info updated\n')
+        current.to_csv(current_fname, index=False)
+        print('\nSPY_Info updated\n')
 
     if o_hist.equals(hist):
-        print('SPY-Historical is up to date\n')
+        print('SPY_Historical is up to date\n')
     else: 
-        hist.to_csv('data/SPY-Historical.csv', index=False)
-        print('SPY-Historical updated\n')
+        hist.to_csv(hist_fname, index=False)
+        print('SPY_Historical updated\n')
 
 
 def get_tickers():
-    df1 = pd.read_csv('data/SPY-Info.csv')
-    df2 = pd.read_csv('data/SPY-Historical.csv', index_col='Date')
+    df1 = pd.read_csv(r'data\spy_data\SPY_Info.csv')
+    df2 = pd.read_csv(r'data\spy_data\SPY_Historical.csv', index_col='Date')
     df2[:'2015-01-01']
     
     tickers = df1['Symbol'].to_list()
@@ -87,7 +88,7 @@ def get_SPY_weights():
     df['Weight'] = pd.to_numeric(df['Weight'])
     df['Symbol'] = df['Symbol'].str.replace('.', '-', regex=False)
     df.set_index('Symbol', inplace=True)
-    df.to_csv('data/SPY Weights.csv')
+    df.to_csv(r'data\spy_data\SPY_Weights.csv')
     print('S&P 500 weights updated \n')
 
 
@@ -95,17 +96,18 @@ def get_market_data():
     '''Get historical data for S&P 500 index & for each constituent stock'''
 
     SPY = yf.Ticker('^GSPC').history(period='max') # download index data
-    SPY.to_csv('data/SPY.csv')
+    SPY.to_csv(r'data\spy_data\SPY.csv')
 
     tickers = get_tickers()[0]
     n = len(tickers)
     not_downloaded = []
+    path = r'data\market_data'
 
     for i, ticker in enumerate(tickers, 1):
-        path = f'data/market_data/{ticker}.csv'
+        fname = os.path.join(path, f'{ticker}.csv')
         try:
             data = si.get_data(ticker) # download stock data
-            data.to_csv(path)
+            data.to_csv(fname)
             print(f"\r{i}/{n} ({i / n:.2%}) of SPY market data downloaded", end='', flush=True)
         except Exception as e:
             print(f'\r{i}/{n}: {ticker} - {e}')
@@ -280,7 +282,7 @@ def save_TTM_financial_ratios():
         
     cdate -= timedelta(days=days)   
     file = cdate.strftime('%d-%m-%Y') + '.pickle'
-    path = 'data/financial_ratios/Current'
+    path = r'data\financial_ratios\Current'
     d = get_TTM_financial_ratios()
     nd = len(d)
     tickers = get_tickers()[0]
@@ -310,17 +312,19 @@ def get_multi_factor_model_data():
     df_four_factor = df_three_factor.join(df_mom)
     df_five_factor = web.DataReader('F-F_Research_Data_5_Factors_2x3', 'famafrench', start=start_date)[0]
     df_five_factor.index = df_five_factor.index.format()
-    df_three_factor.to_csv('data/multi-factor_models/F-F_Research_Data_Factors.csv')
-    df_four_factor.to_csv('data/multi-factor_models/Carhart_4_Factors.csv')
-    df_five_factor.to_csv('data/multi-factor_models/F-F_Research_Data_5_Factors_2x3.csv')
+    path = r'data\factor_models'
+    df_three_factor.to_csv(os.path.join(path, 'F-F_Research_Data_Factors.csv'))
+    df_four_factor.to_csv(os.path.join(path, 'Carhart_4_Factors.csv'))
+    df_five_factor.to_csv(os.path.join(path, 'F-F_Research_Data_5_Factors_2x3.csv'))
 
-    print('Multi-factor model data downloaded\n')
+    print('Factor model data downloaded\n')
 
 
 def get_financial_statements():
     tickers = get_tickers()[0]
     n = len(tickers)
-    path = 'data/financial_statements'
+    path = r'data\financial_statements'
+    base_url = 'https://stockrow.com/api/companies/'
     d_tickers = {'META': 'FB',
                  'BALL': 'BLL'
                  }
@@ -338,7 +342,7 @@ def get_financial_statements():
         else:
             d_ticker = ticker.replace('-', '.')
 
-        base_url = f"https://stockrow.com/api/companies/{d_ticker}/financials.xlsx?dimension=Q&section="
+        base_url += f"{d_ticker}/financials.xlsx?dimension=Q&section="
         sofp = f"{base_url}Balance%20Sheet&sort=desc"
         soci = f"{base_url}Income%20Statement&sort=desc"
         socf = f"{base_url}Cash%20Flow&sort=desc"
