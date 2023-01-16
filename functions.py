@@ -42,6 +42,7 @@ def get_SPY_data():
 @st.cache
 def get_ticker_data(ticker):
     '''Load ticker's market data'''
+    
     file = os.path.join(r'data\market_data', f'{ticker}.csv')
     df = pd.read_csv(file, index_col=0, parse_dates=True)
     
@@ -378,7 +379,7 @@ def plot_sector_metric(df1, df2, metric):
     fig = px.bar(df1, x=df1.index, y=metric, opacity=0.65)
 
     if metric == 'Return' or metric == 'Volatility':
-        fig.layout.yaxis.tickformat = ',.0%'
+        fig.layout.yaxis.tickformat = ',.2%'
         text1 = f'S&P 500 ({df2[metric]:.2%})'
         fig.add_hline(y=df2[metric],
                   line_color='red',
@@ -388,7 +389,7 @@ def plot_sector_metric(df1, df2, metric):
                   annotation_bgcolor='indianred',
                   annotation_bordercolor='red')
     else:
-        fig.layout.yaxis.tickformat = ',.2'
+        fig.layout.yaxis.tickformat = ',.2f'
         text1 = f'S&P 500 ({df2[metric]:,.2f})'
     
     if metric != 'Volatility':
@@ -440,11 +441,11 @@ def plot_subIndustry_metric(df1, df2, df3, sector, metric):
     fig = px.bar(df2, x=df2.index, y=metric, opacity=0.65)
 
     if metric == 'Return' or metric == 'Volatility':
-        fig.layout.yaxis.tickformat = ',.0%'
+        fig.layout.yaxis.tickformat = ',.2%'
         text1 = f'S&P 500 ({SPY_metric:.2%})'
         text2 = f'{sector} ({sector_metric:.2%})'
     else:
-        fig.layout.yaxis.tickformat = ',.2'
+        fig.layout.yaxis.tickformat = ',.2f'
         text1 = f'S&P 500 ({SPY_metric:,.2f})'
         text2 = f'{sector} ({sector_metric:,.2f})'
 
@@ -487,10 +488,6 @@ def plot_si_tickers_metric(df1, df2, df3, df4, sector, subIndustry, metric, tick
     sector_metric = df1.loc[sector, metric]
     subIndustry_metric = df2.loc[subIndustry, metric]
     SPY_metric = df4[metric]
-    rank_df = df3.reset_index()
-    rank_df.index += 1
-    si_rank = rank_df[rank_df['Ticker'] == ticker].index.item()
-
 
     if metric != 'Volatility':
         title = f'{subIndustry} Company {metric}s'
@@ -514,12 +511,12 @@ def plot_si_tickers_metric(df1, df2, df3, df4, sector, subIndustry, metric, tick
     fig = px.bar(df3, x=df3.index, y=metric, opacity=0.65, hover_data={'Company': True})
 
     if metric == 'Return' or metric == 'Volatility':
-        fig.layout.yaxis.tickformat = ',.0%'
+        fig.layout.yaxis.tickformat = ',.2%'
         text1 = f'S&P 500 ({SPY_metric:.2%})'
         text2 = f'{sector} Sector ({sector_metric:.2%})'
         text3 = f'{subIndustry} Sub-Industry ({subIndustry_metric:.2%})'
     else:
-        fig.layout.yaxis.tickformat = ',.2'
+        fig.layout.yaxis.tickformat = ',.2f'
         text1 = f'S&P 500 ({SPY_metric:,.2f})'
         text2 = f'{sector} Sector ({sector_metric:,.2f})'
         text3 = f'{subIndustry} Sub-Industry ({subIndustry_metric:,.2f})'
@@ -529,7 +526,6 @@ def plot_si_tickers_metric(df1, df2, df3, df4, sector, subIndustry, metric, tick
             title = f'{subIndustry} Sub-Industry {metric}s'
         else:
             title = f'{subIndustry} Sub-Industry Volatilities'
-
 
     fig.add_hline(y=SPY_metric,
                   line_color='red',
@@ -552,18 +548,23 @@ def plot_si_tickers_metric(df1, df2, df3, df4, sector, subIndustry, metric, tick
                   annotation_position=pos3, 
                   annotation_bgcolor='darkblue',
                   annotation_bordercolor='blue')
-    fig.add_annotation(x=ticker, 
-                       y=df3.loc[ticker, metric],
-                       text=f'{ticker} is ranked {si_rank}/{len(rank_df)} in Sub-Industry', 
-                       showarrow=True, 
-                       arrowhead=3,
-                       arrowwidth=2,
-                       arrowcolor='white',
-                       bordercolor='purple',
-                       bgcolor='fuchsia',
-                       )
     fig.update_layout(title=title, xaxis_title=xtitle)
 
+    if ticker:
+        rank_df = df3.reset_index()
+        rank_df.index += 1
+        si_rank = rank_df[rank_df['Ticker'] == ticker].index.item()
+        fig.add_annotation(x=ticker, 
+                           y=df3.loc[ticker, metric],
+                           text=f'{ticker} is ranked {si_rank}/{len(rank_df)} in sub-industry', 
+                           showarrow=True, 
+                           arrowhead=3,
+                           arrowwidth=2,
+                           arrowcolor='white',
+                           bordercolor='purple',
+                           bgcolor='fuchsia'
+                        )
+                        
     return fig
 
 
@@ -591,7 +592,6 @@ def plot_sector_tickers_metric(df1, df2, df3, df4, sector, subIndustry, metric, 
     rank_df.index += 1
     sector_rank = rank_df[rank_df['Ticker'] == ticker].index.item()
 
-
     if metric != 'Volatility':
         title = f'{sector} Sector {metric}s'
     else:
@@ -614,12 +614,12 @@ def plot_sector_tickers_metric(df1, df2, df3, df4, sector, subIndustry, metric, 
     fig = px.bar(df3, x=df3.index, y=metric, opacity=0.65, hover_data={'Company': True})
 
     if metric == 'Return' or metric == 'Volatility':
-        fig.layout.yaxis.tickformat = ',.0%'
+        fig.layout.yaxis.tickformat = ',.2%'
         text1 = f'S&P 500 ({SPY_metric:.2%})'
         text2 = f'{sector} Sector ({sector_metric:.2%})'
         text3 = f'{subIndustry} Sub-Industry ({subIndustry_metric:.2%})'
     else:
-        fig.layout.yaxis.tickformat = ',.2'
+        fig.layout.yaxis.tickformat = ',.2f'
         text1 = f'S&P 500 ({SPY_metric:,.2f})'
         text2 = f'{sector} Sector ({sector_metric:,.2f})'
         text3 = f'{subIndustry} Sub-Industry ({subIndustry_metric:,.2f})'

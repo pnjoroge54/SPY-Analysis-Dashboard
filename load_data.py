@@ -26,7 +26,6 @@ def get_SPY_data():
     df = pd.read_csv(r'data\SPY.csv')
     df.index = pd.to_datetime(df['Date'].apply(lambda x: x.split(' ')[0]))
     df.drop(columns='Date', inplace=True)
-    df['Return'] = np.log1p(df['Close'].pct_change())
 
     return df
 

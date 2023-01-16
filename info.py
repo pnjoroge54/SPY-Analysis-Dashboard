@@ -37,7 +37,65 @@ SPY_INFO = '''
 # For more information on the calculation of financial ratios
 # visit https://en.wikipedia.org/wiki/Financial_ratio
        
+RATIOS = {
+    'Investment Valuation Ratios':
+        {'Price to Earnings Ratio': 'priceEarningsRatioTTM', 
+         'Price to Book Value Ratio': 'priceToBookRatioTTM', 
+         'Price to Sales Ratio': 'priceToSalesRatioTTM', 
+         'Price to Earnings to Growth Ratio': 'priceEarningsToGrowthRatioTTM',
+         'Price to Free Cash Flows Ratio': 'priceToFreeCashFlowsRatioTTM', 
+         'Enterprise Value Multiplier': 'enterpriseValueMultipleTTM', 
+         'Dividend Yield': 'dividendYieldTTM'},
 
+    'Profitability Indicator Ratios':
+        {'Gross Profit Margin': 'grossProfitMarginTTM',
+         'Net Profit Margin': 'netProfitMarginTTM',
+         'Operating Profit Margin': 'operatingProfitMarginTTM',
+         'Pre-Tax Profit Margin': 'pretaxProfitMarginTTM',
+         'Effective Tax Rate': 'effectiveTaxRateTTM',
+         'Return On Assets': 'returnOnAssetsTTM',
+         'Return On Equity': 'returnOnEquityTTM',
+         'Return On Capital Employed': 'returnOnCapitalEmployedTTM'},
+    
+    'Liquidity Measurement Ratios':
+        {'Current Ratio': 'currentRatioTTM',
+         'Quick Ratio': 'quickRatioTTM',
+         'Cash Ratio': 'cashRatioTTM',
+         'Days Of Sales Outstanding': 'daysOfSalesOutstandingTTM',
+         'Days Of Inventory Outstanding': 'daysOfInventoryOutstandingTTM',
+         'Operating Cycle': 'operatingCycleTTM',
+         'Days Of Payables Outstanding': 'daysOfPayablesOutstandingTTM',
+         'Cash Conversion Cycle': 'cashConversionCycleTTM'},
+    
+    'Debt Ratios':
+        {'Debt Ratio': 'debtRatioTTM',
+         'Debt to Equity Ratio': 'debtEquityRatioTTM',
+         'Long-Term Debt to Capitalisation': 'longTermDebtToCapitalizationTTM',
+         'Total Debt to Capitalisation': 'totalDebtToCapitalizationTTM',
+         'Interest Coverage Ratio': 'interestCoverageTTM',
+         'Cash Flow to Debt Ratio': 'cashFlowToDebtRatioTTM',
+         'Company Equity Multiplier': 'companyEquityMultiplierTTM'},
+    
+    'Operating Performance Ratios':
+        {'Asset Turnover': 'assetTurnoverTTM',
+         'Fixed Asset Turnover': 'fixedAssetTurnoverTTM',
+         'Inventory Turnover': 'inventoryTurnoverTTM',
+         'Receivables Turnover': 'receivablesTurnoverTTM',
+         'Payables Turnover': 'payablesTurnoverTTM'},
+
+    'Cash Flow Indicator Ratios':
+        {'Operating Cash Flow per Share': 'operatingCashFlowPerShareTTM',
+         'Free Cash Flow per Share': 'freeCashFlowPerShareTTM',
+         'Cash per Share': 'cashPerShareTTM',
+         'Operating Cash Flow to Sales Ratio': 'operatingCashFlowSalesRatioTTM',
+         'Free Cash Flow to Operating Cash Flow Ratio': 'freeCashFlowOperatingCashFlowRatioTTM',
+         'Cash Flow Coverage Ratio': 'cashFlowCoverageRatiosTTM',
+         'Short-Term Coverage Ratio': 'shortTermCoverageRatiosTTM',
+         'Capex Coverage Ratio': 'capitalExpenditureCoverageRatioTTM',
+         'Dividend Paid & Capex Coverage Ratio': 'dividendPaidAndCapexCoverageRatioTTM',
+         'Dividend Payout Ratio': 'payoutRatioTTM'}
+    }
+    
 FORMULAS = {
     'Investment Valuation Ratios':
         {'Price to Earnings Ratio': r'$P/E = \frac{\text{Stock Price}}{\text{Diluted EPS}}$', 
@@ -214,4 +272,4 @@ DEFINITIONS = {
          'Dividend Payout Ratio': 'payoutRatioTTM'}
 }
 
-FINANCIAL_RATIOS = {'formulas': FORMULAS, 'definitions': DEFINITIONS}
+FINANCIAL_RATIOS = {'formulas': FORMULAS, 'definitions': DEFINITIONS, 'ratios': RATIOS}

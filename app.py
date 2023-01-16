@@ -26,7 +26,7 @@ if option == 'S&P 500 Information':
     start, end = set_form_dates()
 
     df = SPY_df[start : end]
-    df['Return'] = np.log1p(df.Close.pct_change())
+    df['Return'] = np.log1p(df['Close'].pct_change())
     t = len(df) / 252
     cagr = ((df['Close'][-1] / df['Open'][0])**(1 / t) - 1)
     std = df['Return'].std() * np.sqrt(252)
@@ -66,7 +66,7 @@ if option == 'Stock Information':
     subIndustry = SPY_info_df.loc[ticker, 'Sub-Industry']
     location = SPY_info_df.loc[ticker, 'Headquarters Location']
     founded = SPY_info_df.loc[ticker, 'Founded']
-    date_added = SPY_info_df.loc[ticker, 'Date first added']
+    date_added = SPY_info_df.loc[ticker, 'Date added']
     
     try:
         date_added = dt.strptime(date_added, '%Y-%m-%d')
@@ -107,9 +107,9 @@ if option == 'Stock Information':
     if start > end:
         st.error('*Start Date* must be before *End Date*')
     if start < first_date:
-        st.error(f"Market data before {first_date.strftime('%B %d, %Y')} is unavailable.")
+        st.error(f"Market data before {first_date.strftime('%B %d, %Y')} is unavailable")
     if end > last_date:
-        st.error(f"Market data after {last_date.strftime('%B %d, %Y')} is unavailable.")
+        st.error(f"Market data after {last_date.strftime('%B %d, %Y')} is unavailable")
 
     # Candlestick chart
     qf = cf.QuantFig(ticker_df, title=f'{name} Daily Prices', name=ticker)
@@ -126,6 +126,8 @@ if option == 'Stock Information':
 
     sectors_df, subIndustries_df, tickers_df, SPY_metrics, rf = calculate_metrics(start, end)
     metrics = ('Return', 'Volatility') # Metrics to display graphs of
+    
+    st.subheader('Peers Comparison')
     metric = st.selectbox('Metric', metrics)
 
     rank_df = tickers_df.sort_values(by=metric, ascending=False).reset_index()
@@ -133,21 +135,18 @@ if option == 'Stock Information':
     rank = rank_df[rank_df['Ticker'] == ticker].index.item()
     metric_val = rank_df.loc[rank, metric]
  
-    st.info(f"{name}'s {metric.lower()} ({metric_val:,.2%}) is ranked {rank}/{len(tickers_df)} in the S&P 500")
+    st.info(f"{name}'s {metric.lower()} ({metric_val:,.2%}) is ranked \
+              {rank}/{len(tickers_df)} in the S&P 500")
 
     # Graph of all tickers in sector
-    plot_btn1 = st.button(f'View {metric} of Sector Companies')
     fig = plot_sector_tickers_metric(sectors_df, subIndustries_df, tickers_df, 
                                      SPY_metrics, sector, subIndustry, metric, ticker)
-    if plot_btn1:
-        st.plotly_chart(fig)
+    st.plotly_chart(fig)
 
     # Graph of all tickers in sub-industry
-    plot_btn2 = st.button(f'View {metric} of Sub-Industry Companies')
     fig = plot_si_tickers_metric(sectors_df, subIndustries_df, tickers_df, 
                                  SPY_metrics, sector, subIndustry, metric, ticker)
-    if plot_btn2:
-        st.plotly_chart(fig)
+    st.plotly_chart(fig)
   
 
 if option == 'Sector Analysis':
@@ -165,17 +164,17 @@ if option == 'Sector Analysis':
         if start > end:
             st.error('*Start Date* must be before *End Date*')
 
-        missing_mkt_data, rpt1, rpt2, rpt3 = find_stocks_missing_data(start, end)
+        missing_data, rpt1, rpt2, rpt3 = find_stocks_missing_data(start, end)
 
         # Provide information on data that is available between chosen dates
         if rpt1 != '':
             st.error(rpt1)
         if rpt2 != '':
             st.error(rpt2)
-        if len(missing_mkt_data) > 0:
+        if len(missing_data) > 0:
             with st.expander("Stocks Missing Data"):
                 st.warning(rpt3)
-                st.write(missing_mkt_data)
+                st.write(missing_data)
 
         fig = plot_sector_metric(sectors_df, SPY_metrics, metric)
         st.plotly_chart(fig)
@@ -184,8 +183,8 @@ if option == 'Sector Analysis':
         sector = st.selectbox('GICS Sector', sector_list)
 
         nsector_tickers = len(SPY_info_df[SPY_info_df['Sector'] == sector].index)
-        subIndustry_list = subIndustries_df[subIndustries_df.Sector == sector].index.to_list()
-        missing = missing_mkt_data.get(sector, {})
+        subIndustry_list = subIndustries_df[subIndustries_df['Sector'] == sector].index.to_list()
+        missing = missing_data.get(sector, {})
         n_missing = len(missing)  
 
         if n_missing > 0:
@@ -231,76 +230,7 @@ if option == 'Sector Analysis':
                       'Cash Flow Indicator Ratios')
         
         category = c1.selectbox('Categories', categories)
-
-        if category == 'Investment Valuation Ratios':
-            ratios = {
-                'Price to Earnings Ratio': 'priceEarningsRatioTTM', 
-                'Price to Book Value Ratio': 'priceToBookRatioTTM', 
-                'Price to Sales Ratio': 'priceToSalesRatioTTM', 
-                'Price to Earnings to Growth Ratio': 'priceEarningsToGrowthRatioTTM',
-                'Price to Free Cash Flows Ratio': 'priceToFreeCashFlowsRatioTTM', 
-                'Enterprise Value Multiplier': 'enterpriseValueMultipleTTM', 
-                'Dividend Yield': 'dividendYieldTTM'
-                }
-
-        if category == 'Profitability Indicator Ratios':
-            ratios = {
-                'Gross Profit Margin': 'grossProfitMarginTTM',
-                'Net Profit Margin': 'netProfitMarginTTM',
-                'Operating Profit Margin': 'operatingProfitMarginTTM',
-                'Pre-Tax Profit Margin': 'pretaxProfitMarginTTM',
-                'Effective Tax Rate': 'effectiveTaxRateTTM',
-                'Return On Assets': 'returnOnAssetsTTM',
-                'Return On Equity': 'returnOnEquityTTM',
-                'Return On Capital Employed': 'returnOnCapitalEmployedTTM'
-            }
-
-        if category == 'Liquidity Measurement Ratios':
-            ratios = {
-                'Current Ratio': 'currentRatioTTM',
-                'Quick Ratio': 'quickRatioTTM',
-                'Cash Ratio': 'cashRatioTTM',
-                'Days Of Sales Outstanding': 'daysOfSalesOutstandingTTM',
-                'Days Of Inventory Outstanding': 'daysOfInventoryOutstandingTTM',
-                'Operating Cycle': 'operatingCycleTTM',
-                'Days Of Payables Outstanding': 'daysOfPayablesOutstandingTTM',
-                'Cash Conversion Cycle': 'cashConversionCycleTTM'
-            }
-
-        if category == 'Debt Ratios':
-            ratios = {
-                'Debt Ratio': 'debtRatioTTM',
-                'Debt to Equity Ratio': 'debtEquityRatioTTM',
-                'Long-Term Debt to Capitalisation': 'longTermDebtToCapitalizationTTM',
-                'Total Debt to Capitalisation': 'totalDebtToCapitalizationTTM',
-                'Interest Coverage Ratio': 'interestCoverageTTM',
-                'Cash Flow to Debt Ratio': 'cashFlowToDebtRatioTTM',
-                'Company Equity Multiplier': 'companyEquityMultiplierTTM'
-            }
-
-        if category == 'Operating Performance Ratios':
-            ratios = {
-                'Asset Turnover': 'assetTurnoverTTM',
-                'Fixed Asset Turnover': 'fixedAssetTurnoverTTM',
-                'Inventory Turnover': 'inventoryTurnoverTTM',
-                'Receivables Turnover': 'receivablesTurnoverTTM',
-                'Payables Turnover': 'payablesTurnoverTTM'
-            }
-
-        if category == 'Cash Flow Indicator Ratios':
-            ratios = {
-                'Operating Cash Flow per Share': 'operatingCashFlowPerShareTTM',
-                'Free Cash Flow per Share': 'freeCashFlowPerShareTTM',
-                'Cash per Share': 'cashPerShareTTM',
-                'Operating Cash Flow to Sales Ratio': 'operatingCashFlowSalesRatioTTM',
-                'Free Cash Flow to Operating Cash Flow Ratio': 'freeCashFlowOperatingCashFlowRatioTTM',
-                'Cash Flow Coverage Ratio': 'cashFlowCoverageRatiosTTM',
-                'Short-Term Coverage Ratio': 'shortTermCoverageRatiosTTM',
-                'Capex Coverage Ratio': 'capitalExpenditureCoverageRatioTTM',
-                'Dividend Paid & Capex Coverage Ratio': 'dividendPaidAndCapexCoverageRatioTTM',
-                'Dividend Payout Ratio': 'payoutRatioTTM'
-            }
-
+        ratios = FINANCIAL_RATIOS['ratios'][category]
         ratio = c2.selectbox('TTM Ratio', list(ratios.keys()))
         formula = FINANCIAL_RATIOS['formulas'][category][ratio]
         definition = FINANCIAL_RATIOS['definitions'][category][ratio]
@@ -319,11 +249,12 @@ if option == 'Sector Analysis':
         sector = st.selectbox('GICS Sector', sector_list)
 
         sector_ratio = sectors_df.loc[sector].item()
-        df = subIndustries_df[subIndustries_df.Sector == sector].sort_values(by=ratio, ascending=False)
+        df = subIndustries_df[subIndustries_df['Sector'] == sector].sort_values(by=ratio, ascending=False)
         subIndustry_list = df.index.to_list()
 
         # Chart of sub-industry ratios
         fig = px.bar(df, x=df.index, y=ratio, opacity=0.65)
+        fig.layout.yaxis.tickformat = ',.2f'
         fig.add_hline(y=sector_ratio, 
                       line_color='red', 
                       line_width=1,
@@ -337,11 +268,11 @@ if option == 'Sector Analysis':
         subIndustry = st.selectbox('GICS Sub-Industry', subIndustry_list)
 
         subIndustry_ratio = df.loc[subIndustry, ratio]
-
         df = tickers_df[tickers_df['Sub-Industry'] == subIndustry].sort_values(by=ratio, ascending=False)
 
         # Chart of ticker ratios
         fig = px.bar(df, x=df.index, y=ratio, opacity=0.65, hover_data={'Company': True})
+        fig.layout.yaxis.tickformat = ',.2f'
         fig.add_hline(y=sector_ratio, 
                       line_color='red', 
                       line_width=1,
@@ -354,7 +285,7 @@ if option == 'Sector Analysis':
                       line_width=1,
                       annotation_text=f'{subIndustry} {ratio} ({subIndustry_ratio:,.2f})',
                       annotation_position='bottom left',
-                      annotation_bgcolor='lightgreen',
+                      annotation_bgcolor='darkgreen',
                       annotation_bordercolor='green')
         fig.update_layout(title=f'{subIndustry} Company {ratio}s', xaxis_title='')
         st.plotly_chart(fig)
@@ -364,12 +295,11 @@ if option == 'Stock Analysis':
     start, end = set_form_dates() # Date input
 
     _, _, tickers_df, _, _ = calculate_metrics(start, end)
-
-    metrics = ('Return', 'Volatility', 'Sharpe Ratio', 'Beta', 'Piotroski F-Score')
+    metrics = ('Return', 'Volatility', 'Sharpe Ratio', 'Beta')
+    
     metric = st.selectbox('Metric', metrics)
 
-    df = tickers_df.sort_values(by=metric, ascending=False)
-    df.reset_index(inplace=True)
+    df = tickers_df.sort_values(by=metric, ascending=False).reset_index()
     df.index += 1
     cols = df.columns.to_list()
     cols.pop(cols.index(metric))
@@ -396,11 +326,11 @@ if option == 'News':
     news = get_news(ticker, date)
     
     if len(news) == 0:
-        st.write(f'There are no stories about {name}.')
+        st.write(f'There are no stories about {name}')
     elif len(news) == 1:
-        st.write(f'There is {len(news)} story about {name}.')
+        st.write(f'There is {len(news)} story about {name}')
     else:    
-        st.write(f'There are {len(news)} stories about {name}.')
+        st.write(f'There are {len(news)} stories about {name}')
 
     for story in news:
         headline = story['headline']
@@ -409,7 +339,7 @@ if option == 'News':
         # Convert timestamp to datetime and get string of hours & min
         published = dt.fromtimestamp(story['datetime']).strftime('%d %b, %Y %I:%M%p')
         
-        # Get a summary of the article
+        # Get summary of the article
         try:
             article = Article(url)
             article.download()

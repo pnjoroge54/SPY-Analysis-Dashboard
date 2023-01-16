@@ -73,7 +73,7 @@ def url_get_contents(url):
 
 
 def get_SPY_weights():
-    '''Gets market cap weights for stocks, sectors and sub-industries'''
+    '''Download market cap weights for stocks as a CSV file'''
 
     url = 'https://www.slickcharts.com/sp500'
     xhtml = url_get_contents(url).decode('utf-8')
@@ -92,7 +92,7 @@ def get_SPY_weights():
 
 
 def get_market_data():  
-    '''Get historical data for S&P 500 & for each constituent stock'''
+    '''Get historical data for S&P 500 index & for each constituent stock'''
 
     SPY = yf.Ticker('^GSPC').history(period='max') # download index data
     SPY.to_csv('data/SPY.csv')
@@ -153,8 +153,7 @@ def ratios_to_update():
     f = 'data/financial_ratios/Annual'
 
     for ticker in tickers:
-        file = ticker + '.csv'
-        
+        file = ticker + '.csv'   
         if file in os.listdir(f):
             df = pd.read_csv(os.path.join(f, file))
             if not df.empty:
@@ -172,7 +171,7 @@ def ratios_to_update():
 
 def get_financial_ratios(i=0, n=1):
     '''
-    Downloads annual financial ratios
+    Downloads annual financial ratios for each S&P 500 stock as a CSV file
 
     Parameters
     ----------
@@ -181,11 +180,6 @@ def get_financial_ratios(i=0, n=1):
         A counter of the tickers whose ratios have been downloaded
     n : int
         Calls the API key according to the number, e.g., key{n}
-
-    Returns
-    -------
-    ratios.to_csv : csv
-        CSVs of all downloaded ratios for SPY stocks
     '''
 
     f = 'data/financial_ratios/Annual'
@@ -228,11 +222,6 @@ def get_TTM_financial_ratios(i=0, n=1, d={}):
         Calls the API key according to the number, e.g., key{n}
     d : dictionary
         Dictionary of the ratios downloaded for each ticker
-
-    Returns
-    -------
-    d : dict
-        Dictionary of all TTM ratios for S&P 500 stocks
     '''
     
     tickers = get_tickers()[0]
@@ -249,7 +238,8 @@ def get_TTM_financial_ratios(i=0, n=1, d={}):
                                              TTM=True)
                 d[ticker] = ratios.to_dict()
                 i += 1
-                print(f"\r{i}/{ntickers} TTM financial ratios downloaded", end='', flush=True)
+                print(f"\r{i}/{ntickers} ({i / ntickers:.2%}) TTM financial ratios downloaded",
+                      end='', flush=True)
         except Exception as e:
             if e == '<urlopen error [Errno 11001] getaddrinfo failed>':
                 print('\n', e)
