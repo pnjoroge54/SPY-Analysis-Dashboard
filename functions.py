@@ -517,13 +517,7 @@ def plot_si_tickers_metric(df1, df2, df3, df4, sector, subIndustry, metric, tick
         text1 = f'S&P 500 ({SPY_metric:,.2f})'
         text2 = f'{sector} Sector ({sector_metric:,.2f})'
         text3 = f'{subIndustry} Sub-Industry ({subIndustry_metric:,.2f})'
-
-    if ticker is not None:
-        if metric != 'Volatility':
-            title = f'{subIndustry} Sub-Industry {metric}s'
-        else:
-            title = f'{subIndustry} Sub-Industry Volatilities'
-
+        
     fig.add_hline(y=SPY_metric,
                   line_color='red',
                   line_width=2,
@@ -545,9 +539,13 @@ def plot_si_tickers_metric(df1, df2, df3, df4, sector, subIndustry, metric, tick
                   annotation_position=pos3, 
                   annotation_bgcolor='darkblue',
                   annotation_bordercolor='blue')
-    fig.update_layout(title=title, xaxis_title=xtitle)
 
     if ticker:
+        if metric != 'Volatility':
+            title = f'{subIndustry} Sub-Industry {metric}s'
+        else:
+            title = f'{subIndustry} Sub-Industry Volatilities'
+
         rank_df = df3.reset_index()
         rank_df.index += 1
         si_rank = rank_df[rank_df['Ticker'] == ticker].index.item()
@@ -561,6 +559,8 @@ def plot_si_tickers_metric(df1, df2, df3, df4, sector, subIndustry, metric, tick
                            bordercolor='purple',
                            bgcolor='fuchsia'
                         )
+                        
+    fig.update_layout(title=title, xaxis_title=xtitle)
                         
     return fig
 

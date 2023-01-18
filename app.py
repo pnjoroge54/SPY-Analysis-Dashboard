@@ -120,7 +120,7 @@ if option == 'Stock Information':
     fig = make_returns_histogram(ticker_df)
     st.plotly_chart(fig)
 
-    window = st.number_input('Moving Average Window (Days)', value=20, min_value=3, max_value=180)
+    window = st.number_input('Moving Average Window (Days)', value=20, min_value=3, max_value=2000)
     fig = plot_sma_returns(ticker, start, end, window)
     st.plotly_chart(fig)
 

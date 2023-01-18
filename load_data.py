@@ -1,7 +1,6 @@
 import os
-import numpy as np
 import pandas as pd
-from datetime import timedelta
+import pickle
 
 
 def get_rf_data():
@@ -33,9 +32,19 @@ def get_SPY_data():
 def get_ticker_data(ticker):
     file = os.path.join(r'data\market_data', f'{ticker}.csv')
     df = pd.read_csv(file, index_col=0, parse_dates=True)
-    df['Return'] = np.log1p(df['adjclose'].pct_change())
     
     return df
+
+
+def get_financial_statements():
+    '''Load dict of available financial statements of S&P 500 stocks'''
+
+    file = r'data\financial_statements\financial_statements.pickle'
+
+    with open(file, 'rb') as f:
+        d = pickle.load(f)
+    
+    return d
 
 
 # def combine_returns():
