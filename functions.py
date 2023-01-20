@@ -44,7 +44,7 @@ def get_SPY_data():
 def get_ticker_data(ticker):
     '''Load ticker's market data'''
     
-    file = os.path.join(r'data\market_data', f'{ticker}.csv')
+    file = os.path.join('data/market_data', f'{ticker}.csv')
     df = pd.read_csv(file, index_col=0, parse_dates=True)
     
     return df
@@ -103,7 +103,7 @@ def load_TTM_ratios():
     tz = timezone('EST')
     cdate = dt.now(tz)  # Set datetime object to EST timezone
     file = cdate.strftime('%d-%m-%Y') + '.pickle'
-    path = r'data\financial_ratios\Current'
+    path = 'data/financial_ratios/Current'
     
     if file in os.listdir(path):
         s = "The data reported is today's."
@@ -671,7 +671,7 @@ def get_news(ticker, date):
 def get_financial_statements():
     '''Load dict of available financial statements of S&P 500 stocks'''
 
-    file = r'data\financial_statements\financial_statements.pickle'
+    file = 'data/financial_statements/financial_statements.pickle'
     with open(file, 'rb') as f:
         d = pickle.load(f)
     
