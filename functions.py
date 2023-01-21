@@ -15,13 +15,13 @@ import streamlit as st
 
 
 def get_rf_data():
-    '''Make dataframe of 90-day T-Bill Rates'''
+    '''Returns DataFrame of 90-day T-Bill Rates'''
 
     return pd.read_csv('data/T-Bill Rates.csv', index_col='Date', parse_dates=True)
 
 
 def get_SPY_info():
-    '''Make dataframe of info about S&P 500 companies'''
+    '''Returns DataFrame of info about S&P 500 companies'''
     
     df = pd.read_csv('data/spy_data/SPY_Info.csv', index_col=0)
     cols = {'GICS Sector': 'Sector', 'GICS Sub-Industry': 'Sub-Industry'}
@@ -31,11 +31,10 @@ def get_SPY_info():
 
 
 def get_SPY_data():
-    '''Make dataframe of S&P 500 market data'''
+    '''Returns DataFrame of S&P 500 market data'''
 
-    df = pd.read_csv('data/spy_data/SPY.csv')
-    df.index = pd.to_datetime(df['Date'].apply(lambda x: x.split(' ')[0]))
-    df.drop(columns='Date', inplace=True)
+    df = pd.read_csv('data/spy_data/SPY.csv', index_col='Date', parse_dates=['Date'])
+    df.index = pd.to_datetime(df.index, utc=True)
 
     return df
 
@@ -142,7 +141,7 @@ def get_weights():
 
 
 def set_form_dates():
-    '''Creates a streamlit form for selecting date inputs'''
+    '''Returns a streamlit form for selecting date inputs'''
 
     with st.form(key='form1'):
         c1, c2 = st.columns(2)
@@ -215,7 +214,7 @@ def calculate_beta(ticker, start_date, end_date):
 def calculate_metrics(start_date, end_date):
     '''
     Calculate return, volatility, sharpe ratio, and beta
-    for stocks, sectors and sub-industries
+    for index, stocks, sectors and sub-industries
     '''
     
     rf = rf_rates.loc[start_date : end_date, 'Close'].mean() / 100
@@ -283,7 +282,7 @@ def calculate_metrics(start_date, end_date):
 @st.cache
 def get_TTM_ratios(ratios, ratio):
     '''
-    Makes dicts of Trailing Twelve-Month (TTM) financial ratios 
+    Returns dicts of Trailing Twelve-Month (TTM) financial ratios 
     by sector, sub-industry, and ticker
     '''
 
@@ -295,11 +294,10 @@ def get_TTM_ratios(ratios, ratio):
         sector_tickers = SPY_info_df[SPY_info_df['Sector'] == sector].index.to_list()
         sectors[sector] = 0
         for ticker in sector_tickers:
-            # Get sub-industry of ticker
-            t_si = SPY_info_df.loc[ticker, 'Sub-Industry']
+            t_si = SPY_info_df.loc[ticker, 'Sub-Industry'] # Get sub-industry of ticker
             res = TTM_ratios[ticker][r] # Ratio result
 
-            # Get weight to use in weighted average calculation
+            # Get weights to use in weighted average calculations
             weight = ticker_weights[ticker]
             ticker_sector_weight = weight / sector_weights[sector]
             ticker_subIndustry_weight = weight / subIndustry_weights[t_si]
@@ -327,7 +325,7 @@ def get_TTM_ratios(ratios, ratio):
 
 @st.cache(allow_output_mutation=True)
 def plot_sma_returns(ticker, start_date, end_date, window):
-    '''Creates line charts of simple moving average of returns for ticker and S&P 500'''
+    '''Returns line charts of simple moving average of returns for ticker and S&P 500'''
 
     ticker_df = get_ticker_data(ticker)[start_date : end_date]
     ticker_df['Return'] = np.log1p(ticker_df['adjclose'].pct_change())
@@ -364,11 +362,11 @@ def plot_sma_returns(ticker, start_date, end_date, window):
 @st.cache(allow_output_mutation=True)
 def plot_sector_metric(df1, df2, metric):
     '''
-    Bar chart of S&P 500 sectors by metric
+    Returns bar chart of S&P 500 sectors by metric
     
     Parameters
     ----------
-    df1 : dataframe of sector metrics
+    df1 : DataFrame of sector metrics
     df2 : pd.Series of S&P 500 metrics
     metric : selected from [Return, Volatility, Sharpe Ratio, Beta, Financial Ratio]  
     '''
@@ -408,12 +406,12 @@ def plot_sector_metric(df1, df2, metric):
 @st.cache(allow_output_mutation=True)
 def plot_subIndustry_metric(df1, df2, df3, sector, metric):
     '''
-    Bar chart of sub-industries in sector by metric
+    Returns bar chart of sub-industries in sector by metric
     
     Parameters
     ----------  
-    df1 : dataframe of sector metrics
-    df2 : dataframe of sub-industries metrics
+    df1 : DataFrame of sector metrics
+    df2 : DataFrame of sub-industries metrics
     df3 : pd.Series of S&P 500 metrics
     sector : user-selected input
     metric : selected from [Return, Volatility, Sharpe Ratio, Beta, Financial Ratio] 
@@ -469,13 +467,13 @@ def plot_subIndustry_metric(df1, df2, df3, sector, metric):
 @st.cache(allow_output_mutation=True)
 def plot_si_tickers_metric(df1, df2, df3, df4, sector, subIndustry, metric, ticker=None):
     '''
-    Bar chart of sub-industries in sector by metric
+    Returns bar chart of sub-industries in sector by metric
     
     Parameters
     ----------  
-    df1 : dataframe of sector metrics
-    df2 : dataframe of sub-industries metrics
-    df3 : dataframe of tickers metrics
+    df1 : DataFrame of sector metrics
+    df2 : DataFrame of sub-industries metrics
+    df3 : DataFrame of tickers metrics
     df4 : pd.Series of S&P 500 metrics
     sector : user-selected input
     metric : selected from [Return, Volatility, Sharpe Ratio, Beta, Financial Ratio]
@@ -569,13 +567,13 @@ def plot_si_tickers_metric(df1, df2, df3, df4, sector, subIndustry, metric, tick
 @st.cache
 def plot_sector_tickers_metric(df1, df2, df3, df4, sector, subIndustry, metric, ticker):
     '''
-    Bar chart of tickers in sector by metric
+    Returns bar chart of tickers in sector by metric
     
     Parameters
     ----------  
-    df1 : dataframe of sector metrics
-    df2 : dataframe of sub-industries metrics
-    df3 : dataframe of tickers metrics
+    df1 : DataFrame of sector metrics
+    df2 : DataFrame of sub-industries metrics
+    df3 : DataFrame of tickers metrics
     df4 : pd.Series of S&P 500 metrics
     sector : user-selected input
     metric : selected from [Return, Volatility, Sharpe Ratio, Beta, Financial Ratio]
@@ -672,6 +670,7 @@ def get_financial_statements():
     '''Load dict of available financial statements of S&P 500 stocks'''
 
     file = 'data/financial_statements/financial_statements.pickle'
+
     with open(file, 'rb') as f:
         d = pickle.load(f)
     

@@ -33,8 +33,8 @@ if option == 'S&P 500 Information':
     rf = rf_rates.loc[start : end, 'Close'].mean() / 100
     sr = (cagr - rf) / std
 
-    s1 = f'Annualised Return: {cagr:.2%}'
-    s2 = f'Annualised Volatility: {std:.2%}'
+    s1 = f'Annualized Return: {cagr:.2%}'
+    s2 = f'Annualized Volatility: {std:.2%}'
     s3 = f'Risk-Free Rate: {rf:.2%}'
     s4 = f'Sharpe Ratio: {sr:,.2f}' 
     

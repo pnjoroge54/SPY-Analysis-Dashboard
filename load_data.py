@@ -4,13 +4,13 @@ import pickle
 
 
 def get_rf_data():
-    '''Make dataframe of 90-day T-Bill Rates'''
+    '''Returns dataframe of 90-day T-Bill Rates'''
 
     return pd.read_csv(r'data\T-Bill Rates.csv', index_col='Date', parse_dates=True)
 
 
 def get_SPY_info():
-    '''Make dataframe of info about S&P 500 companies'''
+    '''Returns dataframe of info about S&P 500 companies'''
     
     df = pd.read_csv(r'data\spy_data\SPY_Info.csv', index_col=0)
     cols = {'GICS Sector': 'Sector', 'GICS Sub-Industry': 'Sub-Industry'}
@@ -20,11 +20,10 @@ def get_SPY_info():
 
 
 def get_SPY_data():
-    '''Make dataframe of S&P 500 market data'''
+    '''Returns DataFrame of S&P 500 market data'''
 
-    df = pd.read_csv(r'data\spy_data\SPY.csv')
-    df.index = pd.to_datetime(df['Date'].apply(lambda x: x.split(' ')[0]))
-    df.drop(columns='Date', inplace=True)
+    df = pd.read_csv('data/spy_data/SPY.csv', index_col='Date', parse_dates=['Date'])
+    df.index = pd.to_datetime(df.index, utc=True)
 
     return df
 
