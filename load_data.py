@@ -29,7 +29,7 @@ def get_SPY_data():
 
 
 def get_ticker_data(ticker):
-    file = os.path.join(r'data\market_data', f'{ticker}.csv')
+    file = os.path.join(r'data\market_data', f'{ticker.upper()}.csv')
     df = pd.read_csv(file, index_col=0, parse_dates=True)
     
     return df
@@ -44,7 +44,3 @@ def get_financial_statements():
         d = pickle.load(f)
     
     return d
-
-
-# def combine_returns():
-

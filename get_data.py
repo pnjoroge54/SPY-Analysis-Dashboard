@@ -104,11 +104,12 @@ def get_market_data():
     path = r'data\market_data'
 
     for i, ticker in enumerate(tickers, 1):
-        fname = os.path.join(path, f'{ticker}.csv')
         try:
             data = si.get_data(ticker) # download stock data
+            fname = os.path.join(path, f'{ticker}.csv')
             data.to_csv(fname)
-            print(f"\r{i}/{n} ({i / n:.2%}) of SPY market data downloaded", end='', flush=True)
+            print(f"\r{i}/{n} ({i / n:.2%}) of SPY market data downloaded",
+                  end='', flush=True)
         except Exception as e:
             print(f'\r{i}/{n}: {ticker} - {e}')
             not_downloaded.append(ticker)  
@@ -137,11 +138,11 @@ def remove_replaced_tickers():
         for ticker in removed:
             file = ticker + '.csv'
             try:
-                os.remove(f'{mkt_path}\{file}')
+                os.remove(os.path.join(mkt_path, file))
             except:
                 pass
             try:
-                os.remove(f'{ratios_path}\{file}')
+                os.remove(os.path.join(ratios_path, file))
             except:
                 continue
             # print(f'{ticker} is no longer in SPY')
@@ -158,8 +159,7 @@ def ratios_to_update():
         file = ticker + '.csv'   
         if file in os.listdir(f):
             df = pd.read_csv(os.path.join(f, file))
-            if not df.empty:
-                if str(dt.now().year - 1) != df.columns[1]:
+            if not df.empty and str(dt.now().year - 1) != df.columns[1]:
                     not_current.append(ticker)
             else:
                 no_data.append(ticker)
@@ -197,14 +197,14 @@ def get_financial_ratios(i=0, n=1):
                                              period='annual')
                 ratios.to_csv(os.path.join(f, f'{ticker}.csv'))
                 i += 1
-                print(f"\r{i}/{len(to_update)} outdated financial ratios downloaded", end='', flush=True)
+                print(f"\r{i}/{len(to_update)} outdated financial ratios downloaded",
+                      end='', flush=True)
         except Exception as e:
             if e == '<urlopen error [Errno 11001] getaddrinfo failed>':
                 print('\r', e.ljust(100, ' '), end='', flush=True)
-            else:
-                if n < 5:
-                    print(f'\nAPI Key {n} has maxed out its requests\n')
-                    n += 1
+            elif n < 5:
+                print(f'\nAPI Key {n} has maxed out its requests\n')
+                n += 1
 
         return get_financial_ratios(i, n)
 
@@ -212,7 +212,7 @@ def get_financial_ratios(i=0, n=1):
         print('\nAnnual financial ratios are up to date!\n')       
 
 
-def get_TTM_financial_ratios(i=0, n=1, d={}):
+def get_TTM_financial_ratios(i=0, n=1, d=dict()):
     '''
     Downloads trailing twelve month (TTM) financial ratios
 
@@ -245,10 +245,9 @@ def get_TTM_financial_ratios(i=0, n=1, d={}):
         except Exception as e:
             if e == '<urlopen error [Errno 11001] getaddrinfo failed>':
                 print('\n', e)
-            else:
-                if n < 5:
-                    print(f'\nAPI Key {n} has maxed out its requests\n')
-                    n += 1
+            elif n < 5:
+                print(f'\nAPI Key {n} has maxed out its requests\n')
+                n += 1
 
         return get_TTM_financial_ratios(i, n, d) 
 
@@ -266,8 +265,8 @@ def save_TTM_financial_ratios():
     hour = cdate.hour
     weekday = cdate.weekday()
 
-    # Sets the file name to today's date only after the US stock market
-    # has closed, otherwise uses the previous day's date. Also sets
+    # Sets file name to today's date only after US stock market
+    # closes, otherwise uses previous day's date. Also sets
     # weekends to Friday's date.
     if weekday != 5 and weekday != 6 and weekday != 0 and hour < 16:
         days = 1
@@ -326,8 +325,7 @@ def get_financial_statements():
     path = r'data\financial_statements'
     base_url = 'https://stockrow.com/api/companies/'
     d_tickers = {'META': 'FB',
-                 'BALL': 'BLL'
-                 }
+                 'BALL': 'BLL'}
     dict_file = os.path.join(path, 'financial_statements.pickle')
 
     try:

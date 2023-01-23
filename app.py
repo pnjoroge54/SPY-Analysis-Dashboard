@@ -56,11 +56,11 @@ if option == 'Stock Information':
     
     if search == 'Ticker':
         ticker = c2.selectbox(search, ticker_list)
-        name = SPY_info_df.loc[ticker, 'Security']
+        cname = SPY_info_df.loc[ticker, 'Security']
     else:
         names_list = SPY_info_df['Security'].to_list()
-        name = c2.selectbox(search, names_list)
-        ticker = SPY_info_df[SPY_info_df['Security'] == name].index.name
+        cname = c2.selectbox(search, names_list)
+        ticker = SPY_info_df[SPY_info_df['Security'] == cname].index.name
     
     sector = SPY_info_df.loc[ticker, 'Sector']
     subIndustry = SPY_info_df.loc[ticker, 'Sub-Industry']
@@ -75,14 +75,14 @@ if option == 'Stock Information':
         date_added = 'N/A'
 
     try:
-        tickerData = yf.Ticker(ticker)              
+        tickerData = yf.Ticker(ticker, timeout=15)              
         website = tickerData.info['website']
         summary = tickerData.info['longBusinessSummary']
     except:
         website = 'N/A'
         summary = 'You are currently offline...'
 
-    st.header(f'**{name}**')
+    st.header(f'**{cname}**')
     st.info(f'''
             **Sector:** {sector} \n
             **Sub-Industry:** {subIndustry} \n
@@ -112,7 +112,7 @@ if option == 'Stock Information':
         st.error(f"Market data after {last_date.strftime('%B %d, %Y')} is unavailable")
 
     # Candlestick chart
-    qf = cf.QuantFig(ticker_df, title=f'{name} Daily Prices', name=ticker)
+    qf = cf.QuantFig(ticker_df, title=f'{cname} Daily Prices', name=ticker)
     qf.add_volume()
     fig = qf.iplot(asFigure=True, yTitle='Price')
     st.plotly_chart(fig)
@@ -135,7 +135,7 @@ if option == 'Stock Information':
     rank = rank_df[rank_df['Ticker'] == ticker].index.item()
     metric_val = rank_df.loc[rank, metric]
  
-    st.info(f"{name}'s {metric.lower()} ({metric_val:,.2%}) is ranked \
+    st.info(f"{cname}'s {metric.lower()} ({metric_val:,.2%}) is ranked \
               {rank}/{len(tickers_df)} in the S&P 500")
 
     # Graph of all tickers in sector
