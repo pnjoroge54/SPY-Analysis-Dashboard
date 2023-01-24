@@ -3,6 +3,7 @@ from datetime import timedelta
 
 import cufflinks as cf
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import streamlit as st
 
 from functions import *
@@ -202,3 +203,142 @@ def make_crossover_charts(crossover, ticker):
     st.plotly_chart(fig)
 
 
+def isSupport(df, i):
+    '''Returns True if value is a price support level'''
+
+    X = df['Low']
+    support = (X[i] < X[i-1]) and (X[i] < X[i+1]) and (X[i+1] < X[i+2]) and (X[i-1] < X[i-2])
+
+    return support
+
+
+def isResistance(df, i):
+    '''Returns True if value is a price resistance level'''
+
+    X = df['High']
+    resistance = (X[i] > X[i-1]) and (X[i] > X[i+1]) and (X[i+1] > X[i+2]) and (X[i-1] > X[i-2]) 
+
+    return resistance
+
+
+def sr_levels(df, start, end):
+    '''Returns key support/resistance levels for a security'''
+
+    df = df[start : end]
+    levels = []
+    s = (df['High'] - df['Low']).mean()
+
+    def isFarFromLevel(l):
+        '''
+        Given a price value, returns False 
+        if it is near some previously discovered key level
+        '''
+
+        # Distance between levels > MAD
+        return np.sum([abs(l - x) < s for x in levels]) == 0
+
+    for i in range(2, df.shape[0]-2):
+        if isSupport(df, i):
+            l = df['Low'][i]
+            if isFarFromLevel(l):
+                levels.append((i, l))
+        elif isResistance(df, i):
+            l = df['High'][i]
+            if isFarFromLevel(l):
+                levels.append((i, l))
+
+    return levels
+
+
+@st.cache(allow_output_mutation=True)
+def plot_trends(df, start, end, time_frame, short_trend, inter_trend, primary_trend):
+    '''
+    Returns candlestick chart with support/resistance levels
+    and market cycle trend lines
+
+    Parameters
+    ----------
+    df: DataFrame of a security's market data
+    start: Start Date
+    end: End Date
+    time_frame: [Daily, Weekly, Monthly]
+    short_trend: moving average window
+    inter_trend: moving average window
+    primary_trend: moving average window
+    '''
+
+    df = df[start : end]
+    df.columns = df.columns.str.title()
+    name = df['Ticker'][0] if 'Ticker' in df.columns else ''  
+
+    if time_frame != 'Daily':
+        if time_frame == 'Weekly':
+            fmt = 'W-MON'
+        elif time_frame == 'Monthly':
+            fmt = 'BMS'
+
+        ixs = df.asfreq(fmt).index
+        open_ = df['Open'].resample(fmt).first()
+        close = df['Close'].resample(fmt).last()
+        high = df['High'].resample(fmt).max()
+        low = df['Low'].resample(fmt).min()
+        volume = df['Volume'].resample(fmt).sum()
+        d = dict(Open=open_, High=high, Low=low, Close=close, Volume=volume)
+        df = pd.DataFrame(d, index=ixs)
+
+    df['Short-Term Trend'] = df['Close'].rolling(window=short_trend).mean()
+    df['Intermediate Trend'] = df['Close'].rolling(window=inter_trend).mean()
+    df['Primary Trend'] = df['Close'].rolling(window=primary_trend).mean()
+    levels = sr_levels(df, start, end)
+
+    cname = SPY_info_df.loc[name, 'Security']
+    title1 = f'{cname}' # {time_frame} Trends & Support-Resistance Levels <br>
+    title2 = ''
+
+    fig = make_subplots(rows=2, cols=1,
+                        shared_xaxes=True, 
+                        vertical_spacing=0.01,
+                        subplot_titles=(title1, title2), 
+                        row_width=[0.2, 0.7])
+    cs = go.Candlestick(x=df.index, 
+                        open=df['Open'], 
+                        high=df['High'],
+                        low=df['Low'], 
+                        close=df['Close'],
+                        name=name)
+    sma1 = go.Scatter(x=df.index, 
+                      y=df['Short-Term Trend'], 
+                      name=f'Short-Term Trend ({short_trend})',
+                      line_width=1,
+                      line_color='orange',
+                      )
+    sma2 = go.Scatter(x=df.index,
+                      y=df['Intermediate Trend'],
+                      name=f'Intermediate Trend ({inter_trend})',
+                      line_width=1.25)
+    sma3 = go.Scatter(x=df.index,
+                      y=df['Primary Trend'],
+                      name=f'Primary Trend ({primary_trend})',
+                      line_width=1.5)
+    
+    fig.add_traces(data=[cs, sma1, sma2, sma3], rows=[1, 1, 1, 1], cols=[1, 1, 1, 1])   
+
+    # Add support & resistance lines
+    for i, l in levels:
+        n = df.shape[0] - i
+        fig.add_scatter(x=df.index[i:],
+                        y=[l] * n,
+                        name='S-R',
+                        line={'color': 'yellow', 'width': 0.5},
+                        mode='lines',
+                        showlegend=False)
+        
+    # Volume subplot
+    fig.add_trace(go.Bar(x=df.index, y=df['Volume'], name='Volume'),
+                  row=2, col=1)
+    fig.update_xaxes(showgrid=False, gridcolor='#BEBEBE')              
+    fig.update_yaxes(showgrid=False)
+    fig.layout.annotations[0].update(x=0.015)
+    fig.layout.xaxis.rangeslider.visible = False
+
+    return fig

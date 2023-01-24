@@ -10,12 +10,13 @@ from newspaper import Article
 
 from info import SPY_INFO, FINANCIAL_RATIOS
 from functions import *
+from technical_analysis import *
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
-      
+
 
 options = ('S&P 500 Information', 'Stock Information', 'Stock Analysis',
-           'Sector Analysis', 'News')
+           'Sector Analysis', 'Technical Analysis', 'News')
 
 option = st.sidebar.selectbox("Select Dashboard", options)
 st.title(option)
@@ -52,7 +53,7 @@ if option == 'S&P 500 Information':
 
 if option == 'Stock Information':
     c1, c2 = st.columns(2)
-    search = c1.radio('Search by', ('Ticker', 'Company Name'), horizontal=True)
+    search = c1.radio('Search by', ('Ticker', 'Company'), horizontal=True)
     
     if search == 'Ticker':
         ticker = c2.selectbox(search, ticker_list)
@@ -120,7 +121,7 @@ if option == 'Stock Information':
     fig = make_returns_histogram(ticker_df)
     st.plotly_chart(fig)
 
-    window = st.number_input('Moving Average Window (Days)', value=20, min_value=3, max_value=2000)
+    window = st.number_input('Moving Average Window (Days)', value=20)
     fig = plot_sma_returns(ticker, start, end, window)
     st.plotly_chart(fig)
 
@@ -361,7 +362,50 @@ if option == 'News':
                 \n_**Published:** {published}_
                 _**Full story:** {url}_
                 ''')
-        
+
+
+if option == 'Technical Analysis':
+    time_frame = st.selectbox('Time Frame', ('Daily', 'Weekly', 'Monthly'))
+
+    if time_frame == 'Daily':
+        v = [50, 100, 200]
+    elif time_frame == 'Weekly':
+        v = [4, 10, 36]
+    else:
+        v = [1, 3, 9]
+
+    with st.form(key='ta_form'):
+        c1, c2, c3 = st.columns(3)
+        short = c1.number_input('Short-Term Trend', value=v[0])
+        inter = c2.number_input('Intermediate Trend', value=v[1])
+        long = c3.number_input('Primary Trend', value=v[2])
+        start_date = last_date - timedelta(365*2)
+        start = c1.date_input('Start Date', start_date, min_value=first_date)
+        end = c2.date_input('End Date', last_date, max_value=last_date)
+        c1.form_submit_button(label='Submit')
+
+    c1, c2, c3 = st.columns(3)
+    sector = c1.selectbox('Sectors', ['ALL'] + sector_list)
+    search = c2.radio('Search by', ('Ticker', 'Company'))
+    
+    if sector != 'ALL':
+        df = SPY_info_df[SPY_info_df['Sector'] == sector]
+        tickers = df.index.to_list()
+        names = df['Security'].to_list()
+    else:
+        tickers = ticker_list
+        names = SPY_info_df['Security'].to_list()
+
+    if search == 'Ticker':
+        ticker = c3.selectbox(search, ticker_list)
+        cname = SPY_info_df.loc[ticker, 'Security']
+    else:
+        cname = c3.selectbox(search, names)
+        ticker = SPY_info_df[SPY_info_df['Security'] == cname].index.name
+
+    df = get_ticker_data(ticker)
+    fig = plot_trends(df, start, end, time_frame, short, inter, long)
+    st.plotly_chart(fig) 
 
 # if option == 'Social Media':
 #     platform = st.selectbox('Platform', 'StockTwits')

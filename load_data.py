@@ -22,8 +22,9 @@ def get_SPY_info():
 def get_SPY_data():
     '''Returns DataFrame of S&P 500 market data'''
 
-    df = pd.read_csv('data/spy_data/SPY.csv', index_col='Date', parse_dates=['Date'])
-    df.index = pd.to_datetime(df.index, utc=True)
+    df = pd.read_csv('data/spy_data/SPY.csv')
+    df.index = pd.to_datetime(df['Date'].apply(lambda x: x.split(' ')[0]))
+    df.drop(columns='Date', inplace=True)
 
     return df
 

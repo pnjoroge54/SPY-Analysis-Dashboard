@@ -33,8 +33,9 @@ def get_SPY_info():
 def get_SPY_data():
     '''Returns DataFrame of S&P 500 market data'''
 
-    df = pd.read_csv('data/spy_data/SPY.csv', index_col='Date', parse_dates=['Date'])
-    df.index = pd.to_datetime(df.index, utc=True)
+    df = pd.read_csv('data/spy_data/SPY.csv')
+    df.index = pd.to_datetime(df['Date'].apply(lambda x: x.split(' ')[0]))
+    df.drop(columns='Date', inplace=True)
 
     return df
 
@@ -366,9 +367,9 @@ def plot_sector_metric(df1, df2, metric):
     
     Parameters
     ----------
-    df1 : DataFrame of sector metrics
-    df2 : pd.Series of S&P 500 metrics
-    metric : selected from [Return, Volatility, Sharpe Ratio, Beta, Financial Ratio]  
+    df1: DataFrame of sector metrics
+    df2: pd.Series of S&P 500 metrics
+    metric: selected from [Return, Volatility, Sharpe Ratio, Beta, Financial Ratio]  
     '''
 
     df1.sort_values(by=metric, ascending=False, inplace=True)    
@@ -410,11 +411,11 @@ def plot_subIndustry_metric(df1, df2, df3, sector, metric):
     
     Parameters
     ----------  
-    df1 : DataFrame of sector metrics
-    df2 : DataFrame of sub-industries metrics
-    df3 : pd.Series of S&P 500 metrics
-    sector : user-selected input
-    metric : selected from [Return, Volatility, Sharpe Ratio, Beta, Financial Ratio] 
+    df1: DataFrame of sector metrics
+    df2: DataFrame of sub-industries metrics
+    df3: pd.Series of S&P 500 metrics
+    sector: user-selected input
+    metric: selected from [Return, Volatility, Sharpe Ratio, Beta, Financial Ratio] 
     '''
 
     df2 = df2[df2.Sector == sector].sort_values(by=metric, ascending=False)
@@ -471,13 +472,13 @@ def plot_si_tickers_metric(df1, df2, df3, df4, sector, subIndustry, metric, tick
     
     Parameters
     ----------  
-    df1 : DataFrame of sector metrics
-    df2 : DataFrame of sub-industries metrics
-    df3 : DataFrame of tickers metrics
-    df4 : pd.Series of S&P 500 metrics
-    sector : user-selected input
-    metric : selected from [Return, Volatility, Sharpe Ratio, Beta, Financial Ratio]
-    ticker : user-selected input
+    df1: DataFrame of sector metrics
+    df2: DataFrame of sub-industries metrics
+    df3: DataFrame of tickers metrics
+    df4: pd.Series of S&P 500 metrics
+    sector: user-selected input
+    metric: selected from [Return, Volatility, Sharpe Ratio, Beta, Financial Ratio]
+    ticker: user-selected input
     '''
 
     df3 = df3[df3['Sub-Industry'] == subIndustry].sort_values(by=metric, ascending=False)
@@ -571,13 +572,13 @@ def plot_sector_tickers_metric(df1, df2, df3, df4, sector, subIndustry, metric, 
     
     Parameters
     ----------  
-    df1 : DataFrame of sector metrics
-    df2 : DataFrame of sub-industries metrics
-    df3 : DataFrame of tickers metrics
-    df4 : pd.Series of S&P 500 metrics
-    sector : user-selected input
-    metric : selected from [Return, Volatility, Sharpe Ratio, Beta, Financial Ratio]
-    ticker : user-selected input
+    df1: DataFrame of sector metrics
+    df2: DataFrame of sub-industries metrics
+    df3: DataFrame of tickers metrics
+    df4: pd.Series of S&P 500 metrics
+    sector: user-selected input
+    metric: selected from [Return, Volatility, Sharpe Ratio, Beta, Financial Ratio]
+    ticker: user-selected input
     '''
 
     df3 = df3[df3['Sector'] == sector].sort_values(by=metric, ascending=False)
@@ -681,7 +682,7 @@ rf_rates = get_rf_data()
 SPY_df = get_SPY_data()
 SPY_info_df = get_SPY_info()
 ticker_list = SPY_info_df.index.to_list()
-sector_list = SPY_info_df['Sector'].unique()
+sector_list = SPY_info_df['Sector'].unique().tolist()
 first_date = SPY_df.iloc[0].name
 last_date = SPY_df.iloc[-1].name
 yr_ago = last_date - timedelta(days=365)
