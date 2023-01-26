@@ -17,7 +17,7 @@ import streamlit as st
 def get_rf_data():
     '''Returns DataFrame of 90-day T-Bill Rates'''
 
-    return pd.read_csv('data/T-Bill Rates.csv', index_col='Date', parse_dates=True)
+    return pd.read_csv('data/T-Bill Rates.csv', index_col=0, parse_dates=True)
 
 
 def get_SPY_info():
@@ -48,6 +48,15 @@ def get_ticker_data(ticker):
     df = pd.read_csv(file, index_col=0, parse_dates=True)
     
     return df
+
+
+@st.cache
+def get_ticker_info():
+    fname = 'data/spy_data/spy_tickers_info.pickle'
+    with open(fname, 'rb') as f:
+        info = pickle.load(f)
+
+    return info
 
 
 @st.cache

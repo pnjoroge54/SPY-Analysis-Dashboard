@@ -95,8 +95,8 @@ def get_SPY_weights():
 def get_market_data():  
     '''Get historical data for S&P 500 index & for each constituent stock'''
 
-    SPY = yf.Ticker('^GSPC').history(period='max') # download index data
-    SPY.to_csv(r'data\spy_data\SPY.csv')
+    df = yf.Ticker('^GSPC').history('max') # download index data
+    df.to_csv(r'data\spy_data\SPY.csv')
 
     tickers = get_tickers()[0]
     n = len(tickers)
@@ -105,13 +105,13 @@ def get_market_data():
 
     for i, ticker in enumerate(tickers, 1):
         try:
-            data = si.get_data(ticker) # download stock data
             fname = os.path.join(path, f'{ticker}.csv')
-            data.to_csv(fname)
+            df = si.get_data(ticker) # download stock data
+            df.to_csv(fname)
             print(f"\r{i}/{n} ({i / n:.2%}) of SPY market data downloaded",
                   end='', flush=True)
         except Exception as e:
-            print(f'\r{i}/{n}: {ticker} - {e}')
+            # print(f'\r{i}/{n}: {ticker} - {e}')
             not_downloaded.append(ticker)  
 
     print('\nS&P 500 stock data downloaded \n')
@@ -119,6 +119,43 @@ def get_market_data():
     if not_downloaded:
         print(f'{len(not_downloaded)} stocks not downloaded \n')
 
+
+def get_tickers_info():
+    tickers = get_tickers()[0]
+    n = len(tickers)
+    fname = r'data\spy_data\spy_tickers_info.pickle'
+    
+    if os.path.isfile:
+        with open(fname, 'rb') as f:
+            info = pickle.load(f)
+    else:
+        info = {}
+    
+    for i, ticker in enumerate(tickers, 1):
+        if ticker not in info:
+            info[ticker] = {}
+            try:
+                ticker_info = yf.Ticker(ticker).info
+                info[ticker]['Security'] = ticker_info['longName']
+                info[ticker]['Sector'] = ticker_info['sector']
+                info[ticker]['Industry'] = ticker_info['industry']
+                info[ticker]['Business Summary'] = ticker_info['longBusinessSummary']
+                info[ticker]['Website'] = ticker_info['website']
+            except:
+                info[ticker]['Security'] = 'N/A'
+                info[ticker]['Sector'] = 'N/A'
+                info[ticker]['Industry'] = 'N/A'
+                info[ticker]['Business Summary'] = 'N/A'
+                info[ticker]['Website'] = 'N/A'
+        
+        print(f'\r{i}/{n} ({i / n:.2%}) ticker business summaries downloaded',
+              end='', flush=True)
+
+    with open(fname, 'wb') as f:
+        pickle.dump(info, f)
+    
+    print('Business summaries saved')
+    
 
 def remove_replaced_tickers():
     '''Move tickers that have been removed from the S&P 500 to their own folder'''
@@ -135,6 +172,7 @@ def remove_replaced_tickers():
         mkt = set(mkt) - set(tickers)
         ratios = set(ratios) - set(tickers)
         removed = mkt | ratios
+        
         for ticker in removed:
             file = ticker + '.csv'
             try:
@@ -145,7 +183,6 @@ def remove_replaced_tickers():
                 os.remove(os.path.join(ratios_path, file))
             except:
                 continue
-            # print(f'{ticker} is no longer in SPY')
     
         
 def ratios_to_update():
@@ -296,13 +333,14 @@ def save_TTM_financial_ratios():
 
 
 def get_risk_free_rates():
-    # rf_rates = pdr.fred.FredReader('DTB3', dt(1954, 1, 4), dt.now()).read()
-    rf_rates = yf.download('^IRX', progress=False)
-    rf_rates.to_csv(r'data\T-Bill Rates.csv')
+    # df = pdr.fred.FredReader('DTB3', dt(1954, 1, 4), dt.now()).read()
+    df = si.get_data('^IRX')
+    df.columns = df.columns.str.title()
+    df.to_csv(r'data\T-Bill Rates.csv')
     print('T-Bill Rates saved\n')
 
 
-def get_multi_factor_model_data():
+def get_factor_model_data():
     start_date = '1954-01-01' 
     df_three_factor = web.DataReader('F-F_Research_Data_Factors', 'famafrench', start=start_date)[0]
     df_three_factor.index = df_three_factor.index.format()
@@ -323,15 +361,14 @@ def get_financial_statements():
     tickers = get_tickers()[0]
     n = len(tickers)
     path = r'data\financial_statements'
-    base_url = 'https://stockrow.com/api/companies/'
     d_tickers = {'META': 'FB',
                  'BALL': 'BLL'}
     dict_file = os.path.join(path, 'financial_statements.pickle')
 
-    try:
+    if os.path.isfile(dict_file):
         with open(dict_file, 'rb') as f:
             statements = pickle.load(f)
-    except:
+    else:
         statements = {}
 
     for i, ticker in enumerate(tickers, 1):
@@ -340,15 +377,16 @@ def get_financial_statements():
         else:
             d_ticker = ticker.replace('-', '.')
 
-        base_url += f"{d_ticker}/financials.xlsx?dimension=Q&section="
+        base_url = f"https://stockrow.com/api/companies/{d_ticker}/financials.xlsx?dimension=Q&section="
         sofp = f"{base_url}Balance%20Sheet&sort=desc"
         soci = f"{base_url}Income%20Statement&sort=desc"
         socf = f"{base_url}Cash%20Flow&sort=desc"
+
         download = False
 
-        if d_ticker not in statements:
+        if ticker not in statements:
             download = True
-        elif dt.strptime(statements[d_ticker].columns[0], "%Y-%m-%d").year < dt.now().year - 2:
+        elif dt.strptime(statements[ticker].columns[0], "%Y-%m-%d").year < dt.now().year - 2:
             download = True            
 
         if download:
@@ -356,18 +394,22 @@ def get_financial_statements():
                 df1 = pd.read_excel(sofp) # balance sheet data           
                 df2 = pd.read_excel(soci) # income statement data
                 df3 = pd.read_excel(socf) # cashflow statement data
-                df = pd.concat([df1, df2, df3]) # combining all extracted information
-                df.set_index("Unnamed: 0", inplace=True)
-                df.index.name = 'Item'
-                columns = [x.strftime("%Y-%m-%d") for x in df.columns]
-                df.columns = columns
-                statements[ticker] = df
+                dfs = [df1, df2, df3]
                 fname = f'{ticker}.xlsx'
-                df1.to_excel(os.path.join(path, 'sofp', fname), index=False)
-                df2.to_excel(os.path.join(path, 'soci', fname), index=False)
-                df3.to_excel(os.path.join(path, 'socf', fname), index=False)
+                folders = ['sofp', 'soci', 'socf']
+
+                for df, f in zip(dfs, folders):
+                    df.set_index("Unnamed: 0", inplace=True)
+                    df.index.name = 'Item'
+                    columns = [x.strftime("%Y-%m-%d") for x in df.columns]
+                    df.columns = columns
+                    fpath = os.path.join(path, f, fname)
+                    df.to_excel(fpath)
+
+                df = pd.concat(dfs) # combining all extracted information
+                statements[ticker] = df
             except Exception as e:
-                print(f'\r{i}/{n}: {ticker} - {e}'.ljust(100, ' '))
+                print(f'\r{i}/{n}: {ticker} - {e}'.ljust(70, ' '))
         
         print(f"\r{i}/{n} ({i / n:.2%}) statements downloaded", end='', flush=True)
 
@@ -381,9 +423,10 @@ if __name__ == "__main__":
     get_SPY_companies()
     get_SPY_weights()
     get_risk_free_rates()
-    get_multi_factor_model_data()
+    get_factor_model_data()
     get_market_data()
     remove_replaced_tickers()
     save_TTM_financial_ratios()
     get_financial_ratios()
     get_financial_statements()
+    get_tickers_info()

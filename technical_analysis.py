@@ -207,7 +207,10 @@ def isSupport(df, i):
     '''Returns True if value is a price support level'''
 
     X = df['Low']
-    support = (X[i] < X[i-1]) and (X[i] < X[i+1]) and (X[i+1] < X[i+2]) and (X[i-1] < X[i-2])
+    support = X[i] < X[i - 1] \
+                and X[i] < X[i + 1] \
+                and X[i + 1] < X[i + 2] \
+                and X[i - 1] < X[i - 2]
 
     return support
 
@@ -216,7 +219,10 @@ def isResistance(df, i):
     '''Returns True if value is a price resistance level'''
 
     X = df['High']
-    resistance = (X[i] > X[i-1]) and (X[i] > X[i+1]) and (X[i+1] > X[i+2]) and (X[i-1] > X[i-2]) 
+    resistance = X[i] > X[i - 1] \
+                    and X[i] > X[i + 1] \
+                    and X[i + 1] > X[i + 2] \
+                    and X[i - 1] > X[i - 2] 
 
     return resistance
 
@@ -225,7 +231,8 @@ def sr_levels(df, start, end):
     '''Returns key support/resistance levels for a security'''
 
     df = df[start : end]
-    levels = []
+    support = []
+    resistance = []
     s = (df['High'] - df['Low']).mean()
 
     def isFarFromLevel(l):
@@ -233,25 +240,52 @@ def sr_levels(df, start, end):
         Given a price value, returns False 
         if it is near some previously discovered key level
         '''
-
-        # Distance between levels > MAD
+        
+        levels = support + resistance
         return np.sum([abs(l - x) < s for x in levels]) == 0
 
     for i in range(2, df.shape[0]-2):
         if isSupport(df, i):
             l = df['Low'][i]
             if isFarFromLevel(l):
-                levels.append((i, l))
+                support.append((i, l))
         elif isResistance(df, i):
             l = df['High'][i]
             if isFarFromLevel(l):
-                levels.append((i, l))
+                resistance.append((i, l))
 
-    return levels
+    return support, resistance
+
+
+@st.cache
+def calculate_trends(df, start, end, time_frame, short_ma, inter_ma, primary_ma):
+    df = df[start : end]
+    df.columns = df.columns.str.title()  
+
+    if time_frame != 'Daily':
+        if time_frame == 'Weekly':
+            fmt = 'W-MON'
+        elif time_frame == 'Monthly':
+            fmt = 'BMS'
+
+        ix = df.asfreq(fmt).index
+        open_ = df['Open'].resample(fmt).first()
+        close = df['Close'].resample(fmt).last()
+        high = df['High'].resample(fmt).max()
+        low = df['Low'].resample(fmt).min()
+        volume = df['Volume'].resample(fmt).sum()
+        d = dict(Open=open_, High=high, Low=low, Close=close, Volume=volume)
+        df = pd.DataFrame(d, index=ix)
+
+    df[f'Short-Term MA{short_ma}'] = df['Close'].rolling(short_ma).mean()
+    df[f'Intermediate MA{inter_ma}'] = df['Close'].rolling(inter_ma).mean()
+    df[f'Primary MA{primary_ma}'] = df['Close'].rolling(primary_ma).mean()
+
+    return df
 
 
 @st.cache(allow_output_mutation=True)
-def plot_trends(df, start, end, time_frame, short_trend, inter_trend, primary_trend):
+def plot_trends(df, start, end, time_frame, short_ma, inter_ma, primary_ma):
     '''
     Returns candlestick chart with support/resistance levels
     and market cycle trend lines
@@ -262,35 +296,13 @@ def plot_trends(df, start, end, time_frame, short_trend, inter_trend, primary_tr
     start: Start Date
     end: End Date
     time_frame: [Daily, Weekly, Monthly]
-    short_trend: moving average window
-    inter_trend: moving average window
-    primary_trend: moving average window
+    short_ma: moving average window
+    inter_ma: moving average window
+    primary_ma: moving average window
     '''
 
-    df = df[start : end]
-    df.columns = df.columns.str.title()
-    name = df['Ticker'][0] if 'Ticker' in df.columns else ''  
-
-    if time_frame != 'Daily':
-        if time_frame == 'Weekly':
-            fmt = 'W-MON'
-        elif time_frame == 'Monthly':
-            fmt = 'BMS'
-
-        ixs = df.asfreq(fmt).index
-        open_ = df['Open'].resample(fmt).first()
-        close = df['Close'].resample(fmt).last()
-        high = df['High'].resample(fmt).max()
-        low = df['Low'].resample(fmt).min()
-        volume = df['Volume'].resample(fmt).sum()
-        d = dict(Open=open_, High=high, Low=low, Close=close, Volume=volume)
-        df = pd.DataFrame(d, index=ixs)
-
-    df['Short-Term Trend'] = df['Close'].rolling(window=short_trend).mean()
-    df['Intermediate Trend'] = df['Close'].rolling(window=inter_trend).mean()
-    df['Primary Trend'] = df['Close'].rolling(window=primary_trend).mean()
-    levels = sr_levels(df, start, end)
-
+    df = calculate_trends(df, start, end, time_frame, short_ma, inter_ma, primary_ma)
+    name = df['Ticker'][0] if 'Ticker' in df.columns else ''
     cname = SPY_info_df.loc[name, 'Security']
     title1 = f'{cname}' # {time_frame} Trends & Support-Resistance Levels <br>
     title2 = ''
@@ -307,21 +319,24 @@ def plot_trends(df, start, end, time_frame, short_trend, inter_trend, primary_tr
                         close=df['Close'],
                         name=name)
     sma1 = go.Scatter(x=df.index, 
-                      y=df['Short-Term Trend'], 
-                      name=f'Short-Term Trend ({short_trend})',
+                      y=df[f'Short-Term MA{short_ma}'], 
+                      name=f'Short-Term Trend (MA{short_ma})',
                       line_width=1,
                       line_color='orange',
                       )
     sma2 = go.Scatter(x=df.index,
-                      y=df['Intermediate Trend'],
-                      name=f'Intermediate Trend ({inter_trend})',
+                      y=df[f'Intermediate MA{inter_ma}'],
+                      name=f'Intermediate Trend (MA{inter_ma})',
                       line_width=1.25)
     sma3 = go.Scatter(x=df.index,
-                      y=df['Primary Trend'],
-                      name=f'Primary Trend ({primary_trend})',
+                      y=df[f'Primary MA{primary_ma}'],
+                      name=f'Primary Trend (MA{primary_ma})',
                       line_width=1.5)
     
     fig.add_traces(data=[cs, sma1, sma2, sma3], rows=[1, 1, 1, 1], cols=[1, 1, 1, 1])   
+
+    support, resistance = sr_levels(df, start, end)
+    levels = support + resistance
 
     # Add support & resistance lines
     for i, l in levels:

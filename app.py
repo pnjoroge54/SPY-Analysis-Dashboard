@@ -75,14 +75,10 @@ if option == 'Stock Information':
     except:
         date_added = 'N/A'
 
-    try:
-        tickerData = yf.Ticker(ticker, timeout=15)              
-        website = tickerData.info['website']
-        summary = tickerData.info['longBusinessSummary']
-    except:
-        website = 'N/A'
-        summary = 'You are currently offline...'
-
+    info = get_ticker_info()             
+    website = info[ticker]['Website']
+    summary = info[ticker]['Business Summary']
+    
     st.header(f'**{cname}**')
     st.info(f'''
             **Sector:** {sector} \n

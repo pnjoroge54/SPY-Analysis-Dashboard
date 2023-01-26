@@ -1,1 +1,4 @@
-Calculate Piotroski F-Scores
+- Calculate Piotroski F-Scores as they could be useful in identifying value
+  in securities in the accumulation stage.
+- Identify seasonality in prices, which can be caused by factors such as 
+  "window dressing" by institutions with upcoming earnings reports.
