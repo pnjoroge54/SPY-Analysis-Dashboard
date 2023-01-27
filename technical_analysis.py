@@ -277,9 +277,9 @@ def calculate_trends(df, start, end, time_frame, short_ma, inter_ma, primary_ma)
         d = dict(Open=open_, High=high, Low=low, Close=close, Volume=volume)
         df = pd.DataFrame(d, index=ix)
 
-    df[f'Short-Term MA{short_ma}'] = df['Close'].rolling(short_ma).mean()
-    df[f'Intermediate MA{inter_ma}'] = df['Close'].rolling(inter_ma).mean()
-    df[f'Primary MA{primary_ma}'] = df['Close'].rolling(primary_ma).mean()
+    df[f'MA{short_ma}'] = df['Close'].rolling(short_ma).mean()
+    df[f'MA{inter_ma}'] = df['Close'].rolling(inter_ma).mean()
+    df[f'MA{primary_ma}'] = df['Close'].rolling(primary_ma).mean()
 
     return df
 
@@ -319,17 +319,17 @@ def plot_trends(df, start, end, time_frame, short_ma, inter_ma, primary_ma):
                         close=df['Close'],
                         name=name)
     sma1 = go.Scatter(x=df.index, 
-                      y=df[f'Short-Term MA{short_ma}'], 
+                      y=df[f'MA{short_ma}'], 
                       name=f'Short-Term Trend (MA{short_ma})',
                       line_width=1,
                       line_color='orange',
                       )
     sma2 = go.Scatter(x=df.index,
-                      y=df[f'Intermediate MA{inter_ma}'],
+                      y=df[f'MA{inter_ma}'],
                       name=f'Intermediate Trend (MA{inter_ma})',
                       line_width=1.25)
     sma3 = go.Scatter(x=df.index,
-                      y=df[f'Primary MA{primary_ma}'],
+                      y=df[f'MA{primary_ma}'],
                       name=f'Primary Trend (MA{primary_ma})',
                       line_width=1.5)
     
@@ -351,7 +351,7 @@ def plot_trends(df, start, end, time_frame, short_ma, inter_ma, primary_ma):
     # Volume subplot
     fig.add_trace(go.Bar(x=df.index, y=df['Volume'], name='Volume'),
                   row=2, col=1)
-    fig.update_xaxes(showgrid=False, gridcolor='#BEBEBE')              
+    fig.update_xaxes(showgrid=False)              
     fig.update_yaxes(showgrid=False)
     fig.layout.annotations[0].update(x=0.015)
     fig.layout.xaxis.rangeslider.visible = False

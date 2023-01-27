@@ -6,7 +6,7 @@ import pickle
 def get_rf_data():
     '''Returns dataframe of 90-day T-Bill Rates'''
 
-    return pd.read_csv(r'data\T-Bill Rates.csv', index_col='Date', parse_dates=True)
+    return pd.read_csv(r'data\T-Bill Rates.csv', index_col=0, parse_dates=True)
 
 
 def get_SPY_info():

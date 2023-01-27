@@ -425,7 +425,7 @@ if __name__ == "__main__":
     get_risk_free_rates()
     get_factor_model_data()
     get_market_data()
-    remove_replaced_tickers()
+    # remove_replaced_tickers()
     save_TTM_financial_ratios()
     get_financial_ratios()
     get_financial_statements()
