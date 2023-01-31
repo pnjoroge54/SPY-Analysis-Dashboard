@@ -379,13 +379,14 @@ if option == 'Technical Analysis':
     inter_ma = c1.number_input('Intermediate-Term', value=v[1])
     long_ma = c1.number_input('Long-Term', value=v[2])
     # confirmation_ma = c1.number_input('Confirmation', value=v[2])
+    sectors = ['All Sectors'] + sector_list
 
     c2.write('**Data Selection**')
     trending = c2.selectbox('Trending', [True, False])
-    sector = c2.selectbox('Sectors', ['ALL'] + sector_list)
+    sector = c2.selectbox('Sector', sectors)
     search = c2.radio('Search', ('Ticker', 'Company'), horizontal=True)
     
-    if sector != 'ALL':
+    if sector != sectors[0]:
         df = SPY_info_df[SPY_info_df['Sector'] == sector]
         tickers = df.index.to_list()
         names = df['Security'].to_list()

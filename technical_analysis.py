@@ -360,7 +360,7 @@ def plot_trends(ticker, start, end, time_frame, short_ma, inter_ma, long_ma):
                   row=2, col=1)
     fig.update_xaxes(showgrid=True, gridcolor='#BEBEBE')              
     fig.update_yaxes(showgrid=False)
-    # fig.update_layout(hovermode="x unified")
+    fig.update_layout(hovermode="x unified")
     # fig.layout.annotations[0].update(x=0.1)
     fig.layout.xaxis.rangeslider.visible = False
 
