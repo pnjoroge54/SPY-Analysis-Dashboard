@@ -157,7 +157,7 @@ def set_form_dates():
         c1, c2 = st.columns(2)
         start = c1.date_input('Start Date', yr_ago, min_value=first_date)
         end = c2.date_input('End Date', last_date, max_value=last_date)
-        c1.form_submit_button(label='Submit')
+        st.form_submit_button(label='Submit')
 
     return start, end
 
@@ -690,6 +690,7 @@ def get_financial_statements():
 rf_rates = get_rf_data()
 SPY_df = get_SPY_data()
 SPY_info_df = get_SPY_info()
+tickers_info = get_ticker_info()
 ticker_list = SPY_info_df.index.to_list()
 sector_list = SPY_info_df['Sector'].unique().tolist()
 first_date = SPY_df.iloc[0].name

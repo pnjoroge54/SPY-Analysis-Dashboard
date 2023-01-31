@@ -258,8 +258,8 @@ def sr_levels(df, start, end):
 
 
 @st.cache
-def calculate_trends(df, start, end, time_frame, short_ma, inter_ma, primary_ma):
-    df = df[start : end]
+def calculate_trends(ticker, start, end, time_frame, short_ma, inter_ma, long_ma):
+    df = get_ticker_data(ticker)[start : end]
     df.columns = df.columns.str.title()  
 
     if time_frame != 'Daily':
@@ -279,13 +279,17 @@ def calculate_trends(df, start, end, time_frame, short_ma, inter_ma, primary_ma)
 
     df[f'MA{short_ma}'] = df['Close'].rolling(short_ma).mean()
     df[f'MA{inter_ma}'] = df['Close'].rolling(inter_ma).mean()
-    df[f'MA{primary_ma}'] = df['Close'].rolling(primary_ma).mean()
+    df[f'MA{long_ma}'] = df['Close'].rolling(long_ma).mean()
+
+    if time_frame == 'Daily':
+        confirm_ma = 200
+        df[f'MA{confirm_ma}'] = df['Close'].rolling(confirm_ma).mean()
 
     return df
 
 
 @st.cache(allow_output_mutation=True)
-def plot_trends(df, start, end, time_frame, short_ma, inter_ma, primary_ma):
+def plot_trends(ticker, start, end, time_frame, short_ma, inter_ma, long_ma):
     '''
     Returns candlestick chart with support/resistance levels
     and market cycle trend lines
@@ -298,12 +302,11 @@ def plot_trends(df, start, end, time_frame, short_ma, inter_ma, primary_ma):
     time_frame: [Daily, Weekly, Monthly]
     short_ma: moving average window
     inter_ma: moving average window
-    primary_ma: moving average window
+    long_ma: moving average window
     '''
 
-    df = calculate_trends(df, start, end, time_frame, short_ma, inter_ma, primary_ma)
-    name = df['Ticker'][0] if 'Ticker' in df.columns else ''
-    cname = SPY_info_df.loc[name, 'Security']
+    df = calculate_trends(ticker, start, end, time_frame, short_ma, inter_ma, long_ma)
+    cname = SPY_info_df.loc[ticker, 'Security']
     title1 = f'{cname}' # {time_frame} Trends & Support-Resistance Levels <br>
     title2 = ''
 
@@ -311,29 +314,32 @@ def plot_trends(df, start, end, time_frame, short_ma, inter_ma, primary_ma):
                         shared_xaxes=True, 
                         vertical_spacing=0.01,
                         subplot_titles=(title1, title2), 
-                        row_width=[0.2, 0.7])
+                        row_width=[0.2, 0.8])
+    
     cs = go.Candlestick(x=df.index, 
                         open=df['Open'], 
                         high=df['High'],
                         low=df['Low'], 
                         close=df['Close'],
-                        name=name)
-    sma1 = go.Scatter(x=df.index, 
-                      y=df[f'MA{short_ma}'], 
-                      name=f'Short-Term Trend (MA{short_ma})',
-                      line_width=1,
-                      line_color='orange',
-                      )
-    sma2 = go.Scatter(x=df.index,
-                      y=df[f'MA{inter_ma}'],
-                      name=f'Intermediate Trend (MA{inter_ma})',
-                      line_width=1.25)
-    sma3 = go.Scatter(x=df.index,
-                      y=df[f'MA{primary_ma}'],
-                      name=f'Primary Trend (MA{primary_ma})',
-                      line_width=1.5)
+                        name=ticker)
+    cs.increasing.fillcolor = 'green'
+    cs.increasing.line.color = 'darkgreen'
+    cs.decreasing.fillcolor = 'red'
+    cs.decreasing.line.color = 'indianred'
+
+    data = [cs]
+    all_ma = [short_ma, inter_ma, long_ma]
+
+    if time_frame == 'Daily':
+        all_ma.append(200)
+
+    for ma in all_ma:
+        ma = f'MA{ma}'
+        sma = go.Scatter(x=df.index, y=df[ma], name=ma, line_width=1.25)
+        data.append(sma)
     
-    fig.add_traces(data=[cs, sma1, sma2, sma3], rows=[1, 1, 1, 1], cols=[1, 1, 1, 1])   
+    pos = [1] * len(data) # position to add rows, cols in subplot 
+    fig.add_traces(data=data, rows=pos, cols=pos)   
 
     support, resistance = sr_levels(df, start, end)
     levels = support + resistance
@@ -343,17 +349,19 @@ def plot_trends(df, start, end, time_frame, short_ma, inter_ma, primary_ma):
         n = df.shape[0] - i
         fig.add_scatter(x=df.index[i:],
                         y=[l] * n,
-                        name='S-R',
-                        line={'color': 'yellow', 'width': 0.5},
+                        name='S/R Level',
+                        line={'color': 'orange', 'width': 0.5},
                         mode='lines',
                         showlegend=False)
         
     # Volume subplot
-    fig.add_trace(go.Bar(x=df.index, y=df['Volume'], name='Volume'),
+    fig.add_trace(go.Bar(x=df.index, y=df['Volume'], name='Volume',
+                         marker={'color': 'steelblue'}),
                   row=2, col=1)
-    fig.update_xaxes(showgrid=False)              
+    fig.update_xaxes(showgrid=True, gridcolor='#BEBEBE')              
     fig.update_yaxes(showgrid=False)
-    fig.layout.annotations[0].update(x=0.015)
+    # fig.update_layout(hovermode="x unified")
+    # fig.layout.annotations[0].update(x=0.1)
     fig.layout.xaxis.rangeslider.visible = False
 
     return fig

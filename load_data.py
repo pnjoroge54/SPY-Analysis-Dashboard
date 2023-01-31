@@ -45,3 +45,11 @@ def get_financial_statements():
         d = pickle.load(f)
     
     return d
+
+
+def get_ticker_info():
+    fname = 'data/spy_data/spy_tickers_info.pickle'
+    with open(fname, 'rb') as f:
+        info = pickle.load(f)
+
+    return info

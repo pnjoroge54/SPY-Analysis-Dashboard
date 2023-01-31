@@ -40,9 +40,10 @@ if option == 'S&P 500 Information':
     s4 = f'Sharpe Ratio: {sr:,.2f}' 
     
     # Candlestick chart
-    qf = cf.QuantFig(df, title='S&P 500 Daily Values', name='SPY')
+    qf = cf.QuantFig(df, name='SPY', title='S&P 500')
     qf.add_volume()
-    fig = qf.iplot(asFigure=True, yTitle='Value')
+
+    fig = qf.iplot(asFigure=True)
     st.plotly_chart(fig)
     
     fig = make_returns_histogram(df)
@@ -53,7 +54,7 @@ if option == 'S&P 500 Information':
 
 if option == 'Stock Information':
     c1, c2 = st.columns(2)
-    search = c1.radio('Search by', ('Ticker', 'Company'), horizontal=True)
+    search = c1.radio('Search', ('Ticker', 'Company'), horizontal=True)
     
     if search == 'Ticker':
         ticker = c2.selectbox(search, ticker_list)
@@ -61,7 +62,7 @@ if option == 'Stock Information':
     else:
         names_list = SPY_info_df['Security'].to_list()
         cname = c2.selectbox(search, names_list)
-        ticker = SPY_info_df[SPY_info_df['Security'] == cname].index.name
+        ticker = SPY_info_df[SPY_info_df['Security'] == cname].index.item()
     
     sector = SPY_info_df.loc[ticker, 'Sector']
     subIndustry = SPY_info_df.loc[ticker, 'Sub-Industry']
@@ -74,10 +75,9 @@ if option == 'Stock Information':
         date_added = date_added.strftime('%B %d, %Y')
     except:
         date_added = 'N/A'
-
-    info = get_ticker_info()             
-    website = info[ticker]['Website']
-    summary = info[ticker]['Business Summary']
+             
+    website = tickers_info[ticker]['Website']
+    summary = tickers_info[ticker]['Business Summary']
     
     st.header(f'**{cname}**')
     st.info(f'''
@@ -110,8 +110,8 @@ if option == 'Stock Information':
 
     # Candlestick chart
     qf = cf.QuantFig(ticker_df, title=f'{cname} Daily Prices', name=ticker)
-    qf.add_volume()
-    fig = qf.iplot(asFigure=True, yTitle='Price')
+    qf.add_volume(colorchange=False)
+    fig = qf.iplot(asFigure=True)
     st.plotly_chart(fig)
 
     fig = make_returns_histogram(ticker_df)
@@ -361,28 +361,29 @@ if option == 'News':
 
 
 if option == 'Technical Analysis':
-    time_frame = st.selectbox('Time Frame', ('Daily', 'Weekly', 'Monthly'))
+    start, end = set_form_dates()
+    c1, c2 = st.columns(2)
 
+    c1.write('**Moving Average (MA) Periods**') 
+    time_frame = c1.selectbox('Period', ('Daily', 'Weekly'))
+    
+    # Refer to p.146 
     if time_frame == 'Daily':
-        v = [50, 100, 200]
+        v = [10, 20, 50]
     elif time_frame == 'Weekly':
-        v = [4, 10, 36]
+        v = [10, 20, 40]
     else:
         v = [1, 3, 9]
 
-    with st.form(key='ta_form'):
-        c1, c2, c3 = st.columns(3)
-        short = c1.number_input('Short-Term Trend', value=v[0])
-        inter = c2.number_input('Intermediate Trend', value=v[1])
-        long = c3.number_input('Primary Trend', value=v[2])
-        start_date = last_date - timedelta(365*2)
-        start = c1.date_input('Start Date', start_date, min_value=first_date)
-        end = c2.date_input('End Date', last_date, max_value=last_date)
-        c1.form_submit_button(label='Submit')
+    short_ma = c1.number_input('Short-Term', value=v[0])
+    inter_ma = c1.number_input('Intermediate-Term', value=v[1])
+    long_ma = c1.number_input('Long-Term', value=v[2])
+    # confirmation_ma = c1.number_input('Confirmation', value=v[2])
 
-    c1, c2, c3 = st.columns(3)
-    sector = c1.selectbox('Sectors', ['ALL'] + sector_list)
-    search = c2.radio('Search by', ('Ticker', 'Company'))
+    c2.write('**Data Selection**')
+    trending = c2.selectbox('Trending', [True, False])
+    sector = c2.selectbox('Sectors', ['ALL'] + sector_list)
+    search = c2.radio('Search', ('Ticker', 'Company'), horizontal=True)
     
     if sector != 'ALL':
         df = SPY_info_df[SPY_info_df['Sector'] == sector]
@@ -393,14 +394,13 @@ if option == 'Technical Analysis':
         names = SPY_info_df['Security'].to_list()
 
     if search == 'Ticker':
-        ticker = c3.selectbox(search, ticker_list)
+        ticker = c2.selectbox(search, tickers)
         cname = SPY_info_df.loc[ticker, 'Security']
     else:
-        cname = c3.selectbox(search, names)
-        ticker = SPY_info_df[SPY_info_df['Security'] == cname].index.name
-
-    df = get_ticker_data(ticker)
-    fig = plot_trends(df, start, end, time_frame, short, inter, long)
+        cname = c2.selectbox(search, names)
+        ticker = SPY_info_df[SPY_info_df['Security'] == cname].index.item()
+    
+    fig = plot_trends(ticker, start, end, time_frame, short_ma, inter_ma, long_ma)
     st.plotly_chart(fig) 
 
 # if option == 'Social Media':
