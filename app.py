@@ -117,7 +117,7 @@ if option == 'Stock Information':
     fig = make_returns_histogram(ticker_df)
     st.plotly_chart(fig)
 
-    window = st.number_input('Moving Average Window (Days)', value=20)
+    window = st.number_input('Moving Average (Days)', value=20)
     fig = plot_sma_returns(ticker, start, end, window)
     st.plotly_chart(fig)
 
@@ -364,44 +364,66 @@ if option == 'Technical Analysis':
     start, end = set_form_dates()
     c1, c2 = st.columns(2)
 
-    c1.write('**Moving Average (MA) Periods**') 
-    time_frame = c1.selectbox('Period', ('Daily', 'Weekly'))
+    c1.write('**Moving Averages (MA)**') 
+    period = c1.radio('Period', ('Daily', 'Weekly'), horizontal=True)
     
     # Refer to p.146 
-    if time_frame == 'Daily':
+    if period == 'Daily':
         v = [10, 20, 50]
-    elif time_frame == 'Weekly':
+    elif period == 'Weekly':
         v = [10, 20, 40]
     else:
         v = [1, 3, 9]
 
-    short_ma = c1.number_input('Short-Term', value=v[0])
-    inter_ma = c1.number_input('Intermediate-Term', value=v[1])
-    long_ma = c1.number_input('Long-Term', value=v[2])
+    short_ma = c1.number_input('Short-Term MA', value=v[0])
+    inter_ma = c1.number_input('Intermediate-Term MA', value=v[1])
+    long_ma = c1.number_input('Long-Term MA', value=v[2])
     # confirmation_ma = c1.number_input('Confirmation', value=v[2])
-    sectors = ['All Sectors'] + sector_list
 
     c2.write('**Data Selection**')
-    trending = c2.selectbox('Trending', [True, False])
-    sector = c2.selectbox('Sector', sectors)
-    search = c2.radio('Search', ('Ticker', 'Company'), horizontal=True)
-    
-    if sector != sectors[0]:
-        df = SPY_info_df[SPY_info_df['Sector'] == sector]
-        tickers = df.index.to_list()
-        names = df['Security'].to_list()
+    data = c2.radio('Data', ('All', 'Trending', 'Consolidating'), horizontal=True)  
+    sectors = ['-' * 50] + sector_list
+
+    if data != 'All':
+        up_tickers, down_tickers = get_trending_stocks(start, end, period, short_ma, inter_ma, long_ma)
+        if data == 'Consolidating':
+            tickers = up_tickers + down_tickers
+            tickers = set(ticker_list) - set(tickers)
+        if data == 'Trending':
+            trend = c2.radio('Trend', ('Up', 'Down'), horizontal=True)
+            if trend == 'Up':
+                tickers = up_tickers
+            else:
+                tickers = down_tickers
+            c2.write('') # for aligning rows in columns
     else:
         tickers = ticker_list
-        names = SPY_info_df['Security'].to_list()
-
-    if search == 'Ticker':
-        ticker = c2.selectbox(search, tickers)
-        cname = SPY_info_df.loc[ticker, 'Security']
-    else:
-        cname = c2.selectbox(search, names)
-        ticker = SPY_info_df[SPY_info_df['Security'] == cname].index.item()
     
-    fig = plot_trends(ticker, start, end, time_frame, short_ma, inter_ma, long_ma)
+    sector = c2.selectbox('Sector', sectors)
+    if data != 'Trending':
+        search = c2.radio('Search', ('Ticker', 'Company'), horizontal=True)
+        c2.write('') # for aligning rows in columns
+        ticker_lbl = search
+        if data != 'All':
+            text = f'{len(tickers)} {data.lower()}'
+        else:
+            text = ''
+    else:
+        ticker_lbl = 'Ticker - Security'
+        names = SPY_info_df.loc[tickers, 'Security'].to_list()
+        tickers = [f'{ticker} - {name}' for ticker, name in zip(tickers, names)]
+        text = f'{len(tickers)} {data.lower()} {trend.lower()}'
+
+    # not 'All Sectors'
+    if sector != sectors[0]:
+        df = SPY_info_df[SPY_info_df['Sector'] == sector]
+        tickers = list(set(df.index.to_list()) & set(tickers))   
+    
+    ticker = c2.selectbox(ticker_lbl, tickers, help=text)
+    ticker = ticker.split(' - ')[0]
+
+    show_prices = st.checkbox('Display Candlestick Data')
+    fig = plot_trends(ticker, start, end, period, short_ma, inter_ma, long_ma, show_prices)
     st.plotly_chart(fig) 
 
 # if option == 'Social Media':

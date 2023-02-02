@@ -136,7 +136,7 @@ def get_tickers_info():
     for tickers, s in zip((crnt_tickers, hist_tickers), ('current', 'historical')):
         n = len(tickers)
         for i, ticker in enumerate(tickers, 1):
-            if ticker not in info or info[ticker]['Security'] == 'N/A':
+            if ticker not in info:
                 info[ticker] = {}
                 try:
                     ticker_info = yf.Ticker(ticker).info
