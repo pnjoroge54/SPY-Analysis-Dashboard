@@ -44,8 +44,24 @@ def get_SPY_data():
 def get_ticker_data(ticker):
     '''Load ticker's market data'''
     
-    file = os.path.join('data/market_data', f'{ticker}.csv')
+    file = os.path.join('data/market_data/daily', f'{ticker}.csv')
     df = pd.read_csv(file, index_col=0, parse_dates=True)
+    df.columns = df.columns.str.title()  
+    
+    return df
+
+
+def get_intraday_ticker_data(ticker, interval):
+    '''Load ticker's market data'''
+    
+    # if interval < '5 Min':
+    #     folder = '1m'
+    # else:
+    #     folder = '5m'
+    folder = interval.split(' Min')[0] + 'm'
+    file = os.path.join(f'data/market_data/{folder}', f'{ticker}.csv')
+    df = pd.read_csv(file, index_col=0, parse_dates=True) 
+    df.drop(columns=['Adj Close'], inplace=True)
     
     return df
 
@@ -163,7 +179,7 @@ def set_form_dates():
 
     
 @st.cache
-def make_returns_histogram(df):
+def plot_returns_histogram(df):
     '''Histogram of daily returns'''
 
     gt0 = (len(df[df['Return'] >= 0]) / (len(df) - 1))
@@ -188,12 +204,13 @@ def make_returns_histogram(df):
                   annotation_bgcolor='indianred',
                   annotation_bordercolor='red')
     fig.add_vline(x=df['Return'].median(),
-                  line_color='green',
+                  line_color='limegreen',
                   line_width=0.65, 
                   annotation_text=f"Median ({df['Return'].median():.2%})",
                   annotation_position=pos2, 
-                  annotation_bgcolor='darkgreen',
+                  annotation_bgcolor='limegreen',
                   annotation_bordercolor='green')
+    fig.update_annotations(font=dict(color='white'))
     fig.update_layout(xaxis_title=xtitle)
     fig.layout.xaxis.tickformat = ',.2%'
 
@@ -208,7 +225,7 @@ def calculate_beta(ticker, start_date, end_date):
     df1['Return'] = np.log1p(df1['Close'].pct_change())
     df1.rename(columns={'Return': 'SPY'}, inplace=True)
     df2 = get_ticker_data(ticker)[start_date : end_date]
-    df2['Return'] = np.log1p(df2['adjclose'].pct_change())
+    df2['Return'] = np.log1p(df2['Adjclose'].pct_change())
     df2.rename(columns={'Return': ticker}, inplace=True)
     df = pd.concat([df1['SPY'], df2[ticker]], axis=1, join='inner')
     SPY_std = df['SPY'].std()
@@ -246,9 +263,9 @@ def calculate_metrics(start_date, end_date):
             # Get sub-industry of ticker
             t_si = SPY_info_df.loc[ticker, 'Sub-Industry']
             df = get_ticker_data(ticker)[start_date : end_date]
-            df['Return'] = np.log1p(df['adjclose'].pct_change())
+            df['Return'] = np.log1p(df['Adjclose'].pct_change())
             t = len(df) / 252
-            cagr = ((df['adjclose'][-1] / df['open'][0])**(1 / t) - 1)
+            cagr = ((df['Adjclose'][-1] / df['Open'][0])**(1 / t) - 1)
             std = df['Return'].std() * np.sqrt(252) # Annualised std
             sr = (cagr - rf) / std # Sharpe Ratio
             beta = calculate_beta(ticker, start_date, end_date)
@@ -338,10 +355,13 @@ def plot_sma_returns(ticker, start_date, end_date, window):
     '''Returns line charts of simple moving average of returns for ticker and S&P 500'''
 
     ticker_df = get_ticker_data(ticker)[start_date : end_date]
-    ticker_df['Return'] = np.log1p(ticker_df['adjclose'].pct_change())
+    ticker_df['Return'] = np.log1p(ticker_df['Adjclose'].pct_change())
     SPY_df = get_SPY_data()[start_date : end_date]
     SPY_df['Return'] = np.log1p(SPY_df['Close'].pct_change())
     beta = calculate_beta(ticker, start_date, end_date)
+    yr_days = 365
+    years, days = divmod((end_date - start_date).days, yr_days)
+    years += days / yr_days
 
     fig = go.Figure([
             go.Scatter(
@@ -363,7 +383,8 @@ def plot_sma_returns(ticker, start_date, end_date, window):
             ])
     fig.layout.yaxis.tickformat = ',.2%'
     fig.update_layout(title=f'{window}-Day Moving Average of Returns',
-                      xaxis=dict(title=f'Beta = {beta:,.2f}', showgrid=False), 
+                      xaxis=dict(title=f'{years:.0f}y Beta = {beta:,.2f}',
+                      showgrid=False), 
                       yaxis_title='Return')
 
     return fig
@@ -389,7 +410,7 @@ def plot_sector_metric(df1, df2, metric):
         text1 = f'S&P 500 ({df2[metric]:.2%})'
         fig.add_hline(y=df2[metric],
                   line_color='red',
-                  line_width=2,
+                  line_width=1,
                   annotation_text=text1, 
                   annotation_position='top right',
                   annotation_bgcolor='indianred',
@@ -404,11 +425,12 @@ def plot_sector_metric(df1, df2, metric):
         title = 'Sector Volatilities'
     
     if metric == 'Sharpe Ratio':
-        xtitle = f'Risk-Free rate = {df2.RF:.2%}'
+        xtitle = f'Risk-Free Rate = {df2.RF:.2%}'
     else:
         xtitle = ''
 
     fig.update_layout(title=title, xaxis_title=xtitle)
+    fig.update_annotations(font=dict(color='white'))
 
     return fig
 
@@ -457,19 +479,20 @@ def plot_subIndustry_metric(df1, df2, df3, sector, metric):
 
     fig.add_hline(y=SPY_metric,
                   line_color='red',
-                  line_width=2,
+                  line_width=1,
                   annotation_text=text1, 
                   annotation_position=pos1,
                   annotation_bgcolor='indianred',
                   annotation_bordercolor='red')
     fig.add_hline(y=sector_metric,
-                  line_color='green',
-                  line_width=2,
+                  line_color='limegreen',
+                  line_width=1,
                   annotation_text=text2,
                   annotation_position=pos2, 
-                  annotation_bgcolor='darkgreen',
+                  annotation_bgcolor='limegreen',
                   annotation_bordercolor='green')       
     fig.update_layout(title=title, xaxis_title=xtitle)
+    fig.update_annotations(font=dict(color='white'))
 
     return fig
 
@@ -529,24 +552,24 @@ def plot_si_tickers_metric(df1, df2, df3, df4, sector, subIndustry, metric, tick
         
     fig.add_hline(y=SPY_metric,
                   line_color='red',
-                  line_width=2,
+                  line_width=1,
                   annotation_text=text1, 
                   annotation_position=pos1,
                   annotation_bgcolor='indianred',
                   annotation_bordercolor='red')
     fig.add_hline(y=sector_metric,
-                  line_color='green',
-                  line_width=2,
+                  line_color='limegreen',
+                  line_width=1,
                   annotation_text=text2,
                   annotation_position=pos2, 
-                  annotation_bgcolor='darkgreen',
+                  annotation_bgcolor='limegreen',
                   annotation_bordercolor='green')
     fig.add_hline(y=subIndustry_metric,
                   line_color='blue',
-                  line_width=2,
+                  line_width=1,
                   annotation_text=text3,
                   annotation_position=pos3, 
-                  annotation_bgcolor='darkblue',
+                  annotation_bgcolor='blue',
                   annotation_bordercolor='blue')
 
     if ticker:
@@ -564,12 +587,13 @@ def plot_si_tickers_metric(df1, df2, df3, df4, sector, subIndustry, metric, tick
                            showarrow=True, 
                            arrowhead=3,
                            arrowwidth=2,
-                           arrowcolor='white',
+                           arrowcolor='fuchsia',
                            bordercolor='purple',
                            bgcolor='fuchsia'
                         )
                         
     fig.update_layout(title=title, xaxis_title=xtitle)
+    fig.update_annotations(font=dict(color='white'))
                         
     return fig
 
@@ -632,35 +656,36 @@ def plot_sector_tickers_metric(df1, df2, df3, df4, sector, subIndustry, metric, 
 
     fig.add_hline(y=SPY_metric,
                   line_color='red',
-                  line_width=2,
+                  line_width=1,
                   annotation_text=text1, 
                   annotation_position=pos1,
                   annotation_bgcolor='indianred',
                   annotation_bordercolor='red')
     fig.add_hline(y=sector_metric,
-                  line_color='green',
-                  line_width=2,
+                  line_color='limegreen',
+                  line_width=1,
                   annotation_text=text2,
                   annotation_position=pos2, 
-                  annotation_bgcolor='darkgreen',
+                  annotation_bgcolor='limegreen',
                   annotation_bordercolor='green')
     fig.add_hline(y=subIndustry_metric,
                   line_color='blue',
-                  line_width=2,
+                  line_width=1,
                   annotation_text=text3,
                   annotation_position=pos3, 
-                  annotation_bgcolor='darkblue',
+                  annotation_bgcolor='blue',
                   annotation_bordercolor='blue')
     fig.add_annotation(x=ticker, 
                        y=df3.loc[ticker, metric],
                        text=f'{ticker} is ranked {sector_rank}/{len(rank_df)} in sector', 
                        arrowhead=3,
                        arrowwidth=2,
-                       arrowcolor='white',
+                       arrowcolor='fuchsia',
                        bordercolor='purple',
                        bgcolor='fuchsia',
                        )
     fig.update_layout(title=title, xaxis_title=xtitle)
+    fig.update_annotations(font=dict(color='white'))
 
     return fig
 

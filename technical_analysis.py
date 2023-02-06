@@ -1,5 +1,6 @@
 import numpy as np
 from datetime import timedelta
+import holidays
 
 import cufflinks as cf
 import plotly.graph_objects as go
@@ -244,7 +245,7 @@ def sr_levels(df, start, end):
         levels = support + resistance
         return np.sum([abs(l - x) < s for x in levels]) == 0
 
-    for i in range(2, df.shape[0]-2):
+    for i in range(2, df.shape[0] - 2):
         if isSupport(df, i):
             l = df['Low'][i]
             if isFarFromLevel(l):
@@ -259,36 +260,24 @@ def sr_levels(df, start, end):
 
 @st.cache
 def calculate_trends(ticker, start, end, period, short_ma, inter_ma, long_ma):
-    df = get_ticker_data(ticker)[start : end]
-    df.columns = df.columns.str.title()  
+    if 'Min' in period:
+        df = get_intraday_ticker_data(ticker, period)[start : end]
+    else:
+        df = get_ticker_data(ticker)[start : end]
+        df.drop(columns=['Ticker', 'Adjclose'], inplace=True)
 
-    if period != 'Daily':
-        if period == 'Weekly':
-            fmt = 'W-MON'
-        # elif period == 'Monthly':
-        #     fmt = 'BMS'
+    all_ma = [short_ma, inter_ma, long_ma]
 
-        ix = df.asfreq(fmt).index
-        open_ = df['Open'].resample(fmt).first()
-        close = df['Close'].resample(fmt).last()
-        high = df['High'].resample(fmt).max()
-        low = df['Low'].resample(fmt).min()
-        volume = df['Volume'].resample(fmt).sum()
-        d = dict(Open=open_, High=high, Low=low, Close=close, Volume=volume)
-        df = pd.DataFrame(d, index=ix)
-
-    df[f'MA{short_ma}'] = df['Close'].rolling(short_ma).mean()
-    df[f'MA{inter_ma}'] = df['Close'].rolling(inter_ma).mean()
-    df[f'MA{long_ma}'] = df['Close'].rolling(long_ma).mean()
-
+    for ma in all_ma:
+        df[f'MA{ma}'] = df['Close'].rolling(ma).mean()
+    
     return df
 
 
 @st.cache(allow_output_mutation=True)
 def plot_trends(ticker, start, end, period, short_ma, inter_ma, long_ma, show_prices):
     '''
-    Returns candlestick chart with support/resistance levels
-    and market cycle trend lines
+    Returns candlestick chart with support/resistance levels and market cycle trend lines
 
     Parameters
     ----------
@@ -299,11 +288,12 @@ def plot_trends(ticker, start, end, period, short_ma, inter_ma, long_ma, show_pr
     short_ma: moving average window
     inter_ma: moving average window
     long_ma: moving average window
+    show_prices: display candlestick data on crowded charts
     '''
 
     df = calculate_trends(ticker, start, end, period, short_ma, inter_ma, long_ma)
     cname = SPY_info_df.loc[ticker, 'Security']
-    title1 = f'{cname}' # {period} Trends & Support-Resistance Levels <br>
+    title1 = f'{cname} - {period} Chart' # {period} Trends & Support-Resistance Levels <br>
     title2 = ''
 
     fig = make_subplots(rows=2, cols=1,
@@ -325,7 +315,7 @@ def plot_trends(ticker, start, end, period, short_ma, inter_ma, long_ma, show_pr
 
     data = [cs]
     all_ma = [short_ma, inter_ma, long_ma]
-    colors = ['red', 'blue', 'green']
+    colors = ['red', 'blue', 'limegreen']
 
     for ma, color in zip(all_ma, colors):
         ma = f'MA{ma}'
@@ -333,12 +323,13 @@ def plot_trends(ticker, start, end, period, short_ma, inter_ma, long_ma, show_pr
                          y=df[ma],
                          name=ma,
                          line_width=1,
-                         line_color=color)
+                         line_color=color,
+                         connectgaps=True)
         data.append(sma)
     
     pos = [1] * len(data) # position to add rows, cols in subplot 
-    fig.add_traces(data=data, rows=pos, cols=pos)   
-
+    fig.add_traces(data=data, rows=pos, cols=pos)  
+    
     support, resistance = sr_levels(df, start, end)
     levels = support + resistance
 
@@ -351,21 +342,32 @@ def plot_trends(ticker, start, end, period, short_ma, inter_ma, long_ma, show_pr
                         line_width=0.5,
                         line_color='orange',
                         mode='lines',
-                        showlegend=False)
+                        showlegend=False,
+                        connectgaps=True)
         
     # Volume subplot
-    fig.add_trace(go.Bar(x=df.index, y=df['Volume'], name='Volume',
+    fig.add_trace(go.Bar(x=df.index,
+                         y=df['Volume'],
+                         name='Volume',
                          marker={'color': 'steelblue'}),
                   row=2, col=1)
-    fig.update_xaxes(showgrid=True, gridcolor='#BEBEBE')              
+    
+    us_holidays = list(holidays.US(range(start.year, end.year + 1)).keys())
+    rangebreaks = [dict(bounds=["sat", "mon"]), dict(values=us_holidays)]
+
+    if 'Min' in period:
+        rangebreaks.extend([dict(bounds=[16, 9.5], pattern="hour")])
+        
+    if show_prices:
+        fig.update_layout(hovermode="x unified")
+
+    fig.update_xaxes(showgrid=True, rangebreaks=rangebreaks)              
     fig.update_yaxes(showgrid=False)
     # fig.layout.annotations[0].update(x=0.1)
     fig.layout.xaxis.rangeslider.visible = False
 
-    if show_prices:
-        fig.update_layout(hovermode="x unified")
-
     return fig
+
 
 @st.cache
 def get_trending_stocks(start, end, period, short_ma, inter_ma, long_ma):
@@ -373,10 +375,13 @@ def get_trending_stocks(start, end, period, short_ma, inter_ma, long_ma):
     down = []
 
     for ticker in ticker_list:
-        df = calculate_trends(ticker, start, end, period, short_ma, inter_ma, long_ma)
-        if df[f'MA{long_ma}'][-1] > df[f'MA{inter_ma}'][-1] > df[f'MA{short_ma}'][-1]:
-            down.append(ticker)
-        if df[f'MA{long_ma}'][-1] < df[f'MA{inter_ma}'][-1] < df[f'MA{short_ma}'][-1]:
-            up.append(ticker)
+        try:
+            df = calculate_trends(ticker, start, end, period, short_ma, inter_ma, long_ma)
+            if df[f'MA{long_ma}'][-1] > df[f'MA{inter_ma}'][-1] > df[f'MA{short_ma}'][-1]:
+                down.append(ticker)
+            if df[f'MA{long_ma}'][-1] < df[f'MA{inter_ma}'][-1] < df[f'MA{short_ma}'][-1]:
+                up.append(ticker)
+        except:
+            pass
 
     return up, down

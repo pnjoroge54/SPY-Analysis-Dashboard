@@ -15,7 +15,7 @@ from technical_analysis import *
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 
-options = ('S&P 500 Information', 'Stock Information', 'Stock Analysis',
+options = ('S&P 500 Information', 'Stock Information', 'Stock Comparisons',
            'Sector Analysis', 'Technical Analysis', 'News')
 
 option = st.sidebar.selectbox("Select Dashboard", options)
@@ -46,7 +46,7 @@ if option == 'S&P 500 Information':
     fig = qf.iplot(asFigure=True)
     st.plotly_chart(fig)
     
-    fig = make_returns_histogram(df)
+    fig = plot_returns_histogram(df)
     st.plotly_chart(fig)
 
     st.info(f'{s1}  \n{s2}  \n{s3}  \n{s4}')
@@ -98,7 +98,7 @@ if option == 'Stock Information':
     start, end = set_form_dates() 
 
     ticker_df = ticker_df[start : end]
-    ticker_df['Return'] = np.log1p(ticker_df['adjclose'].pct_change())
+    ticker_df['Return'] = np.log1p(ticker_df['Adjclose'].pct_change())
     ticker_df.rename(columns={'volume': 'Volume'}, inplace=True)
   
     if start > end:
@@ -114,7 +114,7 @@ if option == 'Stock Information':
     fig = qf.iplot(asFigure=True)
     st.plotly_chart(fig)
 
-    fig = make_returns_histogram(ticker_df)
+    fig = plot_returns_histogram(ticker_df)
     st.plotly_chart(fig)
 
     window = st.number_input('Moving Average (Days)', value=20)
@@ -288,7 +288,7 @@ if option == 'Sector Analysis':
         st.plotly_chart(fig)
 
 
-if option == 'Stock Analysis':
+if option == 'Stock Comparisons':
     start, end = set_form_dates() # Date input
 
     _, _, tickers_df, _, _ = calculate_metrics(start, end)
@@ -307,7 +307,9 @@ if option == 'Stock Analysis':
         format = {'Return': lambda x: '{:,.2%}'.format(x),
                   'Volatility': lambda x: '{:,.2%}'.format(x)}
         styler.format(precision=2, formatter=format)
-        styler.set_properties(**{'background-color': 'darkblue'}, subset=[metric])  
+        styler.set_properties(**{'background-color': 'steelblue',
+                                 'color': 'white'},
+                              subset=[metric])  
         return styler
 
     st.write(f'Stocks Ranked by {metric}')
@@ -361,27 +363,58 @@ if option == 'News':
 
 
 if option == 'Technical Analysis':
-    start, end = set_form_dates()
-    c1, c2 = st.columns(2)
+    setups = ('Investor', 'Swing Trader', 'Day Trader')
+    setup = st.selectbox('Trader Setup', setups)
 
-    c1.write('**Moving Averages (MA)**') 
-    period = c1.radio('Period', ('Daily', 'Weekly'), horizontal=True)
-    
-    # Refer to p.146 
-    if period == 'Daily':
-        v = [10, 20, 50]
-    elif period == 'Weekly':
-        v = [10, 20, 40]
+    if setup == 'Investor':
+        periods = ('Weekly', 'Daily', '30 Min')
+    elif setup == 'Swing Trader':
+        periods = ('Daily', '30 Min', '15 Min', '5 Min')
     else:
-        v = [1, 3, 9]
+        periods = ('30 Min', '15 Min', '5 Min', '1 Min')
 
+    c1, c2 = st.columns(2)
+    
+    period = c1.radio('Moving Average (MA) Period', periods, horizontal=True)
+    end = last_date
+
+    if period == '1 Min':
+        days = 1
+    if period == '5 Min':
+        days = 5
+    if period == '15 Min':
+        days = 20
+    if period == '30 Min':
+        days = 20
+    if period == 'Daily':
+        days = 365
+    if period == 'Weekly':
+        days = 365 * 1.5
+    
+    start = end - timedelta(days)
+    # p.146 of Brian Shannon - Technical Analysis Using Multiple Timeframes (2008)
+    if period == 'Weekly':
+        v = [10, 20, 40]
+    elif period == 'Daily':
+        v = [10, 20, 50, 200]
+    elif period == '30 Min':
+        v = [7, 17, 33, 65]
+    elif period == '15 Min':
+        v = [14, 35, 70, 130]
+    elif period == '5 Min':
+        v = [40, 100, 200]
+    elif period == '2 Min':
+        v = [20, 50, 100]
+    elif period == '1 Min':
+        v = [50, 100, 200]
+
+    # c1.write('')
     short_ma = c1.number_input('Short-Term MA', value=v[0])
     inter_ma = c1.number_input('Intermediate-Term MA', value=v[1])
     long_ma = c1.number_input('Long-Term MA', value=v[2])
-    # confirmation_ma = c1.number_input('Confirmation', value=v[2])
 
-    c2.write('**Data Selection**')
-    data = c2.radio('Data', ('All', 'Trending', 'Consolidating'), horizontal=True)  
+    data = c2.radio('Stocks', ('Trending', 'Consolidating', 'All'), horizontal=True)
+    # c2.write('')
     sectors = ['-' * 50] + sector_list
 
     if data != 'All':
@@ -400,31 +433,59 @@ if option == 'Technical Analysis':
         tickers = ticker_list
     
     sector = c2.selectbox('Sector', sectors)
+
     if data != 'Trending':
         search = c2.radio('Search', ('Ticker', 'Company'), horizontal=True)
         c2.write('') # for aligning rows in columns
         ticker_lbl = search
-        if data != 'All':
-            text = f'{len(tickers)} {data.lower()}'
-        else:
-            text = ''
     else:
         ticker_lbl = 'Ticker - Security'
-        names = SPY_info_df.loc[tickers, 'Security'].to_list()
-        tickers = [f'{ticker} - {name}' for ticker, name in zip(tickers, names)]
-        text = f'{len(tickers)} {data.lower()} {trend.lower()}'
+        
 
-    # not 'All Sectors'
+    # not all sectors
     if sector != sectors[0]:
         df = SPY_info_df[SPY_info_df['Sector'] == sector]
-        tickers = list(set(df.index.to_list()) & set(tickers))   
+        tickers = list(set(df.index.to_list()) & set(tickers))
+        names = SPY_info_df.loc[tickers, 'Security'].to_list()
+        if data == 'Trending':
+            tickers = [f'{ticker} - {name}' for ticker, name in zip(tickers, names)]
+
+    if data == 'Consolidating':
+        text = f'{len(tickers)} {data.lower()}'
+    elif data == 'Trending':
+        text = f'{len(tickers)} {data.lower()} {trend.lower()}'
+    elif data == 'All':
+        text = '' 
     
     ticker = c2.selectbox(ticker_lbl, tickers, help=text)
-    ticker = ticker.split(' - ')[0]
 
-    show_prices = st.checkbox('Display Candlestick Data')
-    fig = plot_trends(ticker, start, end, period, short_ma, inter_ma, long_ma, show_prices)
-    st.plotly_chart(fig) 
+    if tickers:
+        ticker = ticker.split(' - ')[0]
+
+        show_prices = st.checkbox('Display Candlestick Data')
+        # file = 'watchlist.pickle'
+
+        # if os.path.isfile(file):
+        #     with open(file, 'rb') as f:
+        #         watchlist = pickle.load(f)
+        # else:
+        #     watchlist = []
+
+        # if len(watchlist) > 0:
+        #     with c1.expander("Watchlist", expanded=False):
+        #         st.write(watchlist)
+            
+        fig = plot_trends(ticker, start, end, period, short_ma, inter_ma, long_ma, show_prices)
+        st.plotly_chart(fig)
+        
+        # Add option to view stocks in watchlist
+        # save = c2.button('Add Stock to Watchlist')
+        
+        # if save:
+        #     with open(file, 'wb') as f:
+        #         watchlist.append(ticker)
+        #         pickle.dump(watchlist, f)
+
 
 # if option == 'Social Media':
 #     platform = st.selectbox('Platform', 'StockTwits')

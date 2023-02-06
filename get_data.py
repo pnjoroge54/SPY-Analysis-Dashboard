@@ -1,6 +1,7 @@
 import os
 import pickle
 import pandas as pd
+import time
 from datetime import datetime as dt
 from datetime import timedelta
 from pytz import timezone
@@ -93,26 +94,39 @@ def get_SPY_weights():
 
 def get_market_data():  
     '''Get historical data for S&P 500 index & for each constituent stock'''
-
+    start = time.time()
     df = yf.Ticker('^GSPC').history('max') # download index data
-    df.to_csv(r'data\spy_data\SPY.csv')
-    print('S&P 500 index data downloaded')
+
+    if not df.empty:
+        df.to_csv(r'data\spy_data\SPY.csv')
+    end = time.time()
+    mm, ss = divmod(end - start, 60)
+    print(f'\r{mm:.0f}m:{ss:.0f}s S&P 500 index data downloaded')
 
     crnt_tickers, hist_tickers = get_tickers()
     not_downloaded = []
-    path = r'data\market_data'
+    path = r'data\market_data\daily'
 
     for tickers, s in zip((crnt_tickers, hist_tickers), ('current', 'historical')):
+        # tickers = set(tickers) - set([f.split('.csv')[0] for f in os.listdir(path)])
         n = len(tickers)
+        j = 0
         for i, ticker in enumerate(tickers, 1):
             try:
                 fname = os.path.join(path, f'{ticker}.csv')
                 df = si.get_data(ticker) # download stock data
-                df.to_csv(fname)
-                print(f"\r{i}/{n} ({i / n:.2%}) of {s} SPY market data downloaded",
-                    end='', flush=True)
+                if not df.empty:
+                    df.to_csv(fname)
+                end = time.time()
+                mm, ss = divmod(end - start, 60)
+                print(f"\r{mm:.0f}m:{ss:.0f}s {i}/{n} ({i / n:.2%})" \
+                      f" of {s} SPY market data downloaded".ljust(70, ' '),
+                      end='', flush=True)
             except Exception as e:
-                print(f'\r{i}/{n}: {ticker} - {e}')
+                j += 1
+                end = time.time()
+                mm, ss = divmod(end - start, 60)
+                print(f'\r{mm:.0f}m:{ss:.0f}s {j}/{n}: {ticker} - {e}'.ljust(70, ' '))
                 not_downloaded.append(ticker)  
 
     print('\nS&P 500 stock data downloaded \n')
@@ -121,6 +135,43 @@ def get_market_data():
         print(f'{len(not_downloaded)} stocks not downloaded \n')
     
     return not_downloaded
+
+
+def get_intraday_market_data(interval):
+    t_start = time.time()
+    tickers, _ = get_tickers()
+    end = dt.now()
+    start = end - timedelta(60)
+    
+    if interval == '1m':
+        start = end - timedelta(7)
+    
+    path = fr'data\market_data\{interval}'
+    os.makedirs(path, exist_ok=True)
+    tickers = set(tickers) - set([f.split('.csv')[0] for f in os.listdir(path)])
+    n = len(tickers)
+    j = 0
+
+    for i, ticker in enumerate(tickers, 1):
+        try:
+            fname = os.path.join(path, f'{ticker}.csv')
+            df = yf.download(ticker, interval=interval, start=start, end=end, progress=False)
+            if not df.empty:
+                df.to_csv(fname)
+            t_end = time.time()
+            mm, ss = divmod(t_end - t_start, 60)
+            print(f"\r{mm:.0f}m:{ss:.0f}s {i}/{n} ({i / n:.2%})" \
+                  f" of {interval} SPY market data downloaded".ljust(70, ' '),
+                    end='', flush=True)
+        except Exception as e:
+            j += 1
+            t_end = time.time()
+            mm, ss = divmod(t_end - t_start, 60)
+            print(f'\r{mm:.0f}m:{ss:.0f}s{j}/{n}: {ticker} - {e}',
+                  end='', flush=True)
+        
+
+    print(f'\n{n - j}/{n} of S&P 500 stock {interval} data downloaded \n')
 
 
 def get_tickers_info():
@@ -398,12 +449,16 @@ def get_financial_statements():
         
 
 if __name__ == "__main__":           
-    get_SPY_companies()
-    get_SPY_weights()
-    get_risk_free_rates()
-    get_factor_model_data()
-    get_market_data()
-    save_TTM_financial_ratios()
-    get_financial_ratios()
-    get_financial_statements()
-    get_tickers_info()
+    # get_SPY_companies()
+    # get_SPY_weights()
+    # get_risk_free_rates()
+    # get_factor_model_data()
+    # get_market_data()
+    # save_TTM_financial_ratios()
+    # get_financial_ratios()
+    # get_financial_statements()
+    # get_tickers_info()
+    # intervals = ('1m', '5m', '15m', '30m', '60m')
+    intervals = ('15m', '30m', '60m')
+    for intvl in intervals:
+        get_intraday_market_data(intvl)

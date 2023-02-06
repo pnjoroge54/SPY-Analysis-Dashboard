@@ -30,8 +30,24 @@ def get_SPY_data():
 
 
 def get_ticker_data(ticker):
-    file = os.path.join(r'data\market_data', f'{ticker.upper()}.csv')
+    file = os.path.join(r'data\market_data\daily', f'{ticker.upper()}.csv')
     df = pd.read_csv(file, index_col=0, parse_dates=True)
+    df.columns = df.columns.str.title()  
+    
+    return df
+
+
+def get_intraday_ticker_data(ticker, interval):
+    '''Load ticker's market data'''
+    
+    if interval < '5 Min':
+        folder = '1min'
+    else:
+        folder = '5min'
+
+    file = os.path.join(f'data/market_data/{folder}', f'{ticker}.csv')
+    df = pd.read_csv(file, index_col=0, parse_dates=True) 
+    df.drop(columns=['Adj Close'], inplace=True)
     
     return df
 
