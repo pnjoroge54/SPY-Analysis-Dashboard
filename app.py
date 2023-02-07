@@ -181,6 +181,7 @@ if option == 'Sector Analysis':
 
         nsector_tickers = len(SPY_info_df[SPY_info_df['Sector'] == sector].index)
         subIndustry_list = subIndustries_df[subIndustries_df['Sector'] == sector].index.to_list()
+        subIndustry_list = sorted(subIndustry_list)
         missing = missing_data.get(sector, {})
         n_missing = len(missing)  
 
@@ -378,44 +379,35 @@ if option == 'Technical Analysis':
     period = c1.radio('Moving Average (MA) Period', periods, horizontal=True)
     end = last_date
 
+    # p.146 of Brian Shannon - Technical Analysis Using Multiple Timeframes (2008)
     if period == '1 Min':
+        v = [50, 100, 200]
         days = 1
     if period == '5 Min':
+        v = [40, 100, 200]
         days = 5
     if period == '15 Min':
+        v = [14, 35, 70, 130]
         days = 20
     if period == '30 Min':
+        v = [7, 17, 33, 65]
         days = 20
     if period == 'Daily':
+        v = [10, 20, 50, 200]
         days = 365
     if period == 'Weekly':
+        v = [10, 20, 40]
         days = 365 * 1.5
     
-    start = end - timedelta(days)
-    # p.146 of Brian Shannon - Technical Analysis Using Multiple Timeframes (2008)
-    if period == 'Weekly':
-        v = [10, 20, 40]
-    elif period == 'Daily':
-        v = [10, 20, 50, 200]
-    elif period == '30 Min':
-        v = [7, 17, 33, 65]
-    elif period == '15 Min':
-        v = [14, 35, 70, 130]
-    elif period == '5 Min':
-        v = [40, 100, 200]
-    elif period == '2 Min':
-        v = [20, 50, 100]
-    elif period == '1 Min':
-        v = [50, 100, 200]
-
-    # c1.write('')
+    start = end - timedelta(days)    
+    
     short_ma = c1.number_input('Short-Term MA', value=v[0])
     inter_ma = c1.number_input('Intermediate-Term MA', value=v[1])
     long_ma = c1.number_input('Long-Term MA', value=v[2])
 
     data = c2.radio('Stocks', ('Trending', 'Consolidating', 'All'), horizontal=True)
-    # c2.write('')
-    sectors = ['-' * 50] + sector_list
+    
+    sectors = ['-' * 50]
 
     if data != 'All':
         up_tickers, down_tickers = get_trending_stocks(start, end, period, short_ma, inter_ma, long_ma)
@@ -428,9 +420,11 @@ if option == 'Technical Analysis':
                 tickers = up_tickers
             else:
                 tickers = down_tickers
+            sectors += SPY_info_df.loc[tickers, 'Sector'].unique().tolist()
             c2.write('') # for aligning rows in columns
     else:
         tickers = ticker_list
+        sectors += sector_list
     
     sector = c2.selectbox('Sector', sectors)
 
@@ -441,28 +435,28 @@ if option == 'Technical Analysis':
     else:
         ticker_lbl = 'Ticker - Security'
         
-
     # not all sectors
     if sector != sectors[0]:
         df = SPY_info_df[SPY_info_df['Sector'] == sector]
         tickers = list(set(df.index.to_list()) & set(tickers))
-        names = SPY_info_df.loc[tickers, 'Security'].to_list()
-        if data == 'Trending':
-            tickers = [f'{ticker} - {name}' for ticker, name in zip(tickers, names)]
-
+            
     if data == 'Consolidating':
         text = f'{len(tickers)} {data.lower()}'
     elif data == 'Trending':
+        names = SPY_info_df.loc[tickers, 'Security'].to_list()
+        tickers = [f'{ticker} - {name}' for ticker, name in zip(tickers, names)]
         text = f'{len(tickers)} {data.lower()} {trend.lower()}'
-    elif data == 'All':
+    else:
         text = '' 
     
-    ticker = c2.selectbox(ticker_lbl, tickers, help=text)
+    ticker = c2.selectbox(ticker_lbl, sorted(tickers), help=text)
 
     if tickers:
         ticker = ticker.split(' - ')[0]
-
         show_prices = st.checkbox('Display Candlestick Data')
+        fig = plot_trends(ticker, start, end, period, short_ma, inter_ma, long_ma, show_prices)
+        st.plotly_chart(fig)
+
         # file = 'watchlist.pickle'
 
         # if os.path.isfile(file):
@@ -475,8 +469,7 @@ if option == 'Technical Analysis':
         #     with c1.expander("Watchlist", expanded=False):
         #         st.write(watchlist)
             
-        fig = plot_trends(ticker, start, end, period, short_ma, inter_ma, long_ma, show_prices)
-        st.plotly_chart(fig)
+
         
         # Add option to view stocks in watchlist
         # save = c2.button('Add Stock to Watchlist')

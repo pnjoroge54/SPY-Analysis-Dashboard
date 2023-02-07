@@ -46,7 +46,7 @@ def get_ticker_data(ticker):
     
     file = os.path.join('data/market_data/daily', f'{ticker}.csv')
     df = pd.read_csv(file, index_col=0, parse_dates=True)
-    df.columns = df.columns.str.title()  
+    df.columns = df.columns.str.title()
     
     return df
 
@@ -54,10 +54,6 @@ def get_ticker_data(ticker):
 def get_intraday_ticker_data(ticker, interval):
     '''Load ticker's market data'''
     
-    # if interval < '5 Min':
-    #     folder = '1m'
-    # else:
-    #     folder = '5m'
     folder = interval.split(' Min')[0] + 'm'
     file = os.path.join(f'data/market_data/{folder}', f'{ticker}.csv')
     df = pd.read_csv(file, index_col=0, parse_dates=True) 
@@ -717,7 +713,7 @@ SPY_df = get_SPY_data()
 SPY_info_df = get_SPY_info()
 tickers_info = get_ticker_info()
 ticker_list = SPY_info_df.index.to_list()
-sector_list = SPY_info_df['Sector'].unique().tolist()
+sector_list = sorted(SPY_info_df['Sector'].unique().tolist())
 first_date = SPY_df.iloc[0].name
 last_date = SPY_df.iloc[-1].name
 yr_ago = last_date - timedelta(days=365)

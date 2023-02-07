@@ -94,6 +94,7 @@ def get_SPY_weights():
 
 def get_market_data():  
     '''Get historical data for S&P 500 index & for each constituent stock'''
+
     start = time.time()
     df = yf.Ticker('^GSPC').history('max') # download index data
 
@@ -168,8 +169,7 @@ def get_intraday_market_data(interval):
             t_end = time.time()
             mm, ss = divmod(t_end - t_start, 60)
             print(f'\r{mm:.0f}m:{ss:.0f}s{j}/{n}: {ticker} - {e}',
-                  end='', flush=True)
-        
+                  end='', flush=True) 
 
     print(f'\n{n - j}/{n} of S&P 500 stock {interval} data downloaded \n')
 
@@ -449,16 +449,17 @@ def get_financial_statements():
         
 
 if __name__ == "__main__":           
-    # get_SPY_companies()
-    # get_SPY_weights()
-    # get_risk_free_rates()
-    # get_factor_model_data()
-    # get_market_data()
-    # save_TTM_financial_ratios()
-    # get_financial_ratios()
-    # get_financial_statements()
-    # get_tickers_info()
-    # intervals = ('1m', '5m', '15m', '30m', '60m')
-    intervals = ('15m', '30m', '60m')
+    get_SPY_companies()
+    get_SPY_weights()
+    get_risk_free_rates()
+    get_factor_model_data()
+    get_market_data()
+    save_TTM_financial_ratios()
+    get_financial_ratios()
+    get_financial_statements()
+    get_tickers_info()
+
+    intervals = ('1m', '5m', '15m', '30m', '60m')
+    
     for intvl in intervals:
         get_intraday_market_data(intvl)
