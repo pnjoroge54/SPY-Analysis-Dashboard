@@ -686,6 +686,34 @@ def plot_sector_tickers_metric(df1, df2, df3, df4, sector, subIndustry, metric, 
     return fig
 
 
+@st.cache(allow_output_mutation=True)
+def plot_sector_financial_ratios(df, ratio):
+    df.sort_values(by=ratio, ascending=False, inplace=True) 
+    fig = px.bar(df, x=df.index, y=ratio, opacity=0.65)
+    fig.update_layout(title=f'Sector {ratio}', xaxis_title='')
+    
+    return fig
+                          
+
+# @st.cache(allow_output_mutation=True)
+# def plot_si_financial_ratios(df1, df2, ratio, sector):
+#     sector_ratio = df1.loc[sector].item()
+#     df2 = df2[df2['Sector'] == sector].sort_values(by=ratio, ascending=False)
+    
+#     # Chart of sub-industry ratios
+#     fig = px.bar(df2, x=df2.index, y=ratio, opacity=0.65)
+#     fig.layout.yaxis.tickformat = ',.2f'
+#     fig.add_hline(y=sector_ratio, 
+#                   line_color='red', 
+#                   line_width=1,
+#                   annotation_text=f'{sector} {ratio} ({sector_ratio:,.2f})', 
+#                   annotation_bgcolor='indianred', 
+#                   annotation_bordercolor='red')
+#     fig.update_layout(title=f'{sector} Sub-Industry {ratio}s', xaxis_title='')
+    
+#     return fig
+
+
 def get_news(ticker, date):
     '''Get news about stock on date using Finnhub API'''
 

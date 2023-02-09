@@ -259,16 +259,16 @@ def sr_levels(df, start, end):
 
 
 @st.cache
-def calculate_trends(ticker, start, end, period, short_ma, inter_ma, long_ma):
+def calculate_MAs(ticker, start, end, period, short_ma, inter_ma, long_ma):
     if 'Min' in period:
         df = get_intraday_ticker_data(ticker, period)[start : end]
     else:
         df = get_ticker_data(ticker)[start : end]
         df.drop(columns=['Ticker', 'Adjclose'], inplace=True)
 
-    all_ma = [short_ma, inter_ma, long_ma]
+    MAs = [short_ma, inter_ma, long_ma]
 
-    for ma in all_ma:
+    for ma in MAs:
         df[f'MA{ma}'] = df['Close'].rolling(ma).mean()
     
     return df
@@ -291,14 +291,14 @@ def plot_trends(ticker, start, end, period, short_ma, inter_ma, long_ma, show_pr
     show_prices: display candlestick data on crowded charts
     '''
 
-    df = calculate_trends(ticker, start, end, period, short_ma, inter_ma, long_ma)
+    df = calculate_MAs(ticker, start, end, period, short_ma, inter_ma, long_ma)
     cname = SPY_info_df.loc[ticker, 'Security']
     title1 = f'{cname} - {period} Chart' # {period} Trends & Support-Resistance Levels <br>
     title2 = ''
 
     fig = make_subplots(rows=2, cols=1,
                         shared_xaxes=True, 
-                        vertical_spacing=0.01,
+                        vertical_spacing=0.05,
                         subplot_titles=(title1, title2), 
                         row_width=[0.2, 0.8])
     
@@ -308,16 +308,17 @@ def plot_trends(ticker, start, end, period, short_ma, inter_ma, long_ma, show_pr
                         low=df['Low'], 
                         close=df['Close'],
                         name=ticker)
+    
     cs.increasing.fillcolor = 'green'
     cs.increasing.line.color = 'darkgreen'
     cs.decreasing.fillcolor = 'red'
     cs.decreasing.line.color = 'indianred'
 
     data = [cs]
-    all_ma = [short_ma, inter_ma, long_ma]
+    MAs = [short_ma, inter_ma, long_ma]
     colors = ['red', 'blue', 'limegreen']
 
-    for ma, color in zip(all_ma, colors):
+    for ma, color in zip(MAs, colors):
         ma = f'MA{ma}'
         sma = go.Scatter(x=df.index,
                          y=df[ma],
@@ -376,12 +377,43 @@ def get_trending_stocks(start, end, period, short_ma, inter_ma, long_ma):
 
     for ticker in ticker_list:
         try:
-            df = calculate_trends(ticker, start, end, period, short_ma, inter_ma, long_ma)
+            df = calculate_MAs(ticker, start, end, period, short_ma, inter_ma, long_ma)
             if df[f'MA{long_ma}'][-1] > df[f'MA{inter_ma}'][-1] > df[f'MA{short_ma}'][-1]:
                 down.append(ticker)
             if df[f'MA{long_ma}'][-1] < df[f'MA{inter_ma}'][-1] < df[f'MA{short_ma}'][-1]:
                 up.append(ticker)
         except:
-            pass
+            continue
 
     return up, down
+
+
+@st.cache
+def get_trend_aligned_stocks(periods_data, periods):
+    end = last_date
+
+    for i, period in enumerate(periods):
+        period_d = periods_data[period]
+        days = period_d['days']
+        days = days + 2 if end.weekday() == 0 else days
+        start = end - timedelta(days)
+        short_ma, inter_ma, long_ma, *_ = period_d['MA']
+        up, down = get_trending_stocks(start, end, period, short_ma, inter_ma, long_ma)
+        if i == 0:
+            up_aligned = set(up)
+            down_aligned = set(down)
+        else:
+            up_aligned.intersection_update(up) 
+            down_aligned.intersection_update(down)
+
+    return list(up_aligned), list(down_aligned)
+
+
+# def get_trending_stocks_data(up, down, period):
+#     tickers = up + down
+#     d = dict(Up={}, Down={})
+
+#     for ticker in tickers:
+#         if ticker in up:
+#             d['Up'][ticker] = date
+

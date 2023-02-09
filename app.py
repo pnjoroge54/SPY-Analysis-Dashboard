@@ -4,11 +4,10 @@ import warnings
 
 import cufflinks as cf
 import plotly.express as px
-import yfinance as yf
 import streamlit as st
 from newspaper import Article
 
-from info import SPY_INFO, FINANCIAL_RATIOS
+from info import *
 from functions import *
 from technical_analysis import *
 
@@ -148,10 +147,10 @@ if option == 'Stock Information':
 
 if option == 'Sector Analysis':
     # Metrics to display graphs of
-    metrics = ('Return', 'Volatility', 'Sharpe Ratio', 'Beta', 'Financial Ratio')
+    metrics = ('Return', 'Volatility', 'Sharpe Ratio', 'Beta', 'Financial Ratios')
     metric = st.selectbox('Metric', metrics)
     
-    if metric != 'Financial Ratio':
+    if metric != 'Financial Ratios':
         #------------------SECTORS--------------------
         start, end = set_form_dates() # Date input
 
@@ -213,7 +212,7 @@ if option == 'Sector Analysis':
                                      SPY_metrics, sector, subIndustry, metric)
         st.plotly_chart(fig)
 
-    if metric == 'Financial Ratio':
+    if metric == 'Financial Ratios':
         #------------------SECTORS--------------------
         c1, c2 = st.columns(2)
 
@@ -239,8 +238,7 @@ if option == 'Sector Analysis':
         sectors_df, subIndustries_df, tickers_df = get_TTM_ratios(ratios, ratio)
 
         # Charts of sector ratios
-        fig = px.bar(sectors_df, x=sectors_df.index, y=ratio, opacity=0.65)
-        fig.update_layout(title=f'Sector {ratio}', xaxis_title='')
+        fig = plot_sector_financial_ratios(sectors_df, ratio)
         st.plotly_chart(fig)
 
         #------------------SUB-INDUSTRIES--------------------
@@ -249,7 +247,7 @@ if option == 'Sector Analysis':
         sector_ratio = sectors_df.loc[sector].item()
         df = subIndustries_df[subIndustries_df['Sector'] == sector].sort_values(by=ratio, ascending=False)
         subIndustry_list = df.index.to_list()
-
+        
         # Chart of sub-industry ratios
         fig = px.bar(df, x=df.index, y=ratio, opacity=0.65)
         fig.layout.yaxis.tickformat = ',.2f'
@@ -366,7 +364,7 @@ if option == 'News':
 if option == 'Technical Analysis':
     setups = ('Investor', 'Swing Trader', 'Day Trader')
     setup = st.selectbox('Trader Setup', setups)
-
+    
     if setup == 'Investor':
         periods = ('Weekly', 'Daily', '30 Min')
     elif setup == 'Swing Trader':
@@ -375,74 +373,56 @@ if option == 'Technical Analysis':
         periods = ('30 Min', '15 Min', '5 Min', '1 Min')
 
     c1, c2 = st.columns(2)
-    
     period = c1.radio('Moving Average (MA) Period', periods, horizontal=True)
+
+    period_d = TA_PERIODS[period]
+    MAs = period_d['MA']
+    days = period_d['days']
     end = last_date
 
-    # p.146 of Brian Shannon - Technical Analysis Using Multiple Timeframes (2008)
-    if period == '1 Min':
-        v = [50, 100, 200]
-        days = 1
-    if period == '5 Min':
-        v = [40, 100, 200]
-        days = 5
-    if period == '15 Min':
-        v = [14, 35, 70, 130]
-        days = 20
-    if period == '30 Min':
-        v = [7, 17, 33, 65]
-        days = 20
-    if period == 'Daily':
-        v = [10, 20, 50, 200]
-        days = 365
-    if period == 'Weekly':
-        v = [10, 20, 40]
-        days = 365 * 1.5
-    
-    start = end - timedelta(days)    
-    
-    short_ma = c1.number_input('Short-Term MA', value=v[0])
-    inter_ma = c1.number_input('Intermediate-Term MA', value=v[1])
-    long_ma = c1.number_input('Long-Term MA', value=v[2])
+    if end.weekday() == 0:
+        days += 2
 
-    data = c2.radio('Stocks', ('Trending', 'Consolidating', 'All'), horizontal=True)
+    start = end - timedelta(days)
     
-    sectors = ['-' * 50]
+    short_ma = c1.number_input('Short-Term MA', value=MAs[0])
+    inter_ma = c1.number_input('Intermediate-Term MA', value=MAs[1])
+    long_ma = c1.number_input('Long-Term MA', value=MAs[2])
+
+    data = c2.radio('Stocks', ('Trend-Aligned', 'Trending', 'All'), horizontal=True)
 
     if data != 'All':
-        up_tickers, down_tickers = get_trending_stocks(start, end, period, short_ma, inter_ma, long_ma)
-        if data == 'Consolidating':
-            tickers = up_tickers + down_tickers
-            tickers = set(ticker_list) - set(tickers)
+        trend = c2.radio('Trend', ('Up', 'Down'), horizontal=True)
+        c2.write('') # for aligning rows in columns
         if data == 'Trending':
-            trend = c2.radio('Trend', ('Up', 'Down'), horizontal=True)
+            up_tickers, down_tickers = get_trending_stocks(start, end, period, short_ma, inter_ma, long_ma)
             if trend == 'Up':
                 tickers = up_tickers
             else:
                 tickers = down_tickers
-            sectors += SPY_info_df.loc[tickers, 'Sector'].unique().tolist()
-            c2.write('') # for aligning rows in columns
+        else:
+            up_aligned, down_aligned = get_trend_aligned_stocks(TA_PERIODS, periods)
+            if trend == 'Up':
+                tickers = up_aligned
+            else:
+                tickers = down_aligned 
+        ticker_lbl = 'Ticker - Security' 
     else:
         tickers = ticker_list
-        sectors += sector_list
-    
-    sector = c2.selectbox('Sector', sectors)
-
-    if data != 'Trending':
         search = c2.radio('Search', ('Ticker', 'Company'), horizontal=True)
         c2.write('') # for aligning rows in columns
         ticker_lbl = search
-    else:
-        ticker_lbl = 'Ticker - Security'
+
+    sectors = ['-' * 50]    
+    sectors += SPY_info_df.loc[tickers, 'Sector'].unique().tolist()
+    sector = c2.selectbox('Sector', sorted(sectors))
         
     # not all sectors
     if sector != sectors[0]:
         df = SPY_info_df[SPY_info_df['Sector'] == sector]
         tickers = list(set(df.index.to_list()) & set(tickers))
             
-    if data == 'Consolidating':
-        text = f'{len(tickers)} {data.lower()}'
-    elif data == 'Trending':
+    if data != 'All':
         names = SPY_info_df.loc[tickers, 'Security'].to_list()
         tickers = [f'{ticker} - {name}' for ticker, name in zip(tickers, names)]
         text = f'{len(tickers)} {data.lower()} {trend.lower()}'

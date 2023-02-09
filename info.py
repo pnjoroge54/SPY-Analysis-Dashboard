@@ -264,3 +264,13 @@ DEFINITIONS = {
 }
 
 FINANCIAL_RATIOS = {'formulas': FORMULAS, 'definitions': DEFINITIONS, 'ratios': RATIOS}
+
+# p.146 of Brian Shannon - Technical Analysis Using Multiple Timeframes (2008)
+TA_PERIODS = {
+    'Weekly': {'MA': [10, 20, 40], 'days': 365 * 2},
+    'Daily': {'MA': [10, 20, 50, 200], 'days': 180},
+    '30 Min': {'MA': [7, 17, 33, 65], 'days': 20},
+    '15 Min': {'MA': [14, 34, 66, 130], 'days': 15},
+    '5 Min': {'MA': [40, 100, 200], 'days': 5},
+    '1 Min': {'MA': [50, 100, 200], 'days': 1}
+    }

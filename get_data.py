@@ -149,7 +149,7 @@ def get_intraday_market_data(interval):
     
     path = fr'data\market_data\{interval}'
     os.makedirs(path, exist_ok=True)
-    tickers = set(tickers) - set([f.split('.csv')[0] for f in os.listdir(path)])
+    # tickers = set(tickers) - set([f.split('.csv')[0] for f in os.listdir(path)])
     n = len(tickers)
     j = 0
 
@@ -406,7 +406,8 @@ def get_financial_statements():
             else:
                 d_ticker = ticker.replace('-', '.')
 
-            base_url = f"https://stockrow.com/api/companies/{d_ticker}/financials.xlsx?dimension=Q&section="
+            base_url = f"https://stockrow.com/api/companies/{d_ticker}/" \
+                        "financials.xlsx?dimension=Q&section="
             sofp = f"{base_url}Balance%20Sheet&sort=desc"
             soci = f"{base_url}Income%20Statement&sort=desc"
             socf = f"{base_url}Cash%20Flow&sort=desc"
@@ -454,12 +455,13 @@ if __name__ == "__main__":
     get_risk_free_rates()
     get_factor_model_data()
     get_market_data()
-    save_TTM_financial_ratios()
-    get_financial_ratios()
-    get_financial_statements()
-    get_tickers_info()
-
+    
     intervals = ('1m', '5m', '15m', '30m', '60m')
     
     for intvl in intervals:
         get_intraday_market_data(intvl)
+
+    save_TTM_financial_ratios()
+    get_financial_ratios()
+    get_financial_statements()
+    get_tickers_info()

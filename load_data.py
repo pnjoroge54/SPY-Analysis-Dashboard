@@ -41,9 +41,9 @@ def get_intraday_ticker_data(ticker, interval):
     '''Load ticker's market data'''
     
     if interval < '5 Min':
-        folder = '1min'
+        folder = '1m'
     else:
-        folder = '5min'
+        folder = '5m'
 
     file = os.path.join(f'data/market_data/{folder}', f'{ticker}.csv')
     df = pd.read_csv(file, index_col=0, parse_dates=True) 
