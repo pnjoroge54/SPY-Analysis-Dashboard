@@ -369,7 +369,6 @@ if option == 'Technical Analysis':
     c1, c2 = st.columns(2)
     setups = ('Investor', 'Swing Trader', 'Day Trader')
     setup = c1.selectbox('Trader Setup', setups)
-    end = c2.date_input('End Date', value=last_date, min_value=first_date, max_value=last_date)
     
     if setup == 'Investor':
         periods = ('Weekly', 'Daily', '30 Min')
@@ -378,30 +377,26 @@ if option == 'Technical Analysis':
     else:
         periods = ('30 Min', '5 Min', '1 Min')
 
-    c1, c2 = st.columns(2)
-    period = c1.radio('Moving Average (MA) Period', periods, horizontal=True)
-
+    period = c2.radio('Timeframe', periods, horizontal=True)
     period_d = TA_PERIODS[period]
     MAs = period_d['MA']
     days = period_d['days']
 
-    if end.weekday() == 0:
-        days += 2
+    if last_date.weekday() == 0:
+        days += 3
+    start = last_date - timedelta(days)
 
-    start = end - timedelta(days)
+    c1, c2 = st.columns(2)
+    start = c1.date_input('Start Date', value=start, min_value=first_date, max_value=last_date - timedelta(5))
+    end = c2.date_input('End Date', value=last_date, min_value=first_date, max_value=last_date)
     
-    short_ma = c1.number_input('Short-Term MA', value=MAs[0])
-    inter_ma = c1.number_input('Intermediate-Term MA', value=MAs[1])
-    long_ma = c1.number_input('Long-Term MA', value=MAs[2])
-
-    data = c2.radio('Stocks', ('Trend-Aligned', 'Trending', 'All'), horizontal=True)
-    sectors = ['-' * 50]    
+    data = c1.radio('Stocks', ('Trend-Aligned', 'Trending', 'All'), horizontal=True)
 
     if data != 'All':
         trend = c2.radio('Trend', ('Up', 'Down'), horizontal=True)
-        c2.write('') # for aligning rows in columns
+        # st.write('') # for aligning rows in columns
         if data == 'Trending':
-            up_tickers, down_tickers = get_trending_stocks(start, end, period, short_ma, inter_ma, long_ma)
+            up_tickers, down_tickers = get_trending_stocks(start, end, period, MAs)
             if trend == 'Up':
                 tickers = up_tickers
             else:
@@ -412,42 +407,62 @@ if option == 'Technical Analysis':
                 tickers = up_aligned
             else:
                 tickers = down_aligned        
-        text = f'{len(tickers)} {trend.lower()}{data.lower()}'
+        # text = f'{len(tickers)} {trend.lower()}{data.lower()}'
     else:
+        c2.empty()
         tickers = ticker_list
-        text = '' 
-
+        # text = '' 
+    
+    c1, c2, c3 = st.columns(3)
+    sectors = ['-' * 30]
     sectors += SPY_info_df.loc[tickers, 'Sector'].unique().tolist()
-    sector = c2.selectbox('Sector', sorted(sectors))
-        
-    # not all sectors
+    sector = c1.selectbox('Sector', sorted(sectors))
+
     if sector != sectors[0]:
         df = SPY_info_df[SPY_info_df['Sector'] == sector]
+        tickers = list(set(df.index.to_list()) & set(tickers))    
+    
+    subIndustries = ['-' * 30] 
+    subIndustries += SPY_info_df.loc[tickers, 'Sub-Industry'].unique().tolist()
+    subIndustry = c2.selectbox('Sub-Industry', sorted(subIndustries))
+    
+    if subIndustry != subIndustries[0]:
+        df = SPY_info_df[SPY_info_df['Sub-Industry'] == subIndustry]
         tickers = list(set(df.index.to_list()) & set(tickers))
-        subIndustries = ['-' * 50] 
-        subIndustries += df['Sub-Industry'].unique().tolist()
-        # print(tickers)
-        if data == 'All':
-            subIndustry = c2.selectbox('Sub-Industry', sorted(subIndustries))
-            if subIndustries != subIndustries[0]:
-                df = SPY_info_df[SPY_info_df['Sub-Industry'] == subIndustry]
-                tickers = list(set(df.index.to_list()) & set(tickers))
-            text = f'{len(tickers)} stocks'
-        else:
-            text = f'{len(tickers)} {trend.lower()}{data.lower()}'
+    
         
-            
+    # # not all sectors
+    # if sector != sectors[0]:
+    #     df = SPY_info_df[SPY_info_df['Sector'] == sector]
+    #     tickers = list(set(df.index.to_list()) & set(tickers))
+        
+    if data == 'All':   
+        text = f'{len(tickers)} stocks'
+    else:
+        # c2.empty()
+        text = f'{len(tickers)} {trend.lower()}{data.lower()}'
+        
             
     ticker_lbl = 'Ticker - Security' 
     names = SPY_info_df.loc[tickers, 'Security'].to_list()
     tickers = [f'{ticker} - {name}' for ticker, name in zip(tickers, names)]
     
-    ticker = c2.selectbox(ticker_lbl, sorted(tickers), help=text)
-
+    ticker = c3.selectbox(ticker_lbl, sorted(tickers), help=text)
+    short_ma, inter_ma, long_ma, *_ = MAs
+    
     if tickers:
         ticker = ticker.split(' - ')[0]
-        show_prices = st.checkbox('Display Candlestick Data')
-        fig = plot_trends(ticker, start, end, period, short_ma, inter_ma, long_ma, show_prices)
+        show_sr = c1.checkbox('Add Support/Resistance (S/R) Levels', True)
+        show_prices = c2.checkbox('Display Candlestick Data')
+        adjust_ma = c3.checkbox('Adjust Moving Averages (MAs)')
+
+        if adjust_ma:
+            c1, c2, c3 = st.columns(3)
+            short_ma = c1.number_input('Short-Term MA', value=MAs[0])
+            inter_ma = c2.number_input('Intermediate-Term MA', value=MAs[1])
+            long_ma = c3.number_input('Long-Term MA', value=MAs[2])
+
+        fig = plot_trends(ticker, start, end, period, short_ma, inter_ma, long_ma, show_sr, show_prices)
         st.plotly_chart(fig)
 
         # file = 'watchlist.pickle'
@@ -465,7 +480,7 @@ if option == 'Technical Analysis':
 
         
         # Add option to view stocks in watchlist
-        # save = c2.button('Add Stock to Watchlist')
+        # save = c1.button('Add Stock to Watchlist')
         
         # if save:
         #     with open(file, 'wb') as f:

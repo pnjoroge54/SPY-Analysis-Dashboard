@@ -280,7 +280,7 @@ def calculate_signals(ticker, start, end, period, short_ma, inter_ma, long_ma):
 
 
 @st.cache(allow_output_mutation=True)
-def plot_trends(ticker, start, end, period, short_ma, inter_ma, long_ma, show_prices):
+def plot_trends(ticker, start, end, period, short_ma, inter_ma, long_ma, show_sr, show_prices):
     '''
     Returns candlestick chart with support/resistance levels and market cycle trend lines
 
@@ -289,7 +289,7 @@ def plot_trends(ticker, start, end, period, short_ma, inter_ma, long_ma, show_pr
     df: DataFrame of a security's market data
     start: Start Date
     end: End Date
-    period: [Daily, Weekly, Monthly]
+    period: user-input
     short_ma: moving average window
     inter_ma: moving average window
     long_ma: moving average window
@@ -340,17 +340,18 @@ def plot_trends(ticker, start, end, period, short_ma, inter_ma, long_ma, show_pr
     levels = support + resistance
 
     # Add support & resistance lines
-    for i, l in levels:
-        n = df.shape[0] - i
-        fig.add_scatter(x=df.index[i:],
-                        y=[l] * n,
-                        name='S/R Level',
-                        line_width=0.5,
-                        line_color='orange',
-                        mode='lines',
-                        showlegend=False,
-                        connectgaps=True)
-        
+    if show_sr:
+        for i, l in levels:
+            n = df.shape[0] - i
+            fig.add_scatter(x=df.index[i:],
+                            y=[l] * n,
+                            name='S/R Level',
+                            line_width=0.5,
+                            line_color='orange',
+                            mode='lines',
+                            showlegend=False,
+                            connectgaps=True)
+            
     # Volume subplot
     fig.add_trace(go.Bar(x=df.index,
                          y=df['Volume'],
@@ -359,12 +360,12 @@ def plot_trends(ticker, start, end, period, short_ma, inter_ma, long_ma, show_pr
                   row=2, col=1)
     
     us_holidays = list(holidays.US(range(start.year, end.year + 1)).keys())
-    rangebreaks = [dict(bounds=["sat", "mon"]), dict(values=us_holidays)]
-
-    if period == 'Daily':
-        fig.update_xaxes(showgrid=True, rangebreaks=rangebreaks)
-    elif period.endswith('Min'):
-        rangebreaks.extend([dict(bounds=[16, 9.5], pattern="hour")])
+    fig.update_xaxes(showgrid=True)
+    
+    if period != 'Weekly':
+        rangebreaks = [dict(bounds=["sat", "mon"]), dict(values=us_holidays)]
+        if period.endswith('Min'):
+            rangebreaks.extend([dict(bounds=[16, 9.5], pattern="hour")])
         fig.update_xaxes(showgrid=True, rangebreaks=rangebreaks)
         
     if show_prices:
@@ -378,10 +379,10 @@ def plot_trends(ticker, start, end, period, short_ma, inter_ma, long_ma, show_pr
 
 
 @st.cache
-def get_trending_stocks(start, end, period, short_ma, inter_ma, long_ma):
+def get_trending_stocks(start, end, period, MAs):
     up = []
     down = []
-
+    short_ma, inter_ma, long_ma, *_ = MAs
     for ticker in ticker_list:
         try:
             df = calculate_signals(ticker, start, end, period, short_ma, inter_ma, long_ma)
@@ -402,10 +403,10 @@ def get_trend_aligned_stocks(periods_data, periods, date):
     for i, period in enumerate(periods):
         period_d = periods_data[period]
         days = period_d['days']
-        days = days + 2 if end.weekday() == 0 else days
+        days = days + 3 if end.weekday() == 0 else days
         start = end - timedelta(days)
-        short_ma, inter_ma, long_ma, *_ = period_d['MA']
-        up, down = get_trending_stocks(start, end, period, short_ma, inter_ma, long_ma)
+        MAs = period_d['MA']
+        up, down = get_trending_stocks(start, end, period, MAs)
         if i == 0:
             up_aligned = set(up)
             down_aligned = set(down)
