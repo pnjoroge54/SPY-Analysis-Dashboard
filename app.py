@@ -387,9 +387,10 @@ if option == 'Technical Analysis':
     start = last_date - timedelta(days)
 
     c1, c2 = st.columns(2)
-    start = c1.date_input('Start Date', value=start, min_value=first_date, max_value=last_date - timedelta(5))
+    start = c1.date_input('Start Date', value=start, min_value=first_date, max_value=last_date)
     end = c2.date_input('End Date', value=last_date, min_value=first_date, max_value=last_date)
     
+    c1, c2 = st.columns(2)
     data = c1.radio('Stocks', ('Trend-Aligned', 'Trending', 'All'), horizontal=True)
 
     if data != 'All':
@@ -407,11 +408,9 @@ if option == 'Technical Analysis':
                 tickers = up_aligned
             else:
                 tickers = down_aligned        
-        # text = f'{len(tickers)} {trend.lower()}{data.lower()}'
     else:
         c2.empty()
         tickers = ticker_list
-        # text = '' 
     
     c1, c2, c3 = st.columns(3)
     sectors = ['-' * 30]
@@ -429,20 +428,12 @@ if option == 'Technical Analysis':
     if subIndustry != subIndustries[0]:
         df = SPY_info_df[SPY_info_df['Sub-Industry'] == subIndustry]
         tickers = list(set(df.index.to_list()) & set(tickers))
-    
-        
-    # # not all sectors
-    # if sector != sectors[0]:
-    #     df = SPY_info_df[SPY_info_df['Sector'] == sector]
-    #     tickers = list(set(df.index.to_list()) & set(tickers))
         
     if data == 'All':   
         text = f'{len(tickers)} stocks'
     else:
-        # c2.empty()
         text = f'{len(tickers)} {trend.lower()}{data.lower()}'
         
-            
     ticker_lbl = 'Ticker - Security' 
     names = SPY_info_df.loc[tickers, 'Security'].to_list()
     tickers = [f'{ticker} - {name}' for ticker, name in zip(tickers, names)]
@@ -451,10 +442,12 @@ if option == 'Technical Analysis':
     short_ma, inter_ma, long_ma, *_ = MAs
     
     if tickers:
+        c1, c2, c3 = st.columns(3)
         ticker = ticker.split(' - ')[0]
-        show_sr = c1.checkbox('Add Support/Resistance (S/R) Levels', True)
-        show_prices = c2.checkbox('Display Candlestick Data')
+        show_sr = c1.checkbox('Add Support-Resistance (S/R) Levels', True)
+        show_fib = c2.checkbox('Add Fibonacci Retracement Levels (FRLs)')
         adjust_ma = c3.checkbox('Adjust Moving Averages (MAs)')
+        show_prices = st.checkbox('Display Candlestick Data')
 
         if adjust_ma:
             c1, c2, c3 = st.columns(3)
@@ -462,7 +455,8 @@ if option == 'Technical Analysis':
             inter_ma = c2.number_input('Intermediate-Term MA', value=MAs[1])
             long_ma = c3.number_input('Long-Term MA', value=MAs[2])
 
-        fig = plot_trends(ticker, start, end, period, short_ma, inter_ma, long_ma, show_sr, show_prices)
+        fig = plot_trends(ticker, start, end, period, short_ma, inter_ma, long_ma,
+                          show_sr, show_prices, show_fib)
         st.plotly_chart(fig)
 
         # file = 'watchlist.pickle'

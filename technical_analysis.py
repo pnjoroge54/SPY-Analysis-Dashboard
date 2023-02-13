@@ -27,7 +27,7 @@ def TTM_Squeeze():
         df['std deviation'] = df['close'].rolling(window=20).std()
         df['lower_band'] = df['20sma'] - (2 * df['std deviation'])
         df['upper_band'] = df['20sma'] + (2 * df['std deviation'])        
-        df['TR'] = abs(df['high'] - df['low'])
+        df['TR'] = abs(df['High'] - df['Low'])
         df['ATR'] = df['TR'].rolling(window=20).mean()
         df['lower_keltner'] = df['20sma'] - (df['ATR'] * 1.5)
         df['upper_keltner'] = df['20sma'] + (df['ATR'] * 1.5)
@@ -56,14 +56,14 @@ def make_TTM_squeeze_charts(ticker, date):
     df['std deviation'] = df['close'].rolling(window=20).std()
     df['lower_band'] = df['20sma'] - (2 * df['std deviation'])
     df['upper_band'] = df['20sma'] + (2 * df['std deviation'])               
-    df['TR'] = abs(df['high'] - df['low'])
+    df['TR'] = abs(df['High'] - df['Low'])
     df['ATR'] = df['TR'].rolling(window=20).mean()
     df['lower_keltner'] = df['20sma'] - (df['ATR'] * 1.5)
     df['upper_keltner'] = df['20sma'] + (df['ATR'] * 1.5)
     name = SPY_info_df.loc[ticker, 'Security']
     title = f'{name} ({ticker})'
-    candlestick = go.Candlestick(x=df.index, open=df['open'], high=df['high'],
-                                 low=df['low'], close=df['close'], name=ticker)
+    candlestick = go.Candlestick(x=df.index, open=df['open'], High=df['High'],
+                                 Low=df['Low'], close=df['close'], name=ticker)
     upper_band = go.Scatter(x=df.index, y=df['upper_band'],
                             name='Upper Bollinger Band',
                             line={'color': 'blue', 'width': 0.75})
@@ -102,24 +102,24 @@ def make_TTM_squeeze_charts(ticker, date):
 
 def plot_fibonacci_levels(ticker, start_date, end_date):
     df = get_ticker_data(ticker)[start_date : end_date]
-    df.reset_index(inplace=True)
-    df.rename(columns={'index': 'date'}, inplace=True)
+    # df.reset_index(inplace=True)
+    # df.rename(columns={'index': 'date'}, inplace=True)
     highest_swing = -1
     lowest_swing = -1
 
     for i in range(1, df.shape[0] - 1):
-        if (df['high'][i] > df['high'][i - 1] and df['high'][i] > df['high'][i + 1]) \
-            and (highest_swing == -1 or df['high'][i] > df['high'][highest_swing]):
+        if (df['High'][i] > df['High'][i - 1] and df['High'][i] > df['High'][i + 1]) \
+            and (highest_swing == -1 or df['High'][i] > df['High'][highest_swing]):
             highest_swing = i
-        if (df['low'][i] < df['low'][i - 1] and df['low'][i] < df['low'][i + 1]) \
-            and (lowest_swing == -1 or df['low'][i] < df['low'][lowest_swing]):
+        if (df['Low'][i] < df['Low'][i - 1] and df['Low'][i] < df['Low'][i + 1]) \
+            and (lowest_swing == -1 or df['Low'][i] < df['Low'][lowest_swing]):
             lowest_swing = i
 
     ratios = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1]
     colors = ["black", "red", "green", "blue", "cyan", "magenta", "gold"]
     levels = []
-    max_level = df['high'][highest_swing]
-    min_level = df['low'][lowest_swing]
+    max_level = df['High'][highest_swing]
+    min_level = df['Low'][lowest_swing]
 
     for ratio in ratios:
         # Uptrend
@@ -133,8 +133,8 @@ def plot_fibonacci_levels(ticker, start_date, end_date):
 
     name = SPY_info_df.loc[ticker, 'Security']
     title = f'{name} ({ticker})'
-    candlesticks = go.Candlestick(x=df['date'], open=df['open'], high=df['high'],
-                                  low=df['low'], close=df['close'], name=ticker)
+    candlesticks = go.Candlestick(x=df['date'], open=df['open'], High=df['High'],
+                                  Low=df['Low'], close=df['close'], name=ticker)
     frl0 = go.Scatter(x=df.date, y=y[0], name='0%',    line={'color': colors[0], 'width': 0.75})
     frl1 = go.Scatter(x=df.date, y=y[1], name='23.6%', line={'color': colors[1], 'width': 0.75})
     frl2 = go.Scatter(x=df.date, y=y[2], name='38.2%', line={'color': colors[2], 'width': 0.75})
@@ -262,7 +262,7 @@ def sr_levels(df, start, end):
 
 @st.cache
 def calculate_signals(ticker, start, end, period, short_ma, inter_ma, long_ma):
-    if period.endswith('Min') or period == 'Weekly':
+    if period != 'Daily':
         df = get_interval_market_data(ticker, period)[start : end]
     else:
         df = get_ticker_data(ticker)[start : end]
@@ -272,7 +272,7 @@ def calculate_signals(ticker, start, end, period, short_ma, inter_ma, long_ma):
 
     for ma in MAs:
         df[f'MA{ma}'] = df['Close'].rolling(ma).mean()
-        df[f'MA{ma} Peak-and-Trough Reversal'] = 0
+        # df[f'MA{ma} Peak-and-Trough Reversal'] = 0
         # peaks, _ = find_peaks(df['Close'], height=0)
         # troughs, _ = find_peaks(df['Close'] * -1, height=0)
     
@@ -280,7 +280,47 @@ def calculate_signals(ticker, start, end, period, short_ma, inter_ma, long_ma):
 
 
 @st.cache(allow_output_mutation=True)
-def plot_trends(ticker, start, end, period, short_ma, inter_ma, long_ma, show_sr, show_prices):
+def add_fibonacci_levels(df, fig):
+    highest_swing = -1
+    lowest_swing = -1
+
+    for i in range(1, df.shape[0] - 1):
+        if (df['High'][i] > df['High'][i - 1] and df['High'][i] > df['High'][i + 1]) \
+            and (highest_swing == -1 or df['High'][i] > df['High'][highest_swing]):
+            highest_swing = i
+        if (df['Low'][i] < df['Low'][i - 1] and df['Low'][i] < df['Low'][i + 1]) \
+            and (lowest_swing == -1 or df['Low'][i] < df['Low'][lowest_swing]):
+            lowest_swing = i
+
+    ratios = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1]
+    colors = ["darkgray", "indianred", "green", "blue", "cyan", "magenta", "gold"]
+    levels = []
+    max_level = df['High'][highest_swing]
+    min_level = df['Low'][lowest_swing]
+
+    for ratio in ratios:
+        # Uptrend
+        if highest_swing > lowest_swing:
+            level = max_level - (max_level - min_level) * ratio
+        # Downtrend
+        else:
+            level = min_level + (max_level - min_level) * ratio
+        levels.append(level)
+
+    y = [[x] * df.shape[0] for x in levels]
+
+    for i in range(len(ratios)):
+        fig.add_scatter(x=df.index,
+                        y=y[i],
+                        name=f'FRL {ratios[i]:,.2%}',
+                        line={'color': colors[i], 'width': 0.75, 'dash': 'dot'},
+                        connectgaps=True)
+    
+    return fig
+
+
+@st.cache(allow_output_mutation=True)
+def plot_trends(ticker, start, end, period, short_ma, inter_ma, long_ma, show_sr, show_prices, show_fib):
     '''
     Returns candlestick chart with support/resistance levels and market cycle trend lines
 
@@ -351,6 +391,10 @@ def plot_trends(ticker, start, end, period, short_ma, inter_ma, long_ma, show_sr
                             mode='lines',
                             showlegend=False,
                             connectgaps=True)
+            
+
+    if show_fib:
+        fig = add_fibonacci_levels(df, fig)
             
     # Volume subplot
     fig.add_trace(go.Bar(x=df.index,
