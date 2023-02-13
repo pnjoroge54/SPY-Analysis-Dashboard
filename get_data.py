@@ -115,7 +115,7 @@ def get_market_data():
         for i, ticker in enumerate(tickers, 1):
             try:
                 fname = os.path.join(path, f'{ticker}.csv')
-                df = si.get_data(ticker) # download stock data
+                df = yf.download(ticker, progress=False) # download stock data
                 if not df.empty:
                     df.to_csv(fname)
                 end = time.time()
@@ -138,40 +138,42 @@ def get_market_data():
     return not_downloaded
 
 
-def get_intraday_market_data(interval):
+def get_interval_market_data(intervals):
     t_start = time.time()
     tickers, _ = get_tickers()
     end = dt.now()
     start = end - timedelta(60)
     
-    if interval == '1m':
-        start = end - timedelta(7)
-    
-    path = fr'data\market_data\{interval}'
-    os.makedirs(path, exist_ok=True)
-    # tickers = set(tickers) - set([f.split('.csv')[0] for f in os.listdir(path)])
-    n = len(tickers)
-    j = 0
+    for interval in intervals:
+        path = fr'data\market_data\{interval}'
+        os.makedirs(path, exist_ok=True)
+        # tickers = set(tickers) - set([f.split('.csv')[0] for f in os.listdir(path)])
+        n = len(tickers)
+        j = 0
+        if interval == '1m':
+            start = end - timedelta(7)
+        for i, ticker in enumerate(tickers, 1):
+            try:
+                fname = os.path.join(path, f'{ticker}.csv')
+                if interval == '1wk' or interval == '1mo':
+                    df = yf.download(ticker, interval=interval, progress=False)
+                else:
+                    df = yf.download(ticker, interval=interval, start=start, end=end, progress=False)
+                if not df.empty:
+                    df.to_csv(fname)
+                t_end = time.time()
+                mm, ss = divmod(t_end - t_start, 60)
+                print(f"\r{mm:.0f}m:{ss:.0f}s {i}/{n} ({i / n:.2%})" \
+                    f" of {interval} SPY market data downloaded".ljust(70, ' '),
+                        end='', flush=True)
+            except Exception as e:
+                j += 1
+                t_end = time.time()
+                mm, ss = divmod(t_end - t_start, 60)
+                print(f'\r{mm:.0f}m:{ss:.0f}s{j}/{n}: {ticker} - {e}',
+                    end='', flush=True) 
 
-    for i, ticker in enumerate(tickers, 1):
-        try:
-            fname = os.path.join(path, f'{ticker}.csv')
-            df = yf.download(ticker, interval=interval, start=start, end=end, progress=False)
-            if not df.empty:
-                df.to_csv(fname)
-            t_end = time.time()
-            mm, ss = divmod(t_end - t_start, 60)
-            print(f"\r{mm:.0f}m:{ss:.0f}s {i}/{n} ({i / n:.2%})" \
-                  f" of {interval} SPY market data downloaded".ljust(70, ' '),
-                    end='', flush=True)
-        except Exception as e:
-            j += 1
-            t_end = time.time()
-            mm, ss = divmod(t_end - t_start, 60)
-            print(f'\r{mm:.0f}m:{ss:.0f}s{j}/{n}: {ticker} - {e}',
-                  end='', flush=True) 
-
-    print(f'\n{n - j}/{n} of S&P 500 stock {interval} data downloaded \n')
+        print(f'\n{n - j}/{n} of S&P 500 stock {interval} data downloaded \n')
 
 
 def get_tickers_info():
@@ -455,12 +457,8 @@ if __name__ == "__main__":
     get_risk_free_rates()
     get_factor_model_data()
     get_market_data()
-    
-    intervals = ('1m', '5m', '15m', '30m', '60m')
-    
-    for intvl in intervals:
-        get_intraday_market_data(intvl)
-
+    intervals = ['1wk', '1m', '5m', '30m']
+    get_interval_market_data(intervals)
     save_TTM_financial_ratios()
     get_financial_ratios()
     get_financial_statements()

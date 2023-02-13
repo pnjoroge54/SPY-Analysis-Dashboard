@@ -1,7 +1,9 @@
 import numpy as np
 from datetime import timedelta
-import holidays
+from itertools import zip_longest
 
+import holidays
+from scipy.signal import find_peaks
 import cufflinks as cf
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -259,17 +261,20 @@ def sr_levels(df, start, end):
 
 
 @st.cache
-def calculate_MAs(ticker, start, end, period, short_ma, inter_ma, long_ma):
-    if 'Min' in period:
-        df = get_intraday_ticker_data(ticker, period)[start : end]
+def calculate_signals(ticker, start, end, period, short_ma, inter_ma, long_ma):
+    if period.endswith('Min') or period == 'Weekly':
+        df = get_interval_market_data(ticker, period)[start : end]
     else:
         df = get_ticker_data(ticker)[start : end]
-        df.drop(columns=['Ticker', 'Adjclose'], inplace=True)
-
+    
+    df.drop(columns=['Adj Close'], inplace=True)
     MAs = [short_ma, inter_ma, long_ma]
 
     for ma in MAs:
         df[f'MA{ma}'] = df['Close'].rolling(ma).mean()
+        df[f'MA{ma} Peak-and-Trough Reversal'] = 0
+        # peaks, _ = find_peaks(df['Close'], height=0)
+        # troughs, _ = find_peaks(df['Close'] * -1, height=0)
     
     return df
 
@@ -291,9 +296,9 @@ def plot_trends(ticker, start, end, period, short_ma, inter_ma, long_ma, show_pr
     show_prices: display candlestick data on crowded charts
     '''
 
-    df = calculate_MAs(ticker, start, end, period, short_ma, inter_ma, long_ma)
+    df = calculate_signals(ticker, start, end, period, short_ma, inter_ma, long_ma)
     cname = SPY_info_df.loc[ticker, 'Security']
-    title1 = f'{cname} - {period} Chart' # {period} Trends & Support-Resistance Levels <br>
+    title1 = f'{cname} - {period} Chart'
     title2 = ''
 
     fig = make_subplots(rows=2, cols=1,
@@ -356,13 +361,15 @@ def plot_trends(ticker, start, end, period, short_ma, inter_ma, long_ma, show_pr
     us_holidays = list(holidays.US(range(start.year, end.year + 1)).keys())
     rangebreaks = [dict(bounds=["sat", "mon"]), dict(values=us_holidays)]
 
-    if 'Min' in period:
+    if period == 'Daily':
+        fig.update_xaxes(showgrid=True, rangebreaks=rangebreaks)
+    elif period.endswith('Min'):
         rangebreaks.extend([dict(bounds=[16, 9.5], pattern="hour")])
+        fig.update_xaxes(showgrid=True, rangebreaks=rangebreaks)
         
     if show_prices:
         fig.update_layout(hovermode="x unified")
-
-    fig.update_xaxes(showgrid=True, rangebreaks=rangebreaks)              
+              
     fig.update_yaxes(showgrid=False)
     # fig.layout.annotations[0].update(x=0.1)
     fig.layout.xaxis.rangeslider.visible = False
@@ -377,7 +384,7 @@ def get_trending_stocks(start, end, period, short_ma, inter_ma, long_ma):
 
     for ticker in ticker_list:
         try:
-            df = calculate_MAs(ticker, start, end, period, short_ma, inter_ma, long_ma)
+            df = calculate_signals(ticker, start, end, period, short_ma, inter_ma, long_ma)
             if df[f'MA{long_ma}'][-1] > df[f'MA{inter_ma}'][-1] > df[f'MA{short_ma}'][-1]:
                 down.append(ticker)
             if df[f'MA{long_ma}'][-1] < df[f'MA{inter_ma}'][-1] < df[f'MA{short_ma}'][-1]:
@@ -389,8 +396,8 @@ def get_trending_stocks(start, end, period, short_ma, inter_ma, long_ma):
 
 
 @st.cache
-def get_trend_aligned_stocks(periods_data, periods):
-    end = last_date
+def get_trend_aligned_stocks(periods_data, periods, date):
+    end = date
 
     for i, period in enumerate(periods):
         period_d = periods_data[period]

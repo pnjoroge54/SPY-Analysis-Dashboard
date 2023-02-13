@@ -97,7 +97,7 @@ if option == 'Stock Information':
     start, end = set_form_dates() 
 
     ticker_df = ticker_df[start : end]
-    ticker_df['Return'] = np.log1p(ticker_df['Adjclose'].pct_change())
+    ticker_df['Return'] = np.log1p(ticker_df['Adj Close'].pct_change())
     ticker_df.rename(columns={'volume': 'Volume'}, inplace=True)
   
     if start > end:
@@ -318,17 +318,20 @@ if option == 'Stock Comparisons':
 if option == 'News':
     c1, c2 = st.columns(2)
     tz = timezone('EST')
-    ticker = c1.selectbox('Ticker', ticker_list)
+    names = SPY_info_df.loc[ticker_list, 'Security']
+    tickers = [f'{ticker} - {name}' for ticker, name in zip(ticker_list, names)]
+    ticker = c1.selectbox('Ticker - Security', tickers)
+    ticker, name = ticker.split(' - ')
     date = c2.date_input('Date', dt.now(tz)).strftime('%Y-%m-%d')
-    name = SPY_info_df.loc[ticker, 'Security']
+    # name = SPY_info_df.loc[ticker, 'Security']
     news = get_news(ticker, date)
     
     if len(news) == 0:
         st.write(f'There are no stories about {name}')
     elif len(news) == 1:
-        st.write(f'There is {len(news)} story about {name}')
+        st.write(f'There is {len(news)} story about {name}.')
     else:    
-        st.write(f'There are {len(news)} stories about {name}')
+        st.write(f'There are {len(news)} stories about {name}.')
 
     for story in news:
         headline = story['headline']
@@ -350,27 +353,30 @@ if option == 'News':
                 summary = story['summary']
         except:
             summary = story['summary']
-    
-        st.info(f'''
-                ### {headline}
-                \n\n##### Summary:
-                \n\n{summary}
-                \n_**Source:** {source}_  
-                \n_**Published:** {published}_
-                _**Full story:** {url}_
-                ''')
+
+        with st.expander(headline):
+            st.info(f'''
+                    ### {headline}
+                    \n\n##### Summary:
+                    \n\n{summary}
+                    \n_**Source:** {source}_  
+                    \n_**Published:** {published}_
+                    _**Full story:** {url}_
+                    ''')
 
 
 if option == 'Technical Analysis':
+    c1, c2 = st.columns(2)
     setups = ('Investor', 'Swing Trader', 'Day Trader')
-    setup = st.selectbox('Trader Setup', setups)
+    setup = c1.selectbox('Trader Setup', setups)
+    end = c2.date_input('End Date', value=last_date, min_value=first_date, max_value=last_date)
     
     if setup == 'Investor':
         periods = ('Weekly', 'Daily', '30 Min')
     elif setup == 'Swing Trader':
-        periods = ('Daily', '30 Min', '15 Min', '5 Min')
+        periods = ('Daily', '30 Min', '5 Min')
     else:
-        periods = ('30 Min', '15 Min', '5 Min', '1 Min')
+        periods = ('30 Min', '5 Min', '1 Min')
 
     c1, c2 = st.columns(2)
     period = c1.radio('Moving Average (MA) Period', periods, horizontal=True)
@@ -378,7 +384,6 @@ if option == 'Technical Analysis':
     period_d = TA_PERIODS[period]
     MAs = period_d['MA']
     days = period_d['days']
-    end = last_date
 
     if end.weekday() == 0:
         days += 2
@@ -390,6 +395,7 @@ if option == 'Technical Analysis':
     long_ma = c1.number_input('Long-Term MA', value=MAs[2])
 
     data = c2.radio('Stocks', ('Trend-Aligned', 'Trending', 'All'), horizontal=True)
+    sectors = ['-' * 50]    
 
     if data != 'All':
         trend = c2.radio('Trend', ('Up', 'Down'), horizontal=True)
@@ -401,19 +407,16 @@ if option == 'Technical Analysis':
             else:
                 tickers = down_tickers
         else:
-            up_aligned, down_aligned = get_trend_aligned_stocks(TA_PERIODS, periods)
+            up_aligned, down_aligned = get_trend_aligned_stocks(TA_PERIODS, periods, end)
             if trend == 'Up':
                 tickers = up_aligned
             else:
-                tickers = down_aligned 
-        ticker_lbl = 'Ticker - Security' 
+                tickers = down_aligned        
+        text = f'{len(tickers)} {trend.lower()}{data.lower()}'
     else:
         tickers = ticker_list
-        search = c2.radio('Search', ('Ticker', 'Company'), horizontal=True)
-        c2.write('') # for aligning rows in columns
-        ticker_lbl = search
+        text = '' 
 
-    sectors = ['-' * 50]    
     sectors += SPY_info_df.loc[tickers, 'Sector'].unique().tolist()
     sector = c2.selectbox('Sector', sorted(sectors))
         
@@ -421,13 +424,23 @@ if option == 'Technical Analysis':
     if sector != sectors[0]:
         df = SPY_info_df[SPY_info_df['Sector'] == sector]
         tickers = list(set(df.index.to_list()) & set(tickers))
+        subIndustries = ['-' * 50] 
+        subIndustries += df['Sub-Industry'].unique().tolist()
+        # print(tickers)
+        if data == 'All':
+            subIndustry = c2.selectbox('Sub-Industry', sorted(subIndustries))
+            if subIndustries != subIndustries[0]:
+                df = SPY_info_df[SPY_info_df['Sub-Industry'] == subIndustry]
+                tickers = list(set(df.index.to_list()) & set(tickers))
+            text = f'{len(tickers)} stocks'
+        else:
+            text = f'{len(tickers)} {trend.lower()}{data.lower()}'
+        
             
-    if data != 'All':
-        names = SPY_info_df.loc[tickers, 'Security'].to_list()
-        tickers = [f'{ticker} - {name}' for ticker, name in zip(tickers, names)]
-        text = f'{len(tickers)} {data.lower()} {trend.lower()}'
-    else:
-        text = '' 
+            
+    ticker_lbl = 'Ticker - Security' 
+    names = SPY_info_df.loc[tickers, 'Security'].to_list()
+    tickers = [f'{ticker} - {name}' for ticker, name in zip(tickers, names)]
     
     ticker = c2.selectbox(ticker_lbl, sorted(tickers), help=text)
 

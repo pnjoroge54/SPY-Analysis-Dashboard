@@ -33,7 +33,7 @@ def get_SPY_info():
 def get_SPY_data():
     '''Returns DataFrame of S&P 500 market data'''
 
-    df = pd.read_csv('data/spy_data/SPY.csv')
+    df = pd.read_csv('data/spy_data/SPY.csv') # , index_col=0, parse_dates=True
     df.index = pd.to_datetime(df['Date'].apply(lambda x: x.split(' ')[0]))
     df.drop(columns='Date', inplace=True)
 
@@ -45,19 +45,33 @@ def get_ticker_data(ticker):
     '''Load ticker's market data'''
     
     file = os.path.join('data/market_data/daily', f'{ticker}.csv')
-    df = pd.read_csv(file, index_col=0, parse_dates=True)
-    df.columns = df.columns.str.title()
+    df = pd.read_csv(file) # , index_col=0, parse_dates=True
+    df.index = pd.to_datetime(df['Date'].apply(lambda x: x.split(' ')[0]))
+    df.drop(columns='Date', inplace=True)
     
     return df
 
 
-def get_intraday_ticker_data(ticker, interval):
+@st.cache
+def get_interval_market_data(ticker, interval):
     '''Load ticker's market data'''
     
-    folder = interval.split(' Min')[0] + 'm'
+    if interval.endswith('Min'):
+        folder = interval.split(' Min')[0] + 'm'
+        col = 'Datetime'
+        fmt = '-0:'
+    elif interval == 'Weekly':
+        folder = '1wk'
+        col = 'Date'
+        fmt = ' '
+    elif interval == 'Monthly':
+        folder = '1mo'
+
     file = os.path.join(f'data/market_data/{folder}', f'{ticker}.csv')
-    df = pd.read_csv(file, index_col=0, parse_dates=True) 
-    df.drop(columns=['Adj Close'], inplace=True)
+    df = pd.read_csv(file) # , index_col=0, parse_dates=True 
+    df.index = pd.to_datetime(df[col].apply(lambda x: x.split(fmt)[0]))
+    df.drop(columns=col, inplace=True)
+    # df.drop(columns=['Adj Close'], inplace=True)
     
     return df
 
@@ -171,7 +185,7 @@ def set_form_dates():
         end = c2.date_input('End Date', last_date, max_value=last_date)
         st.form_submit_button(label='Submit')
 
-    return start, end
+    return pd.to_datetime(start), pd.to_datetime(end)
 
     
 @st.cache
@@ -221,7 +235,7 @@ def calculate_beta(ticker, start_date, end_date):
     df1['Return'] = np.log1p(df1['Close'].pct_change())
     df1.rename(columns={'Return': 'SPY'}, inplace=True)
     df2 = get_ticker_data(ticker)[start_date : end_date]
-    df2['Return'] = np.log1p(df2['Adjclose'].pct_change())
+    df2['Return'] = np.log1p(df2['Adj Close'].pct_change())
     df2.rename(columns={'Return': ticker}, inplace=True)
     df = pd.concat([df1['SPY'], df2[ticker]], axis=1, join='inner')
     SPY_std = df['SPY'].std()
@@ -259,9 +273,9 @@ def calculate_metrics(start_date, end_date):
             # Get sub-industry of ticker
             t_si = SPY_info_df.loc[ticker, 'Sub-Industry']
             df = get_ticker_data(ticker)[start_date : end_date]
-            df['Return'] = np.log1p(df['Adjclose'].pct_change())
+            df['Return'] = np.log1p(df['Adj Close'].pct_change())
             t = len(df) / 252
-            cagr = ((df['Adjclose'][-1] / df['Open'][0])**(1 / t) - 1)
+            cagr = ((df['Adj Close'][-1] / df['Open'][0])**(1 / t) - 1)
             std = df['Return'].std() * np.sqrt(252) # Annualised std
             sr = (cagr - rf) / std # Sharpe Ratio
             beta = calculate_beta(ticker, start_date, end_date)
@@ -351,7 +365,7 @@ def plot_sma_returns(ticker, start_date, end_date, window):
     '''Returns line charts of simple moving average of returns for ticker and S&P 500'''
 
     ticker_df = get_ticker_data(ticker)[start_date : end_date]
-    ticker_df['Return'] = np.log1p(ticker_df['Adjclose'].pct_change())
+    ticker_df['Return'] = np.log1p(ticker_df['Adj Close'].pct_change())
     SPY_df = get_SPY_data()[start_date : end_date]
     SPY_df['Return'] = np.log1p(SPY_df['Close'].pct_change())
     beta = calculate_beta(ticker, start_date, end_date)
