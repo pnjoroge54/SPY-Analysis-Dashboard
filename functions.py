@@ -68,10 +68,9 @@ def get_interval_market_data(ticker, interval):
         folder = '1mo'
 
     file = os.path.join(f'data/market_data/{folder}', f'{ticker}.csv')
-    df = pd.read_csv(file) # , index_col=0, parse_dates=True 
+    df = pd.read_csv(file)
     df.index = pd.to_datetime(df[col].apply(lambda x: x.split(fmt)[0]))
     df.drop(columns=col, inplace=True)
-    # df.drop(columns=['Adj Close'], inplace=True)
     
     return df
 

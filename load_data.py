@@ -58,6 +58,9 @@ def get_interval_market_data(ticker, interval):
     df = pd.read_csv(file) # , index_col=0, parse_dates=True 
     df.index = pd.to_datetime(df[col].apply(lambda x: x.split(fmt)[0]))
     df.drop(columns=col, inplace=True)
+    # df.drop(columns=['Adj Close'], inplace=True)
+    
+    return df
 
 
 def get_financial_statements():

@@ -233,7 +233,7 @@ def isResistance(df, i):
 def sr_levels(df, start, end):
     '''Returns key support/resistance levels for a security'''
 
-    df = df[start : end]
+    df = df[start: end]
     support = []
     resistance = []
     s = (df['High'] - df['Low']).mean()
@@ -263,9 +263,9 @@ def sr_levels(df, start, end):
 @st.cache
 def calculate_signals(ticker, start, end, period, short_ma, inter_ma, long_ma):
     if period != 'Daily':
-        df = get_interval_market_data(ticker, period)[start : end]
+        df = get_interval_market_data(ticker, period)[start: end]
     else:
-        df = get_ticker_data(ticker)[start : end]
+        df = get_ticker_data(ticker)[start: end]
     
     df.drop(columns=['Adj Close'], inplace=True)
     MAs = [short_ma, inter_ma, long_ma]
@@ -307,11 +307,10 @@ def add_fibonacci_levels(df, fig):
             level = min_level + (max_level - min_level) * ratio
         levels.append(level)
 
-    y = [[x] * df.shape[0] for x in levels]
 
     for i in range(len(ratios)):
         fig.add_scatter(x=df.index,
-                        y=y[i],
+                        y=[levels[i]] * df.shape[0],
                         name=f'FRL {ratios[i]:,.2%}',
                         line={'color': colors[i], 'width': 0.75, 'dash': 'dot'},
                         connectgaps=True)
@@ -320,7 +319,8 @@ def add_fibonacci_levels(df, fig):
 
 
 @st.cache(allow_output_mutation=True)
-def plot_trends(ticker, start, end, period, short_ma, inter_ma, long_ma, show_sr, show_prices, show_fib):
+def plot_trends(ticker, start, end, period, short_ma, inter_ma, long_ma,
+                show_sr, show_prices, show_fib, log_y):
     '''
     Returns candlestick chart with support/resistance levels and market cycle trend lines
 
@@ -404,19 +404,21 @@ def plot_trends(ticker, start, end, period, short_ma, inter_ma, long_ma, show_sr
                   row=2, col=1)
     
     us_holidays = list(holidays.US(range(start.year, end.year + 1)).keys())
-    fig.update_xaxes(showgrid=True)
     
     if period != 'Weekly':
         rangebreaks = [dict(bounds=["sat", "mon"]), dict(values=us_holidays)]
         if period.endswith('Min'):
             rangebreaks.extend([dict(bounds=[16, 9.5], pattern="hour")])
-        fig.update_xaxes(showgrid=True, rangebreaks=rangebreaks)
+        fig.update_xaxes(rangebreaks=rangebreaks)
         
     if show_prices:
         fig.update_layout(hovermode="x unified")
-              
+
+    if log_y:
+        fig.update_yaxes(type='log')
+    
+    fig.update_xaxes(showgrid=True)          
     fig.update_yaxes(showgrid=False)
-    # fig.layout.annotations[0].update(x=0.1)
     fig.layout.xaxis.rangeslider.visible = False
 
     return fig

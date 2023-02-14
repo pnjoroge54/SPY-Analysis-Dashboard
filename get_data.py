@@ -142,7 +142,6 @@ def get_interval_market_data(intervals):
     t_start = time.time()
     tickers, _ = get_tickers()
     end = dt.now()
-    start = end - timedelta(60)
     
     for interval in intervals:
         path = fr'data\market_data\{interval}'
@@ -152,6 +151,8 @@ def get_interval_market_data(intervals):
         j = 0
         if interval == '1m':
             start = end - timedelta(7)
+        else:
+            start = end - timedelta(60)
         for i, ticker in enumerate(tickers, 1):
             try:
                 fname = os.path.join(path, f'{ticker}.csv')
@@ -164,14 +165,14 @@ def get_interval_market_data(intervals):
                 t_end = time.time()
                 mm, ss = divmod(t_end - t_start, 60)
                 print(f"\r{mm:.0f}m:{ss:.0f}s {i}/{n} ({i / n:.2%})" \
-                    f" of {interval} SPY market data downloaded".ljust(70, ' '),
-                        end='', flush=True)
+                      f" of {interval} SPY market data downloaded".ljust(70, ' '),
+                      end='', flush=True)
             except Exception as e:
                 j += 1
                 t_end = time.time()
                 mm, ss = divmod(t_end - t_start, 60)
                 print(f'\r{mm:.0f}m:{ss:.0f}s{j}/{n}: {ticker} - {e}',
-                    end='', flush=True) 
+                      end='', flush=True) 
 
         print(f'\n{n - j}/{n} of S&P 500 stock {interval} data downloaded \n')
 
@@ -407,13 +408,11 @@ def get_financial_statements():
                 d_ticker = d_tickers[ticker]
             else:
                 d_ticker = ticker.replace('-', '.')
-
             base_url = f"https://stockrow.com/api/companies/{d_ticker}/" \
                         "financials.xlsx?dimension=Q&section="
             sofp = f"{base_url}Balance%20Sheet&sort=desc"
             soci = f"{base_url}Income%20Statement&sort=desc"
             socf = f"{base_url}Cash%20Flow&sort=desc"
-
             download = False
 
             if ticker not in statements:
@@ -429,7 +428,6 @@ def get_financial_statements():
                     dfs = [df1, df2, df3]
                     fname = f'{ticker}.xlsx'
                     folders = ['sofp', 'soci', 'socf']
-
                     for df, f in zip(dfs, folders):
                         df.set_index("Unnamed: 0", inplace=True)
                         df.index.name = 'Item'
@@ -437,7 +435,6 @@ def get_financial_statements():
                         df.columns = columns
                         fpath = os.path.join(path, f, fname)
                         df.to_excel(fpath)
-
                     df = pd.concat(dfs) # combining all extracted information
                     statements[ticker] = df
                 except Exception as e:
@@ -457,7 +454,7 @@ if __name__ == "__main__":
     get_risk_free_rates()
     get_factor_model_data()
     get_market_data()
-    intervals = ['1wk', '1m', '5m', '30m']
+    intervals = ['1m', '5m', '30m']
     get_interval_market_data(intervals)
     save_TTM_financial_ratios()
     get_financial_ratios()

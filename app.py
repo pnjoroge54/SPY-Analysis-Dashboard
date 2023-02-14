@@ -17,7 +17,7 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 options = ('S&P 500 Information', 'Stock Information', 'Stock Comparisons',
            'Sector Analysis', 'Technical Analysis', 'News')
 
-option = st.sidebar.selectbox("Select Dashboard", options)
+option = st.sidebar.selectbox("Dashboard", options)
 st.title(option)
 
 if option == 'S&P 500 Information':
@@ -25,12 +25,12 @@ if option == 'S&P 500 Information':
     st.subheader('Market Data')
     start, end = set_form_dates()
 
-    df = SPY_df[start : end]
+    df = SPY_df[start: end]
     df['Return'] = np.log1p(df['Close'].pct_change())
     t = len(df) / 252
     cagr = ((df['Close'][-1] / df['Open'][0])**(1 / t) - 1)
     std = df['Return'].std() * np.sqrt(252)
-    rf = rf_rates.loc[start : end, 'Close'].mean() / 100
+    rf = rf_rates.loc[start: end, 'Close'].mean() / 100
     sr = (cagr - rf) / std
 
     s1 = f'Annualized Return: {cagr:.2%}'
@@ -96,7 +96,7 @@ if option == 'Stock Information':
     
     start, end = set_form_dates() 
 
-    ticker_df = ticker_df[start : end]
+    ticker_df = ticker_df[start: end]
     ticker_df['Return'] = np.log1p(ticker_df['Adj Close'].pct_change())
     ticker_df.rename(columns={'volume': 'Volume'}, inplace=True)
   
@@ -323,7 +323,6 @@ if option == 'News':
     ticker = c1.selectbox('Ticker - Security', tickers)
     ticker, name = ticker.split(' - ')
     date = c2.date_input('Date', dt.now(tz)).strftime('%Y-%m-%d')
-    # name = SPY_info_df.loc[ticker, 'Security']
     news = get_news(ticker, date)
     
     if len(news) == 0:
@@ -447,7 +446,8 @@ if option == 'Technical Analysis':
         show_sr = c1.checkbox('Add Support-Resistance (S/R) Levels', True)
         show_fib = c2.checkbox('Add Fibonacci Retracement Levels (FRLs)')
         adjust_ma = c3.checkbox('Adjust Moving Averages (MAs)')
-        show_prices = st.checkbox('Display Candlestick Data')
+        log_y = c1.checkbox('Logarithmic Scale', True)
+        show_prices = c2.checkbox('Display Candlestick Data')
 
         if adjust_ma:
             c1, c2, c3 = st.columns(3)
@@ -456,7 +456,7 @@ if option == 'Technical Analysis':
             long_ma = c3.number_input('Long-Term MA', value=MAs[2])
 
         fig = plot_trends(ticker, start, end, period, short_ma, inter_ma, long_ma,
-                          show_sr, show_prices, show_fib)
+                          show_sr, show_prices, show_fib, log_y)
         st.plotly_chart(fig)
 
         # file = 'watchlist.pickle'
