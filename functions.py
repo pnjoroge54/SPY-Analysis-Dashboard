@@ -7,19 +7,20 @@ from datetime import datetime as dt
 from datetime import timedelta
 from pytz import timezone
 from operator import itemgetter
-from pathlib import Path
 
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
 
+@st.cache
 def get_rf_data():
     '''Returns DataFrame of 90-day T-Bill Rates'''
 
     return pd.read_csv('data/T-Bill Rates.csv', index_col=0, parse_dates=True)
 
 
+@st.cache
 def get_SPY_info():
     '''Returns DataFrame of info about S&P 500 companies'''
     
@@ -30,6 +31,7 @@ def get_SPY_info():
     return df
 
 
+@st.cache
 def get_SPY_data():
     '''Returns DataFrame of S&P 500 market data'''
 
@@ -230,10 +232,11 @@ def plot_returns_histogram(df):
 def calculate_beta(ticker, start_date, end_date):
     '''Stock's beta relative to S&P 500'''
     
-    df1 = get_SPY_data()[start_date : end_date]
+    end_date += timedelta(1)
+    df1 = get_SPY_data()[start_date: end_date]
     df1['Return'] = np.log1p(df1['Close'].pct_change())
     df1.rename(columns={'Return': 'SPY'}, inplace=True)
-    df2 = get_ticker_data(ticker)[start_date : end_date]
+    df2 = get_ticker_data(ticker)[start_date: end_date]
     df2['Return'] = np.log1p(df2['Adj Close'].pct_change())
     df2.rename(columns={'Return': ticker}, inplace=True)
     df = pd.concat([df1['SPY'], df2[ticker]], axis=1, join='inner')
@@ -253,8 +256,9 @@ def calculate_metrics(start_date, end_date):
     for index, stocks, sectors and sub-industries
     '''
     
-    rf = rf_rates.loc[start_date : end_date, 'Close'].mean() / 100
-    df = SPY_df[start_date : end_date]
+    end_date += timedelta(1)
+    rf = rf_rates.loc[start_date: end_date, 'Close'].mean() / 100
+    df = SPY_df[start_date: end_date]
     df['Return'] = np.log1p(df['Close'].pct_change())
     t = len(df) / 252   
     cagr = ((df['Close'][-1] / df['Open'][0])**(1 / t) - 1)
@@ -271,7 +275,7 @@ def calculate_metrics(start_date, end_date):
         for ticker in sector_tickers:
             # Get sub-industry of ticker
             t_si = SPY_info_df.loc[ticker, 'Sub-Industry']
-            df = get_ticker_data(ticker)[start_date : end_date]
+            df = get_ticker_data(ticker)[start_date: end_date]
             df['Return'] = np.log1p(df['Adj Close'].pct_change())
             t = len(df) / 252
             cagr = ((df['Adj Close'][-1] / df['Open'][0])**(1 / t) - 1)
@@ -363,9 +367,10 @@ def get_TTM_ratios(ratios, ratio):
 def plot_sma_returns(ticker, start_date, end_date, window):
     '''Returns line charts of simple moving average of returns for ticker and S&P 500'''
 
-    ticker_df = get_ticker_data(ticker)[start_date : end_date]
+    end_date += timedelta(1)
+    ticker_df = get_ticker_data(ticker)[start_date: end_date]
     ticker_df['Return'] = np.log1p(ticker_df['Adj Close'].pct_change())
-    SPY_df = get_SPY_data()[start_date : end_date]
+    SPY_df = get_SPY_data()[start_date: end_date]
     SPY_df['Return'] = np.log1p(SPY_df['Close'].pct_change())
     beta = calculate_beta(ticker, start_date, end_date)
     yr_days = 365

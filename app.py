@@ -365,9 +365,9 @@ if option == 'News':
 
 
 if option == 'Technical Analysis':
+    st.subheader('Data Selection')
     c1, c2 = st.columns(2)
-    setups = ('Investor', 'Swing Trader', 'Day Trader')
-    setup = c1.selectbox('Trader Setup', setups)
+    setup = c1.selectbox('Trader Setup', ('Investor', 'Swing Trader', 'Day Trader'))
     
     if setup == 'Investor':
         periods = ('Weekly', 'Daily', '30 Min')
@@ -377,12 +377,10 @@ if option == 'Technical Analysis':
         periods = ('30 Min', '5 Min', '1 Min')
 
     period = c2.radio('Timeframe', periods, horizontal=True)
+
     period_d = TA_PERIODS[period]
     MAs = period_d['MA']
     days = period_d['days']
-
-    if last_date.weekday() == 0:
-        days += 3
     start = last_date - timedelta(days)
 
     c1, c2 = st.columns(2)
@@ -394,7 +392,6 @@ if option == 'Technical Analysis':
 
     if data != 'All':
         trend = c2.radio('Trend', ('Up', 'Down'), horizontal=True)
-        # st.write('') # for aligning rows in columns
         if data == 'Trending':
             up_tickers, down_tickers = get_trending_stocks(start, end, period, MAs)
             if trend == 'Up':
@@ -441,22 +438,37 @@ if option == 'Technical Analysis':
     short_ma, inter_ma, long_ma, *_ = MAs
     
     if tickers:
+        st.subheader('Chart Setup')
+        graph = st.radio('Price Display', ('Candlesticks', 'Line'), horizontal=True)
         c1, c2, c3 = st.columns(3)
         ticker = ticker.split(' - ')[0]
-        show_sr = c1.checkbox('Add Support-Resistance (S/R) Levels', True)
-        show_fib = c2.checkbox('Add Fibonacci Retracement Levels (FRLs)')
-        adjust_ma = c3.checkbox('Adjust Moving Averages (MAs)')
-        log_y = c1.checkbox('Logarithmic Scale', True)
-        show_prices = c2.checkbox('Display Candlestick Data')
+        show_vol = c1.checkbox('Volume', True)
+        show_rsi = c1.checkbox('RSI')
+        show_macd = c1.checkbox('MACD')
+        show_sr = c2.checkbox('Support/Resistance', True)
+        show_fib = c2.checkbox('Fibonacci Retracements')
+        show_bb = c2.checkbox('Bollinger Bands')
+        show_MAs = c3.checkbox('Moving Averages (MAs)')
+        show_adv_MAs = c3.checkbox('Advanced MAs')
+        placeholder = c3.empty()
 
-        if adjust_ma:
+        if show_MAs or show_adv_MAs:
+            adjust_MAs = placeholder.checkbox('Adjust MA Windows')
             c1, c2, c3 = st.columns(3)
-            short_ma = c1.number_input('Short-Term MA', value=MAs[0])
-            inter_ma = c2.number_input('Intermediate-Term MA', value=MAs[1])
-            long_ma = c3.number_input('Long-Term MA', value=MAs[2])
+            if adjust_MAs:
+                if show_MAs:
+                    short_ma = c1.number_input('Short-Term MA', value=MAs[0])
+                    inter_ma = c2.number_input('Intermediate-Term MA', value=MAs[1])
+                    long_ma = c3.number_input('Long-Term MA', value=MAs[2])
+                if show_adv_MAs:
+                    advances = [int(x**(1/2)) for x in MAs]
+                    short_advance = c1.number_input('Short-Term Advance', value=advances[0])
+                    inter_advance = c2.number_input('Intermediate-Term Advance', value=advances[1])
+                    long_advance = c3.number_input('Long-Term Advance', value=advances[2])
 
-        fig = plot_trends(ticker, start, end, period, short_ma, inter_ma, long_ma,
-                          show_sr, show_prices, show_fib, log_y)
+        fig = plot_trends(graph, ticker, start, end, period, short_ma, inter_ma, long_ma,
+                          show_vol, show_rsi, show_macd, show_sr, show_fib, show_bb,
+                          show_MAs, show_adv_MAs)
         st.plotly_chart(fig)
 
         # file = 'watchlist.pickle'

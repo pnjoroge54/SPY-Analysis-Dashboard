@@ -13,7 +13,10 @@ import fundamentalanalysis as fa
 from urllib.request import Request, urlopen
 from html_table_parser.parser import HTMLTableParser 
 import streamlit as st
+import winsound
 
+
+start = time.time()
 
 def get_SPY_companies():
     '''Get a list of the companies comprising the S&P 500'''
@@ -454,9 +457,19 @@ if __name__ == "__main__":
     get_risk_free_rates()
     get_factor_model_data()
     get_market_data()
-    intervals = ['1m', '5m', '30m']
+
+    intervals = ['1m', '5m', '30m', '1wk']
     get_interval_market_data(intervals)
+
     save_TTM_financial_ratios()
     get_financial_ratios()
     get_financial_statements()
     get_tickers_info()
+    
+    frequency = 2500  # Set Frequency To 2500 Hertz
+    duration = 1000  # Set Duration To 1000 ms == 1 second
+    winsound.Beep(frequency, duration)
+
+    end = time.time()
+    mm, ss = divmod(end - start, 60)
+    print(f'Done in {mm}m:{ss}s')
