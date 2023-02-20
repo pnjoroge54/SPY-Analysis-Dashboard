@@ -235,7 +235,7 @@ def sr_levels(df, start, end):
     '''Returns key support/resistance levels for a security'''
 
     end += timedelta(1)
-    df = df[start: end]
+    df = df[start:end]
     support = []
     resistance = []
     s = (df['High'] - df['Low']).mean()
@@ -263,16 +263,16 @@ def sr_levels(df, start, end):
 
 
 @st.cache(allow_output_mutation=True)
-def calculate_signals(ticker, start, end, period, short_ma, inter_ma, long_ma):
+def calculate_signals(ticker, start, end, period, minor_ma, secondary_ma, primary_ma):
     end += timedelta(1)
 
     if period != 'Daily':
-        df = get_interval_market_data(ticker, period)[start: end]
+        df = get_interval_market_data(ticker, period)[start:end]
     else:
-        df = get_ticker_data(ticker)[start: end]
+        df = get_ticker_data(ticker)[start:end]
         
     df.drop(columns=['Adj Close'], inplace=True)
-    MAs = [short_ma, inter_ma, long_ma]
+    MAs = [minor_ma, secondary_ma, primary_ma]
 
     for ma in MAs:
         df[f'MA{ma}'] = df['Close'].rolling(ma).mean()
@@ -316,15 +316,17 @@ def add_fibonacci_levels(df, fig):
     for i in range(len(ratios)):
         fig.add_scatter(x=df.index,
                         y=[levels[i]] * df.shape[0],
-                        name=f'FRL {ratios[i]:,.2%}',
-                        line={'color': colors[i], 'width': 0.75, 'dash': 'dot'},
+                        name=f'FR {ratios[i]:,.2%}',
+                        line_color=colors[i],
+                        line_width=0.75,
+                        line_dash='dot',
                         connectgaps=True)
     
     return fig
 
 
 @st.cache(allow_output_mutation=True)
-def plot_trends(graph, ticker, start, end, period, short_ma, inter_ma, long_ma,
+def plot_trends(graph, ticker, start, end, period, minor_ma, secondary_ma, primary_ma,
                 show_vol, show_rsi, show_macd, show_sr, show_fib, show_bb, show_MAs, show_adv_MAs):
     '''
     Returns candlestick chart with support/resistance levels and market cycle trend lines
@@ -335,13 +337,13 @@ def plot_trends(graph, ticker, start, end, period, short_ma, inter_ma, long_ma,
     start: Start Date
     end: End Date
     period: user-input
-    short_ma: moving average window
-    inter_ma: moving average window
-    long_ma: moving average window
+    minor_ma: moving average window
+    secondary_ma : moving average window
+    primary_ma: moving average window
     show_prices: display candlestick data on crowded charts
     '''
 
-    df = calculate_signals(ticker, start, end, period, short_ma, inter_ma, long_ma)
+    df = calculate_signals(ticker, start, end, period, minor_ma, secondary_ma, primary_ma)
     cname = SPY_info_df.loc[ticker, 'Security']
     nrows = 1 + show_vol + show_rsi + show_macd
     titles = [f'{cname} - {period} Chart'] + [''] * nrows
@@ -349,12 +351,15 @@ def plot_trends(graph, ticker, start, end, period, short_ma, inter_ma, long_ma,
     r2 = (1 - r1) / (nrows - 1)
     row_heights = [r1] + [r2] * (nrows - 1)
     fig_row = 2
+    data = []
 
     fig = make_subplots(rows=nrows, cols=1,
                         shared_xaxes=True, 
                         vertical_spacing=0.05,
                         subplot_titles=titles, 
                         row_heights=row_heights)
+    fig.update_xaxes(showgrid=True)          
+    fig.update_yaxes(showgrid=False, type='log')
     
     cs = go.Candlestick(x=df.index, 
                         open=df['Open'], 
@@ -373,17 +378,15 @@ def plot_trends(graph, ticker, start, end, period, short_ma, inter_ma, long_ma,
                     line_width=1.5,
                     connectgaps=True)
 
-    data = []
-
     if graph == 'Candlesticks':
         data.append(cs)
     else:
         data.append(xy)
 
     if show_MAs or show_adv_MAs:
-        MAs = [short_ma, inter_ma, long_ma]
+        MAs = [minor_ma, secondary_ma, primary_ma]
         colors = ['red', 'cyan', 'gold']
-        if show_MAs & show_adv_MAs:
+        if show_MAs and show_adv_MAs or show_adv_MAs:
             dash = 'dot'
         else:
             dash = 'solid'
@@ -418,7 +421,7 @@ def plot_trends(graph, ticker, start, end, period, short_ma, inter_ma, long_ma,
             n = df.shape[0] - i
             fig.add_scatter(x=df.index[i:],
                             y=[l] * n,
-                            name='S/R Level',
+                            name='S/R',
                             line_width=0.5,
                             line_color='orange',
                             mode='lines',
@@ -459,15 +462,12 @@ def plot_trends(graph, ticker, start, end, period, short_ma, inter_ma, long_ma,
                         y=rsi.values,
                         name='RSI',
                         line_width=1,
-                        line_dash=dash,
                         mode='lines',
                         connectgaps=True,
-                        row=fig_row, col=1) 
+                        row=fig_row, col=1)
+        fig.update_layout({f'yaxis{fig_row}': {'type': 'linear'}})
         fig_row += 1
     
-    fig.update_xaxes(showgrid=True)          
-    fig.update_yaxes(showgrid=False, type='log')
-
     # MACD subplot
     if show_macd:
         macd, *_ = MACD(df['Close'], fastperiod=12, slowperiod=26, signalperiod=9)
@@ -475,11 +475,10 @@ def plot_trends(graph, ticker, start, end, period, short_ma, inter_ma, long_ma,
                         y=macd.values,
                         name='MACD',
                         line_width=1,
-                        line_dash=dash,
                         mode='lines',
                         connectgaps=True,
                         row=fig_row, col=1)
-        fig.update_layout({f'yaxis{fig_row}': {'type': 'linear'}}) 
+        fig.update_layout({f'yaxis{fig_row}': {'type': 'linear'}})
     
     if period != 'Weekly':
         us_holidays = list(holidays.US(range(start.year, end.year + 1)).keys())
@@ -488,13 +487,7 @@ def plot_trends(graph, ticker, start, end, period, short_ma, inter_ma, long_ma,
             rangebreaks.extend([dict(bounds=[16, 9.5], pattern="hour")])
         fig.update_xaxes(rangebreaks=rangebreaks)
 
-
     fig.layout.xaxis.rangeslider.visible = False
-    # fig.update_layout(hovermode="x unified")
-    # fig.update_layout(yaxis2=dict(tickfont=dict(size=8)))
-    # fig.update_layout(yaxis2=dict(tickvals=dict(size=8)))
-    # fig.update_layout(width=800, height=500)
-    # print(fig.layout)
 
     return fig
 
@@ -503,13 +496,13 @@ def plot_trends(graph, ticker, start, end, period, short_ma, inter_ma, long_ma,
 def get_trending_stocks(start, end, period, MAs):
     up = []
     down = []
-    short_ma, inter_ma, long_ma, *_ = MAs
+    minor_ma, secondary_ma, primary_ma, *_ = MAs
     for ticker in ticker_list:
         try:
-            df = calculate_signals(ticker, start, end, period, short_ma, inter_ma, long_ma)
-            if df[f'MA{long_ma}'][-1] > df[f'MA{inter_ma}'][-1] > df[f'MA{short_ma}'][-1]:
+            df = calculate_signals(ticker, start, end, period, minor_ma, secondary_ma, primary_ma)
+            if df[f'MA{primary_ma}'][-1] > df[f'MA{secondary_ma}'][-1] > df[f'MA{minor_ma}'][-1]:
                 down.append(ticker)
-            if df[f'MA{long_ma}'][-1] < df[f'MA{inter_ma}'][-1] < df[f'MA{short_ma}'][-1]:
+            if df[f'MA{primary_ma}'][-1] < df[f'MA{secondary_ma}'][-1] < df[f'MA{minor_ma}'][-1]:
                 up.append(ticker)
         except:
             continue

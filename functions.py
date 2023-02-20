@@ -61,7 +61,7 @@ def get_interval_market_data(ticker, interval):
     if interval.endswith('Min'):
         folder = interval.split(' Min')[0] + 'm'
         col = 'Datetime'
-        fmt = '-0:'
+        fmt = ':00-0'
     elif interval == 'Weekly':
         folder = '1wk'
         col = 'Date'
@@ -233,10 +233,10 @@ def calculate_beta(ticker, start_date, end_date):
     '''Stock's beta relative to S&P 500'''
     
     end_date += timedelta(1)
-    df1 = get_SPY_data()[start_date: end_date]
+    df1 = get_SPY_data()[start_date:end_date]
     df1['Return'] = np.log1p(df1['Close'].pct_change())
     df1.rename(columns={'Return': 'SPY'}, inplace=True)
-    df2 = get_ticker_data(ticker)[start_date: end_date]
+    df2 = get_ticker_data(ticker)[start_date:end_date]
     df2['Return'] = np.log1p(df2['Adj Close'].pct_change())
     df2.rename(columns={'Return': ticker}, inplace=True)
     df = pd.concat([df1['SPY'], df2[ticker]], axis=1, join='inner')
@@ -257,8 +257,8 @@ def calculate_metrics(start_date, end_date):
     '''
     
     end_date += timedelta(1)
-    rf = rf_rates.loc[start_date: end_date, 'Close'].mean() / 100
-    df = SPY_df[start_date: end_date]
+    rf = rf_rates.loc[start_date:end_date, 'Close'].mean() / 100
+    df = SPY_df[start_date:end_date]
     df['Return'] = np.log1p(df['Close'].pct_change())
     t = len(df) / 252   
     cagr = ((df['Close'][-1] / df['Open'][0])**(1 / t) - 1)
@@ -275,7 +275,7 @@ def calculate_metrics(start_date, end_date):
         for ticker in sector_tickers:
             # Get sub-industry of ticker
             t_si = SPY_info_df.loc[ticker, 'Sub-Industry']
-            df = get_ticker_data(ticker)[start_date: end_date]
+            df = get_ticker_data(ticker)[start_date:end_date]
             df['Return'] = np.log1p(df['Adj Close'].pct_change())
             t = len(df) / 252
             cagr = ((df['Adj Close'][-1] / df['Open'][0])**(1 / t) - 1)
@@ -368,9 +368,9 @@ def plot_sma_returns(ticker, start_date, end_date, window):
     '''Returns line charts of simple moving average of returns for ticker and S&P 500'''
 
     end_date += timedelta(1)
-    ticker_df = get_ticker_data(ticker)[start_date: end_date]
+    ticker_df = get_ticker_data(ticker)[start_date:end_date]
     ticker_df['Return'] = np.log1p(ticker_df['Adj Close'].pct_change())
-    SPY_df = get_SPY_data()[start_date: end_date]
+    SPY_df = get_SPY_data()[start_date:end_date]
     SPY_df['Return'] = np.log1p(SPY_df['Close'].pct_change())
     beta = calculate_beta(ticker, start_date, end_date)
     yr_days = 365

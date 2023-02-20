@@ -435,7 +435,7 @@ if option == 'Technical Analysis':
     tickers = [f'{ticker} - {name}' for ticker, name in zip(tickers, names)]
     
     ticker = c3.selectbox(ticker_lbl, sorted(tickers), help=text)
-    short_ma, inter_ma, long_ma, *_ = MAs
+    minor_ma, secondary_ma, primary_ma, *_ = MAs
     
     if tickers:
         st.subheader('Chart Setup')
@@ -445,10 +445,10 @@ if option == 'Technical Analysis':
         show_vol = c1.checkbox('Volume', True)
         show_rsi = c1.checkbox('RSI')
         show_macd = c1.checkbox('MACD')
-        show_sr = c2.checkbox('Support/Resistance', True)
-        show_fib = c2.checkbox('Fibonacci Retracements')
-        show_bb = c2.checkbox('Bollinger Bands')
-        show_MAs = c3.checkbox('Moving Averages (MAs)')
+        show_sr = c2.checkbox('Support / Resistance (S/R)', True)
+        show_fib = c2.checkbox('Fibonacci Retracements (FR)')
+        show_bb = c2.checkbox('Bollinger Bands (BB)')
+        show_MAs = c3.checkbox('Moving Averages (MA)')
         show_adv_MAs = c3.checkbox('Advanced MAs')
         placeholder = c3.empty()
 
@@ -457,16 +457,16 @@ if option == 'Technical Analysis':
             c1, c2, c3 = st.columns(3)
             if adjust_MAs:
                 if show_MAs:
-                    short_ma = c1.number_input('Short-Term MA', value=MAs[0])
-                    inter_ma = c2.number_input('Intermediate-Term MA', value=MAs[1])
-                    long_ma = c3.number_input('Long-Term MA', value=MAs[2])
+                    minor_ma = c1.number_input('Minor MA', value=MAs[0])
+                    secondary_ma  = c2.number_input('Secondary MA', value=MAs[1])
+                    primary_ma  = c3.number_input('Primary MA', value=MAs[2])
                 if show_adv_MAs:
                     advances = [int(x**(1/2)) for x in MAs]
-                    short_advance = c1.number_input('Short-Term Advance', value=advances[0])
-                    inter_advance = c2.number_input('Intermediate-Term Advance', value=advances[1])
-                    long_advance = c3.number_input('Long-Term Advance', value=advances[2])
+                    short_advance = c1.number_input('Minor Advance', value=advances[0])
+                    inter_advance = c2.number_input('Secondary Advance', value=advances[1])
+                    long_advance = c3.number_input('Primary Advance', value=advances[2])
 
-        fig = plot_trends(graph, ticker, start, end, period, short_ma, inter_ma, long_ma,
+        fig = plot_trends(graph, ticker, start, end, period, minor_ma, secondary_ma, primary_ma,
                           show_vol, show_rsi, show_macd, show_sr, show_fib, show_bb,
                           show_MAs, show_adv_MAs)
         st.plotly_chart(fig)
