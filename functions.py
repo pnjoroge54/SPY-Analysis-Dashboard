@@ -58,15 +58,18 @@ def get_ticker_data(ticker):
 def get_interval_market_data(ticker, interval):
     '''Load ticker's market data'''
     
+    col = 'Date'
+    fmt = ' '
+    
     if interval.endswith('Min'):
         folder = interval.split(' Min')[0] + 'm'
         col = 'Datetime'
         fmt = ':00-0'
-    elif interval == 'Weekly':
+
+    if interval == 'Weekly':
         folder = '1wk'
-        col = 'Date'
-        fmt = ' '
-    elif interval == 'Monthly':
+
+    if interval == 'Monthly':
         folder = '1mo'
 
     file = os.path.join(f'data/market_data/{folder}', f'{ticker}.csv')
@@ -80,6 +83,7 @@ def get_interval_market_data(ticker, interval):
 @st.cache
 def get_ticker_info():
     fname = 'data/spy_data/spy_tickers_info.pickle'
+
     with open(fname, 'rb') as f:
         info = pickle.load(f)
 
@@ -601,8 +605,7 @@ def plot_si_tickers_metric(df1, df2, df3, df4, sector, subIndustry, metric, tick
                            arrowwidth=2,
                            arrowcolor='fuchsia',
                            bordercolor='purple',
-                           bgcolor='fuchsia'
-                        )
+                           bgcolor='fuchsia')
                         
     fig.update_layout(title=title, xaxis_title=xtitle)
     fig.update_annotations(font=dict(color='white'))
@@ -694,8 +697,7 @@ def plot_sector_tickers_metric(df1, df2, df3, df4, sector, subIndustry, metric, 
                        arrowwidth=2,
                        arrowcolor='fuchsia',
                        bordercolor='purple',
-                       bgcolor='fuchsia',
-                       )
+                       bgcolor='fuchsia')
     fig.update_layout(title=title, xaxis_title=xtitle)
     fig.update_annotations(font=dict(color='white'))
 
