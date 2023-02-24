@@ -256,7 +256,6 @@ def calculate_metrics(start_date, end_date):
     for index, stocks, sectors and sub-industries
     '''
     
-    end_date += timedelta(1)
     rf = rf_rates.loc[start_date:end_date, 'Close'].mean() / 100
     df = SPY_df[start_date:end_date]
     df['Return'] = np.log1p(df['Close'].pct_change())
@@ -367,7 +366,6 @@ def get_TTM_ratios(ratios, ratio):
 def plot_sma_returns(ticker, start_date, end_date, window):
     '''Returns line charts of simple moving average of returns for ticker and S&P 500'''
 
-    end_date += timedelta(1)
     ticker_df = get_ticker_data(ticker)[start_date:end_date]
     ticker_df['Return'] = np.log1p(ticker_df['Adj Close'].pct_change())
     SPY_df = get_SPY_data()[start_date:end_date]

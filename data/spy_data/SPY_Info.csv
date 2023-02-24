@@ -1,11 +1,11 @@
 Symbol,Security,GICS Sector,GICS Sub-Industry,Headquarters Location,Date added,CIK,Founded
-MMM,3M,Industrials,Industrial Conglomerates,"Saint Paul, Minnesota",1976-08-09,66740,1902
+MMM,3M,Industrials,Industrial Conglomerates,"Saint Paul, Minnesota",1957-03-04,66740,1902
 AOS,A. O. Smith,Industrials,Building Products,"Milwaukee, Wisconsin",2017-07-26,91142,1916
-ABT,Abbott,Health Care,Health Care Equipment,"North Chicago, Illinois",1964-03-31,1800,1888
+ABT,Abbott,Health Care,Health Care Equipment,"North Chicago, Illinois",1957-03-04,1800,1888
 ABBV,AbbVie,Health Care,Pharmaceuticals,"North Chicago, Illinois",2012-12-31,1551152,2013 (1888)
 ACN,Accenture,Information Technology,IT Consulting & Other Services,"Dublin, Ireland",2011-07-06,1467373,1989
 ATVI,Activision Blizzard,Communication Services,Interactive Home Entertainment,"Santa Monica, California",2015-08-31,718877,2008
-ADM,ADM,Consumer Staples,Agricultural Products,"Chicago, Illinois",1981-07-29,7084,1902
+ADM,ADM,Consumer Staples,Agricultural Products,"Chicago, Illinois",1957-03-04,7084,1902
 ADBE,Adobe Inc.,Information Technology,Application Software,"San Jose, California",1997-05-05,796343,1982
 ADP,ADP,Information Technology,Data Processing & Outsourced Services,"Roseland, New Jersey",1981-03-31,8670,1949
 AAP,Advance Auto Parts,Consumer Discretionary,Automotive Retail,"Raleigh, North Carolina",2015-07-09,1158449,1932
@@ -115,8 +115,8 @@ C,Citigroup,Financials,Diversified Banks,"New York City, New York",1988-05-31,83
 CFG,Citizens Financial Group,Financials,Regional Banks,"Providence, Rhode Island",2016-01-29,759944,1828
 CLX,Clorox,Consumer Staples,Household Products,"Oakland, California",1969-03-31,21076,1913
 CME,CME Group,Financials,Financial Exchanges & Data,"Chicago, Illinois",2006-08-11,1156375,1848
-CMS,CMS Energy,Utilities,Multi-Utilities,"Jackson, Michigan",1999-05-03,811156,1886
-KO,The Coca-Cola Company,Consumer Staples,Soft Drinks,"Atlanta, Georgia",1957-03-04,21344,1886
+CMS,CMS Energy,Utilities,Multi-Utilities,"Jackson, Michigan",1957-03-04,811156,1886
+KO,Coca-Cola Company (The),Consumer Staples,Soft Drinks,"Atlanta, Georgia",1957-03-04,21344,1886
 CTSH,Cognizant,Information Technology,IT Consulting & Other Services,"Teaneck, New Jersey",2006-11-17,1058290,1994
 CL,Colgate-Palmolive,Consumer Staples,Household Products,"New York City, New York",1957-03-04,21665,1806
 CMCSA,Comcast,Communication Services,Cable & Satellite,"Philadelphia, Pennsylvania",2002-11-19,1166691,1963
@@ -128,13 +128,13 @@ STZ,Constellation Brands,Consumer Staples,Distillers & Vintners,"Victor, New Yor
 CEG,Constellation Energy,Utilities,Multi-Utilities,"Baltimore, Maryland",2022-02-02,1868275,1999
 COO,CooperCompanies,Health Care,Health Care Supplies,"San Ramon, California",2016-09-23,711404,1958
 CPRT,Copart,Industrials,Diversified Support Services,"Dallas, Texas",2018-07-02,900075,1982
-GLW,Corning Inc.,Information Technology,Electronic Components,"Corning, New York",,24741,1851
+GLW,Corning Inc.,Information Technology,Electronic Components,"Corning, New York",1995-02-27,24741,1851
 CTVA,Corteva,Materials,Fertilizers & Agricultural Chemicals,"Indianapolis, Indiana",2019-06-03,1755672,2019
 CSGP,CoStar Group,Industrials,Research & Consulting Services,"Washington, D.C.",2022-09-19,1057352,1987
 COST,Costco,Consumer Staples,Hypermarkets & Super Centers,"Issaquah, Washington",1993-10-01,909832,1976
 CTRA,Coterra,Energy,Oil & Gas Exploration & Production,"Houston, Texas",2008-06-23,858470,2021 (1989)
 CCI,Crown Castle,Real Estate,Specialized REITs,"Houston, Texas",2012-03-14,1051470,1994
-CSX,CSX,Industrials,Railroads,"Jacksonville, Florida",1967-09-30,277948,1980
+CSX,CSX,Industrials,Railroads,"Jacksonville, Florida",1957-03-04,277948,1980
 CMI,Cummins,Industrials,Industrial Machinery,"Columbus, Indiana",1965-03-31,26172,1919
 CVS,CVS Health,Health Care,Health Care Services,"Woonsocket, Rhode Island",1957-03-04,64803,1996
 DHI,D.R. Horton,Consumer Discretionary,Homebuilding,"Arlington, Texas",2005-06-22,882184,1978
@@ -180,7 +180,7 @@ EFX,Equifax,Industrials,Research & Consulting Services,"Atlanta, Georgia",1997-0
 EQIX,Equinix,Real Estate,Specialized REITs,"Redwood City, California",2015-03-20,1101239,1998
 EQR,Equity Residential,Real Estate,Residential REITs,"Chicago, Illinois",2001-12-03,906107,1969
 ESS,Essex Property Trust,Real Estate,Residential REITs,"San Mateo, California",2014-04-02,920522,1971
-EL,The Estée Lauder Companies,Consumer Staples,Personal Products,"New York City, New York",2006-01-05,1001250,1946
+EL,Estée Lauder Companies (The),Consumer Staples,Personal Products,"New York City, New York",2006-01-05,1001250,1946
 ETSY,Etsy,Consumer Discretionary,Internet & Direct Marketing Retail,"New York City, New York",2020-09-21,1370637,2005
 RE,Everest Re,Financials,Reinsurance,"Hamilton, Bermuda",2017-06-19,1095073,1973
 EVRG,Evergy,Utilities,Electric Utilities,"Kansas City, Missouri",2018-06-05,1711269,1909
@@ -217,7 +217,7 @@ GEN,Gen Digital,Information Technology,Application Software,"Tempe, Arizona",200
 GNRC,Generac,Industrials,Electrical Components & Equipment,"Waukesha, Wisconsin",2021-03-22,1474735,1959
 GD,General Dynamics,Industrials,Aerospace & Defense,"Falls Church, Virginia",1957-03-04,40533,1899
 GE,General Electric,Industrials,Industrial Conglomerates,"Boston, Massachusetts",1957-03-04,40545,1892
-GIS,General Mills,Consumer Staples,Packaged Foods & Meats,"Golden Valley, Minnesota",1969-03-31,40704,1856
+GIS,General Mills,Consumer Staples,Packaged Foods & Meats,"Golden Valley, Minnesota",1957-03-04,40704,1856
 GM,General Motors,Consumer Discretionary,Automobile Manufacturers,"Detroit, Michigan",2013-06-06,1467858,1908
 GPC,Genuine Parts Company,Consumer Discretionary,Specialty Stores,"Atlanta, Georgia",1973-12-31,40987,1925
 GILD,Gilead Sciences,Health Care,Biotechnology,"Foster City, California",2004-07-01,882095,1987
@@ -236,10 +236,10 @@ HPE,Hewlett Packard Enterprise,Information Technology,"Technology Hardware, Stor
 HLT,Hilton Worldwide,Consumer Discretionary,"Hotels, Resorts & Cruise Lines","Tysons Corner, Virginia",2017-06-19,1585689,1919
 HOLX,Hologic,Health Care,Health Care Equipment,"Marlborough, Massachusetts",2016-03-30,859737,1985
 HD,Home Depot (The),Consumer Discretionary,Home Improvement Retail,"Atlanta, Georgia",1988-03-31,354950,1978
-HON,Honeywell,Industrials,Industrial Conglomerates,"Charlotte, North Carolina",1964-03-31,773840,1906
+HON,Honeywell,Industrials,Industrial Conglomerates,"Charlotte, North Carolina",1957-03-04,773840,1906
 HRL,Hormel Foods,Consumer Staples,Packaged Foods & Meats,"Austin, Minnesota",2009-03-04,48465,1891
 HST,Host Hotels & Resorts,Real Estate,Hotel & Resort REITs,"Bethesda, Maryland",2007-03-20,1070750,1993
-HWM,Howmet Aerospace,Industrials,Aerospace & Defense,"Pittsburgh, Pennsylvania",1964-03-31,4281,2016
+HWM,Howmet Aerospace,Industrials,Aerospace & Defense,"Pittsburgh, Pennsylvania",1957-03-04,4281,2016
 HPQ,HP Inc.,Information Technology,"Technology Hardware, Storage & Peripherals","Palo Alto, California",1974-12-31,47217,1939 (2015)
 HUM,Humana,Health Care,Managed Health Care,"Louisville, Kentucky",,49071,1961
 HBAN,Huntington Bancshares,Financials,Regional Banks,"Columbus, Ohio; Detroit, Michigan",1997-08-28,49196,1866
@@ -253,9 +253,9 @@ INCY,Incyte,Health Care,Biotechnology,"Wilmington, Delaware",2017-02-28,879169,1
 IR,Ingersoll Rand,Industrials,Industrial Machinery,"Davidson, North Carolina",2020-03-03,1699150,1859
 INTC,Intel,Information Technology,Semiconductors,"Santa Clara, California",1976-12-31,50863,1968
 ICE,Intercontinental Exchange,Financials,Financial Exchanges & Data,"Atlanta, Georgia",2007-09-26,1571949,2000
-IP,International Paper,Materials,Paper Packaging,"Memphis, Tennessee",1957-03-04,51434,1898
-IPG,The Interpublic Group of Companies,Communication Services,Advertising,"New York City, New York",1992-10-01,51644,1961 (1930)
 IFF,International Flavors & Fragrances,Materials,Specialty Chemicals,"New York City, New York",1976-03-31,51253,1958 (1889)
+IP,International Paper,Materials,Paper Packaging,"Memphis, Tennessee",1957-03-04,51434,1898
+IPG,Interpublic Group of Companies (The),Communication Services,Advertising,"New York City, New York",1992-10-01,51644,1961 (1930)
 INTU,Intuit,Information Technology,Application Software,"Mountain View, California",2000-12-05,896878,1983
 ISRG,Intuitive Surgical,Health Care,Health Care Equipment,"Sunnyvale, California",2008-06-02,1035267,1995
 IVZ,Invesco,Financials,Asset Management & Custody Banks,"Atlanta, Georgia",2008-08-21,914208,1935
@@ -290,13 +290,13 @@ LNC,Lincoln Financial,Financials,Multi-line Insurance,"Radnor, Pennsylvania",197
 LIN,Linde plc,Materials,Industrial Gases,"Guildford, United Kingdom",1992-07-01,1707925,1879
 LYV,Live Nation Entertainment,Communication Services,Movies & Entertainment,"Beverly Hills, California",2019-12-23,1335258,2010
 LKQ,LKQ Corporation,Consumer Discretionary,Distributors,"Chicago, Illinois",2016-05-23,1065696,1998
-LMT,Lockheed Martin,Industrials,Aerospace & Defense,"Bethesda, Maryland",1984-07-31,936468,1995
+LMT,Lockheed Martin,Industrials,Aerospace & Defense,"Bethesda, Maryland",1957-03-04,936468,1995
 L,Loews Corporation,Financials,Multi-line Insurance,"New York City, New York",1995-05-31,60086,1959
 LOW,Lowe's,Consumer Discretionary,Home Improvement Retail,"Mooresville, North Carolina",1984-02-29,60667,1904/1946/1959
 LUMN,Lumen Technologies,Communication Services,Alternative Carriers,"Monroe, Louisiana",1999-03-25,18926,1983 (1877)
 LYB,LyondellBasell,Materials,Specialty Chemicals,"Rotterdam, Netherlands",2012-09-05,1489393,2007
 MTB,M&T Bank,Financials,Regional Banks,"Buffalo, New York",2004-02-23,36270,1856
-MRO,Marathon Oil,Energy,Oil & Gas Exploration & Production,"Houston, Texas",1991-05-01,101778,1887
+MRO,Marathon Oil,Energy,Oil & Gas Exploration & Production,"Houston, Texas",1957-03-04,101778,1887
 MPC,Marathon Petroleum,Energy,Oil & Gas Refining & Marketing,"Findlay, Ohio",2011-07-01,1510295,2009 (1887)
 MKTX,MarketAxess,Financials,Financial Exchanges & Data,"New York City, New York",2019-07-01,1278021,2000
 MAR,Marriott International,Consumer Discretionary,"Hotels, Resorts & Cruise Lines","Bethesda, Maryland",1998-05-29,1048286,1927
@@ -327,7 +327,7 @@ MPWR,Monolithic Power Systems,Information Technology,Semiconductors,"Kirkland, W
 MNST,Monster Beverage,Consumer Staples,Soft Drinks,"Corona, California",2012-06-28,865752,2012 (1935)
 MCO,Moody's Corporation,Financials,Financial Exchanges & Data,"New York City, New York",1998-07-01,1059556,1909
 MS,Morgan Stanley,Financials,Investment Banking & Brokerage,"New York City, New York",1993-07-29,895421,1935
-MOS,The Mosaic Company,Materials,Fertilizers & Agricultural Chemicals,"Tampa, Florida",2011-09-26,1285785,2004 (1865 / 1909)
+MOS,Mosaic Company (The),Materials,Fertilizers & Agricultural Chemicals,"Tampa, Florida",2011-09-26,1285785,2004 (1865 / 1909)
 MSI,Motorola Solutions,Information Technology,Communications Equipment,"Chicago, Illinois",1957-03-04,68505,1928 (2011)
 MSCI,MSCI,Financials,Financial Exchanges & Data,"New York City, New York",2018-04-04,1408198,1969
 NDAQ,"Nasdaq, Inc.",Financials,Financial Exchanges & Data,"New York City, New York",2008-10-22,1120193,1971
@@ -343,7 +343,7 @@ NI,NiSource,Utilities,Multi-Utilities,"Merrillville, Indiana",2000-11-02,1111711
 NDSN,Nordson Corporation,Industrials,Industrial Machinery,"Westlake, Ohio",2022-02-15,72331,1935
 NSC,Norfolk Southern Railway,Industrials,Railroads,"Atlanta, Georgia",1957-03-04,702165,1881/1894 (1980)
 NTRS,Northern Trust,Financials,Asset Management & Custody Banks,"Chicago, Illinois",1998-01-30,73124,1889
-NOC,Northrop Grumman,Industrials,Aerospace & Defense,"West Falls Church, Virginia",1985-06-30,1133421,"1994 (Northrop 1939, Grumman 1930)"
+NOC,Northrop Grumman,Industrials,Aerospace & Defense,"West Falls Church, Virginia",1957-03-04,1133421,"1994 (Northrop 1939, Grumman 1930)"
 NCLH,Norwegian Cruise Line Holdings,Consumer Discretionary,"Hotels, Resorts & Cruise Lines","Miami, Florida",2017-10-13,1513761,2011 (1966)
 NRG,NRG Energy,Utilities,Independent Power Producers & Energy Traders,"Houston, Texas",2010-01-29,1013871,1992
 NUE,Nucor,Materials,Steel,"Charlotte, North Carolina",1985-04-30,73309,1940
@@ -351,7 +351,7 @@ NVDA,Nvidia,Information Technology,Semiconductors,"Santa Clara, California",2001
 NVR,"NVR, Inc.",Consumer Discretionary,Homebuilding,"Reston, Virginia",2019-09-26,906163,1980
 NXPI,NXP Semiconductors,Information Technology,Semiconductors,"Eindhoven, Netherlands",2021-03-22,1413447,1953
 ORLY,O'Reilly Auto Parts,Consumer Discretionary,Specialty Stores,"Springfield, Missouri",2009-03-27,898173,1957
-OXY,Occidental Petroleum,Energy,Oil & Gas Exploration & Production,"Houston, Texas",1982-12-31,797468,1920
+OXY,Occidental Petroleum,Energy,Oil & Gas Exploration & Production,"Houston, Texas",1957-03-04,797468,1920
 ODFL,Old Dominion,Industrials,Trucking,"Thomasville, North Carolina",2019-12-09,878927,1934
 OMC,Omnicom Group,Communication Services,Advertising,"New York City, New York",1997-12-31,29989,1986
 ON,ON Semiconductor,Information Technology,Semiconductors,"Phoenix, Arizona",2022-06-21,1097864,1999
@@ -378,7 +378,7 @@ PXD,Pioneer Natural Resources,Energy,Oil & Gas Exploration & Production,"Irving,
 PNC,PNC Financial Services,Financials,Regional Banks,"Pittsburgh, Pennsylvania",1988-04-30,713676,1845
 POOL,Pool Corporation,Consumer Discretionary,Distributors,"Covington, Louisiana",2020-10-07,945841,1993
 PPG,PPG Industries,Materials,Specialty Chemicals,"Pittsburgh, Pennsylvania",1957-03-04,79879,1883
-PPL,PPL Corporation,Utilities,Electric Utilities,"Allentown, Pennsylvania",,922224,1920
+PPL,PPL Corporation,Utilities,Electric Utilities,"Allentown, Pennsylvania",2001-10-01,922224,1920
 PFG,Principal Financial Group,Financials,Life & Health Insurance,"Des Moines, Iowa",2002-07-22,1126328,1879
 PG,Procter & Gamble,Consumer Staples,Personal Products,"Cincinnati, Ohio",1957-03-04,80424,1837
 PGR,Progressive Corporation,Financials,Property & Casualty Insurance,"Mayfield Village, Ohio",1997-08-04,80661,1937
@@ -394,7 +394,7 @@ QCOM,Qualcomm,Information Technology,Semiconductors,"San Diego, California",1999
 DGX,Quest Diagnostics,Health Care,Health Care Services,"Secaucus, New Jersey",2002-12-12,1022079,1967
 RL,Ralph Lauren Corporation,Consumer Discretionary,"Apparel, Accessories & Luxury Goods","New York City, New York",2007-02-02,1037038,1967
 RJF,Raymond James,Financials,Investment Banking & Brokerage,"St. Petersburg, Florida",2017-03-20,720005,1962
-RTX,Raytheon Technologies,Industrials,Aerospace & Defense,"Waltham, Massachusetts",,101829,1922
+RTX,Raytheon Technologies,Industrials,Aerospace & Defense,"Waltham, Massachusetts",1957-03-04,101829,1922
 O,Realty Income,Real Estate,Retail REITs,"San Diego, California",2015-04-07,726728,1969
 REG,Regency Centers,Real Estate,Retail REITs,"Jacksonville, Florida",2017-03-02,910606,1963
 REGN,Regeneron,Health Care,Biotechnology,"Tarrytown, New York",2013-05-01,872589,1988
@@ -402,31 +402,31 @@ RF,Regions Financial Corporation,Financials,Regional Banks,"Birmingham, Alabama"
 RSG,Republic Services,Industrials,Environmental & Facilities Services,"Phoenix, Arizona",2008-12-05,1060391,1998 (1981)
 RMD,ResMed,Health Care,Health Care Equipment,"San Diego, California",2017-07-26,943819,1989
 RHI,Robert Half,Industrials,Human Resource & Employment Services,"Menlo Park, California",2000-12-05,315213,1948
-ROK,Rockwell Automation,Industrials,Electrical Components & Equipment,"Milwaukee, Wisconsin",,1024478,1903
+ROK,Rockwell Automation,Industrials,Electrical Components & Equipment,"Milwaukee, Wisconsin",<1985?,1024478,1903
 ROL,"Rollins, Inc.",Industrials,Environmental & Facilities Services,"Atlanta, Georgia",2018-10-01,84839,1948
 ROP,Roper Technologies,Information Technology,Electronic Equipment & Instruments,"Sarasota, Florida",2009-12-23,882835,1981
 ROST,Ross Stores,Consumer Discretionary,Apparel Retail,"Dublin, California",2009-12-21,745732,1982
 RCL,Royal Caribbean Group,Consumer Discretionary,"Hotels, Resorts & Cruise Lines","Miami, Florida",2014-12-05,884887,1997
-SPGI,S&P Global,Financials,Financial Exchanges & Data,"New York City, New York",,64040,1917
+SPGI,S&P Global,Financials,Financial Exchanges & Data,"New York City, New York",1957-03-04,64040,1917
 CRM,Salesforce,Information Technology,Application Software,"San Francisco, California",2008-09-15,1108524,1999
 SBAC,SBA Communications,Real Estate,Specialized REITs,"Boca Raton, Florida",2017-09-01,1034054,1989
-SLB,Schlumberger,Energy,Oil & Gas Equipment & Services,"Curaçao, Kingdom of the Netherlands",1965-03-31,87347,1926
+SLB,Schlumberger,Energy,Oil & Gas Equipment & Services,"Curaçao, Kingdom of the Netherlands",1957-03-04,87347,1926
 STX,Seagate Technology,Information Technology,"Technology Hardware, Storage & Peripherals","Dublin, Ireland",2012-07-02,1137789,1979
 SEE,Sealed Air,Materials,Paper Packaging,"Charlotte, North Carolina",1957-03-04,1012100,1960
-SRE,Sempra Energy,Utilities,Multi-Utilities,"San Diego, California",,1032208,1998
+SRE,Sempra Energy,Utilities,Multi-Utilities,"San Diego, California",2001?,1032208,1998
 NOW,ServiceNow,Information Technology,Systems Software,"Santa Clara, California",2019-11-21,1373715,2003
 SHW,Sherwin-Williams,Materials,Specialty Chemicals,"Cleveland, Ohio",1964-06-30,89800,1866
 SBNY,Signature Bank,Financials,Regional Banks,"New York City, New York",2021-12-20,1288784,2001
 SPG,Simon Property Group,Real Estate,Retail REITs,"Indianapolis, Indiana",2002-06-26,1063761,2003
 SWKS,Skyworks Solutions,Information Technology,Semiconductors,"Irvine, California",2015-03-12,4127,2002
-SJM,The J.M. Smucker Company,Consumer Staples,Packaged Foods & Meats,"Orrville, Ohio",2008-11-06,91419,1897
+SJM,J.M. Smucker Company (The),Consumer Staples,Packaged Foods & Meats,"Orrville, Ohio",2008-11-06,91419,1897
 SNA,Snap-on,Industrials,Industrial Machinery,"Kenosha, Wisconsin",1982-09-30,91440,1920
 SEDG,SolarEdge,Information Technology,Semiconductor Equipment,"Herzliya, Israel",2021-12-20,1419612,2006
 SO,Southern Company,Utilities,Electric Utilities,"Atlanta, Georgia",1957-03-04,92122,1945
 LUV,Southwest Airlines,Industrials,Airlines,"Dallas, Texas",1994-07-01,92380,1967
 SWK,Stanley Black & Decker,Industrials,Industrial Machinery,"New Britain, Connecticut",1982-09-30,93556,1843
 SBUX,Starbucks,Consumer Discretionary,Restaurants,"Seattle, Washington",2000-06-07,829224,1971
-STT,State Street Corporation,Financials,Asset Management & Custody Banks,"Boston, Massachusetts",,93751,1792
+STT,State Street Corporation,Financials,Asset Management & Custody Banks,"Boston, Massachusetts",2003-03-14,93751,1792
 STLD,Steel Dynamics,Materials,Steel,"Fort Wayne, Indiana",2022-12-22,1022671,1993
 STE,Steris,Health Care,Health Care Equipment,"Dublin, Ireland",2019-12-23,1757898,1985
 SYK,Stryker Corporation,Health Care,Health Care Equipment,"Kalamazoo, Michigan",2000-12-12,310764,1941
@@ -445,19 +445,19 @@ TDY,Teledyne Technologies,Information Technology,Electronic Equipment & Instrume
 TFX,Teleflex,Health Care,Health Care Equipment,"Wayne, Pennsylvania",2019-01-18,96943,1943
 TER,Teradyne,Information Technology,Semiconductor Equipment,"North Reading, Massachusetts",2020-09-21,97210,1960
 TSLA,"Tesla, Inc.",Consumer Discretionary,Automobile Manufacturers,"Austin, Texas",2020-12-21,1318605,2003
-TXN,Texas Instruments,Information Technology,Semiconductors,"Dallas, Texas",,97476,1930
+TXN,Texas Instruments,Information Technology,Semiconductors,"Dallas, Texas",<1985?,97476,1930
 TXT,Textron,Industrials,Aerospace & Defense,"Providence, Rhode Island",1978-12-31,217346,1923
 TMO,Thermo Fisher Scientific,Health Care,Life Sciences Tools & Services,"Waltham, Massachusetts",2004-08-03,97745,2006 (1902)
 TJX,TJX Companies,Consumer Discretionary,Apparel Retail,"Framingham, Massachusetts",1985-09-30,109198,1987
 TSCO,Tractor Supply,Consumer Discretionary,Specialty Stores,"Brentwood, Tennessee",2014-01-24,916365,1938
 TT,Trane Technologies,Industrials,Building Products,"Dublin, Ireland",2010-11-17,1466258,1871
 TDG,TransDigm Group,Industrials,Aerospace & Defense,"Cleveland, Ohio",2016-06-03,1260221,1993
-TRV,The Travelers Companies,Financials,Property & Casualty Insurance,"New York City, New York",2002-08-21,86312,1853
+TRV,Travelers Companies (The),Financials,Property & Casualty Insurance,"New York City, New York",2002-08-21,86312,1853
 TRMB,Trimble Inc.,Information Technology,Electronic Equipment & Instruments,"Westminster, Colorado",2021-01-21,864749,1978
 TFC,Truist,Financials,Regional Banks,"Charlotte, North Carolina",1997-12-04,92230,1872
 TYL,Tyler Technologies,Information Technology,Application Software,"Plano, Texas",2020-06-22,860731,1966
 TSN,Tyson Foods,Consumer Staples,Packaged Foods & Meats,"Springdale, Arkansas",2005-08-10,100493,1935
-USB,U.S. Bank,Financials,Diversified Banks,"Minneapolis, Minnesota",,36104,1968
+USB,U.S. Bank,Financials,Diversified Banks,"Minneapolis, Minnesota",<1985?,36104,1968
 UDR,"UDR, Inc.",Real Estate,Residential REITs,"Highlands Ranch, Colorado",2016-03-07,74208,1972
 ULTA,Ulta Beauty,Consumer Discretionary,Specialty Stores,"Bolingbrook, Illinois",2016-04-18,1403568,1990
 UNP,Union Pacific Corporation,Industrials,Railroads,"Omaha, Nebraska",1957-03-04,100885,1862
@@ -466,7 +466,7 @@ UPS,United Parcel Service,Industrials,Air Freight & Logistics,"Sandy Springs, Ge
 URI,United Rentals,Industrials,Trading Companies & Distributors,"Stamford, Connecticut",2014-09-20,1067701,1997
 UNH,UnitedHealth Group,Health Care,Managed Health Care,"Minnetonka, Minnesota",1994-07-01,731766,1977
 UHS,Universal Health Services,Health Care,Health Care Facilities,"King of Prussia, Pennsylvania",2014-09-20,352915,1979
-VLO,Valero Energy,Energy,Oil & Gas Refining & Marketing,"San Antonio, Texas",,1035002,1980
+VLO,Valero Energy,Energy,Oil & Gas Refining & Marketing,"San Antonio, Texas",2002-12-20,1035002,1980
 VTR,Ventas,Real Estate,Health Care REITs,"Chicago, Illinois",2009-03-04,740260,1998
 VRSN,Verisign,Information Technology,Internet Services & Infrastructure,"Dulles, Virginia",2006-02-01,1014473,1995
 VRSK,Verisk,Industrials,Research & Consulting Services,"Jersey City, New Jersey",2015-10-08,1442145,1971
@@ -481,16 +481,16 @@ WAB,Wabtec,Industrials,Construction Machinery & Heavy Trucks,"Pittsburgh, Pennsy
 WBA,Walgreens Boots Alliance,Consumer Staples,Drug Retail,"Deerfield, Illinois",1979-12-31,1618921,2014
 WMT,Walmart,Consumer Staples,Hypermarkets & Super Centers,"Bentonville, Arkansas",1982-08-31,104169,1962
 WBD,Warner Bros. Discovery,Communication Services,Broadcasting,"New York City, New York",2022-04-11,1437107,2022
-WM,Waste Management,Industrials,Environmental & Facilities Services,"Houston, Texas",,823768,1968
-WAT,Waters Corporation,Health Care,Health Care Distributors,"Milford, Massachusetts",,1000697,1958
+WM,Waste Management,Industrials,Environmental & Facilities Services,"Houston, Texas",<1985?,823768,1968
+WAT,Waters Corporation,Health Care,Health Care Distributors,"Milford, Massachusetts",2002-01-02,1000697,1958
 WEC,WEC Energy Group,Utilities,Electric Utilities,"Milwaukee, Wisconsin",2008-10-31,783325,1896
 WFC,Wells Fargo,Financials,Diversified Banks,"San Francisco, California",1976-06-30,72971,1852
 WELL,Welltower,Real Estate,Health Care REITs,"Toledo, Ohio",2009-01-30,766704,1970
 WST,West Pharmaceutical Services,Health Care,Health Care Supplies,"Exton, Pennsylvania",2020-05-22,105770,1923
 WDC,Western Digital,Information Technology,"Technology Hardware, Storage & Peripherals","San Jose, California",2009-07-01,106040,1970
-WRK,WestRock,Materials,Paper Packaging,"Atlanta, Georgia",2015-07-02,1732845,2015
-WY,Weyerhaeuser,Real Estate,Specialized REITs,"Seattle, Washington",,106535,1900
-WHR,Whirlpool Corporation,Consumer Discretionary,Household Appliances,"Benton Harbor, Michigan",,106640,1911
+WRK,WestRock,Materials,Paper Packaging,"Atlanta, Georgia",1957-03-04,1732845,2015
+WY,Weyerhaeuser,Real Estate,Specialized REITs,"Seattle, Washington",<1985?,106535,1900
+WHR,Whirlpool Corporation,Consumer Discretionary,Household Appliances,"Benton Harbor, Michigan",<1985?,106640,1911
 WMB,Williams Companies,Energy,Oil & Gas Storage & Transportation,"Tulsa, Oklahoma",1975-03-31,107263,1908
 WTW,Willis Towers Watson,Financials,Insurance Brokers,"London, United Kingdom",2016-01-05,1140536,2016
 GWW,W. W. Grainger,Industrials,Industrial Machinery,"Lake Forest, Illinois",1981-06-30,277135,1927

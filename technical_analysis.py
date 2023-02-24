@@ -1,3 +1,4 @@
+import bisect
 import numpy as np
 from datetime import timedelta
 from itertools import zip_longest
@@ -231,13 +232,10 @@ def isResistance(df, i):
     return resistance
 
 
-def sr_levels(df, start, end):
+def sr_levels(df):
     '''Returns key support/resistance levels for a security'''
 
-    end += timedelta(1)
-    df = df[start:end]
-    support = []
-    resistance = []
+    levels = []
     s = (df['High'] - df['Low']).mean()
 
     def isFarFromLevel(l):
@@ -246,27 +244,28 @@ def sr_levels(df, start, end):
         if it is near some previously discovered key level
         '''
         
-        levels = support + resistance
         return np.sum([abs(l - x) < s for x in levels]) == 0
 
     for i in range(2, df.shape[0] - 2):
         if isSupport(df, i):
             l = df['Low'][i]
             if isFarFromLevel(l):
-                support.append((i, l))
+                levels.append((i, l))
         elif isResistance(df, i):
             l = df['High'][i]
             if isFarFromLevel(l):
-                resistance.append((i, l))
+                levels.append((i, l))
 
-    return support, resistance
+    levels.sort(key=itemgetter(1))
+
+    return levels
 
 
 @st.cache(allow_output_mutation=True)
 def calculate_signals(ticker, start, end, period, minor_ma, secondary_ma, primary_ma):
-    end += timedelta(1)
-
     if period != 'Daily':
+        if period.endswith('Min'):
+            end += timedelta(1)
         df = get_interval_market_data(ticker, period)[start:end]
     else:
         df = get_ticker_data(ticker)[start:end]
@@ -415,8 +414,7 @@ def plot_trends(graph, ticker, start, end, period, minor_ma, secondary_ma, prima
 
     # Support & resistance lines
     if show_sr:
-        support, resistance = sr_levels(df, start, end)
-        levels = support + resistance
+        levels = sr_levels(df)
         for i, l in levels:
             n = df.shape[0] - i
             fig.add_scatter(x=df.index[i:],

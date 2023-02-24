@@ -137,10 +137,10 @@ Date,Ticker,Security,inSPY
 2019-06-07,MAT,Mattel,False
 2019-06-07,BMS,Bemis,True
 2019-06-03,DD,DuPont,True
-2019-06-03,DWDP,DuPont,False
+2019-06-03,DWDP,DowDuPont Inc.,False
 2019-06-03,CTVA,Corteva,True
 2019-06-03,FLR,Fluor Corporation,False
-2019-04-02,DOW,Dow Inc,True
+2019-04-02,DOW,Dow Inc.,True
 2019-04-02,BHF,Brighthouse Financial,False
 2019-02-27,GT,The Goodyear Tire & Rubber Company,False
 2019-02-27,WAB,Wabtec,True
@@ -201,7 +201,7 @@ Date,Ticker,Security,inSPY
 2017-09-18,SPLS,Staples,False
 2017-09-18,CDNS,Cadence Design Systems,True
 2017-09-01,DOW,Dow Chemical Company,False
-2017-09-01,DWDP,DuPont,True
+2017-09-01,DWDP,DowDuPont Inc.,True
 2017-09-01,DD,DuPont,False
 2017-09-01,SBAC,SBA Communications,True
 2017-08-29,Q,QuintilesIMS,True

@@ -103,6 +103,7 @@ def get_market_data():
 
     if not df.empty:
         df.to_csv(r'data\spy_data\SPY.csv')
+
     end = time.time()
     mm, ss = divmod(end - start, 60)
     print(f'\r{mm:.0f}m:{ss:.0f}s S&P 500 index data downloaded')
@@ -472,4 +473,4 @@ if __name__ == "__main__":
 
     end = time.time()
     mm, ss = divmod(end - start, 60)
-    print(f'Done in {mm}m:{ss}s')
+    print(f'Done in {mm:.0f}m:{ss:.0f}s')
