@@ -119,7 +119,8 @@ def get_market_data():
         for i, ticker in enumerate(tickers, 1):
             try:
                 fname = os.path.join(path, f'{ticker}.csv')
-                df = yf.download(ticker, progress=False) # download stock data
+                # df = yf.download(ticker, progress=False) # download stock data
+                df = si.get_data(ticker)
                 if not df.empty:
                     df.to_csv(fname)
                 end = time.time()
@@ -145,25 +146,27 @@ def get_market_data():
 def get_interval_market_data(intervals):
     t_start = time.time()
     tickers, _ = get_tickers()
-    end = dt.now()
-    
+    end = dt.now(tz=timezone('EST'))
+
+    if end.weekday() > 4:
+        end -= timedelta(end.weekday() - 4)
+    elif end.hour < 16:
+        end -= timedelta(1)
+
     for interval in intervals:
         path = fr'data\market_data\{interval}'
         os.makedirs(path, exist_ok=True)
         # tickers = set(tickers) - set([f.split('.csv')[0] for f in os.listdir(path)])
         n = len(tickers)
         j = 0
-        if interval == '1m':
-            start = end - timedelta(7)
-        else:
-            start = end - timedelta(60)
+        start = end - timedelta(7) if interval == '1m' else end - timedelta(60)
         for i, ticker in enumerate(tickers, 1):
             try:
                 fname = os.path.join(path, f'{ticker}.csv')
                 if interval == '1wk' or interval == '1mo':
-                    df = yf.download(ticker, interval=interval, progress=False)
+                    df = si.get_data(ticker, interval=interval)
                 else:
-                    df = yf.download(ticker, interval=interval, start=start, end=end, progress=False)
+                    df = yf.download(ticker, start=start, end=end, interval=interval, progress=False)
                 if not df.empty:
                     df.to_csv(fname)
                 t_end = time.time()
@@ -332,27 +335,17 @@ def save_TTM_financial_ratios():
     '''Save ratios as pickle file'''
 
     # Set datetime object to EST timezone
-    tz = timezone('EST')
-    cdate = dt.now(tz)
-    hour = cdate.hour
-    weekday = cdate.weekday()
+    date = dt.now(tz=timezone('EST'))
 
     # Sets file name to today's date only after US stock market
     # closes, otherwise uses previous day's date. Also sets
     # weekends to Friday's date.
-    if weekday != 5 and weekday != 6 and weekday != 0 and hour < 16:
-        days = 1
-    elif weekday == 5:
-        days = 1
-    elif weekday == 6:
-        days = 2
-    elif weekday == 0 and hour < 16:
-        days = 3
-    else:
-        days = 0
+    if date.weekday() > 4:
+        date -= timedelta(date.weekday() - 4)
+    elif date.hour < 16:
+        date -= timedelta(1)
         
-    cdate -= timedelta(days=days)   
-    file = cdate.strftime('%d-%m-%Y') + '.pickle'
+    file = date.strftime('%d-%m-%Y') + '.pickle'
     path = r'data\financial_ratios\Current'
     d = get_TTM_financial_ratios()
     nd = len(d)
@@ -458,19 +451,13 @@ if __name__ == "__main__":
     get_risk_free_rates()
     get_factor_model_data()
     get_market_data()
-
-    intervals = ['1m', '5m', '30m', '1wk']
-    get_interval_market_data(intervals)
-
+    get_interval_market_data(intervals=['1m', '5m', '30m', '1wk'])
     save_TTM_financial_ratios()
     get_financial_ratios()
     get_financial_statements()
     get_tickers_info()
     
-    frequency = 2500  # Set Frequency To 2500 Hertz
-    duration = 1000  # Set Duration To 1000 ms == 1 second
-    winsound.Beep(frequency, duration)
-
     end = time.time()
     mm, ss = divmod(end - start, 60)
     print(f'Done in {mm:.0f}m:{ss:.0f}s')
+    winsound.Beep(440, 500)

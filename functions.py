@@ -47,9 +47,7 @@ def get_ticker_data(ticker):
     '''Load ticker's market data'''
     
     file = os.path.join('data/market_data/daily', f'{ticker}.csv')
-    df = pd.read_csv(file) # , index_col=0, parse_dates=True
-    df.index = pd.to_datetime(df['Date'].apply(lambda x: x.split(' ')[0]))
-    df.drop(columns='Date', inplace=True)
+    df = pd.read_csv(file, index_col=0, parse_dates=True)
     
     return df
 
@@ -58,12 +56,10 @@ def get_ticker_data(ticker):
 def get_interval_market_data(ticker, interval):
     '''Load ticker's market data'''
     
-    col = 'Date'
     fmt = ' '
     
     if interval.endswith('Min'):
         folder = interval.split(' Min')[0] + 'm'
-        col = 'Datetime'
         fmt = ':00-0'
 
     if interval == 'Weekly':
@@ -74,6 +70,7 @@ def get_interval_market_data(ticker, interval):
 
     file = os.path.join(f'data/market_data/{folder}', f'{ticker}.csv')
     df = pd.read_csv(file)
+    col = df.columns[0]
     df.index = pd.to_datetime(df[col].apply(lambda x: x.split(fmt)[0]))
     df.drop(columns=col, inplace=True)
     

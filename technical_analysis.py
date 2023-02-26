@@ -206,28 +206,6 @@ def sr_levels(df):
     return levels
 
 
-@st.cache(allow_output_mutation=True)
-def calculate_signals(ticker, start, end, period, minor_ma, secondary_ma, primary_ma):
-    if period != 'Daily':
-        if period.endswith('Min'):
-            end += timedelta(1)
-        df = get_interval_market_data(ticker, period)[start:end]
-    else:
-        df = get_ticker_data(ticker)[start:end]
-        
-    df.drop(columns=['Adj Close'], inplace=True)
-    MAs = [minor_ma, secondary_ma, primary_ma]
-
-    for ma in MAs:
-        df[f'MA{ma}'] = df['Close'].rolling(ma).mean()
-        df[f'Advanced MA{ma}'] = df['Close'].rolling(ma, center=True).mean().shift(int(ma**(1/2)))
-        # df[f'MA{ma} Peak-and-Trough Reversal'] = 0
-        # peaks, _ = find_peaks(df['Close'], height=0)
-        # troughs, _ = find_peaks(df['Close'] * -1, height=0)
-    
-    return df
-
-
 @st.cache
 def calculate_fibonacci_levels(df):
     highest_swing = -1
@@ -261,8 +239,71 @@ def calculate_fibonacci_levels(df):
 
 
 @st.cache(allow_output_mutation=True)
-def plot_trends(graph, ticker, start, end, period, minor_ma, secondary_ma, primary_ma,
-                show_vol, show_rsi, show_macd, show_sr, show_fib, show_bb, show_MAs, show_adv_MAs):
+def calculate_signals(ticker, start, end, period, MAs):
+    if period != 'Daily':
+        if period.endswith('Min'):
+            end += timedelta(1)
+        df = get_interval_market_data(ticker, period)[start:end]
+    else:
+        df = get_ticker_data(ticker)[start:end]
+        
+    df.drop(columns=['Adj Close'], inplace=True)
+
+    # Calculate moving averages (MAs)
+    for ma in MAs:
+        df[f'MA{ma}'] = df['Close'].rolling(ma, center=True).mean()
+        df[f'Adv MA{ma}'] = df[f'MA{ma}'].shift(int(ma**(1/2)))
+        # df[f'MA{ma} Peak-and-Trough Reversal'] = 0
+        # peaks, _ = find_peaks(df['Close'], height=0)
+        # troughs, _ = find_peaks(df['Close'] * -1, height=0)
+    
+    return df
+
+
+@st.cache
+def get_trending_stocks(start, end, period, MAs):
+    up = []
+    down = []
+    minor_ma, secondary_ma, primary_ma, *_ = MAs
+
+    for ticker in ticker_list:
+        try:
+            df = calculate_signals(ticker, start, end, period, MAs)
+            minor = df[f'MA{minor_ma}'].dropna()[-1]
+            secondary = df[f'MA{secondary_ma}'].dropna()[-1]
+            primary = df[f'MA{primary_ma}'].dropna()[-1]
+            if primary > secondary > minor:
+                down.append(ticker)
+            if primary < secondary < minor:
+                up.append(ticker)
+        except Exception as e:
+            print(f'{ticker} - {e}')
+
+    return up, down
+
+
+@st.cache
+def get_trend_aligned_stocks(periods_data, periods, end_date):
+    for i, period in enumerate(periods):
+        period_d = periods_data[period]
+        days = period_d['days']
+        start = end_date - timedelta(days)
+        MAs = period_d['MA']
+        up, down = get_trending_stocks(start, end_date, period, MAs)
+        if i == 0:
+            up_aligned = set(up)
+            down_aligned = set(down)
+        else:
+            up_aligned.intersection_update(up) 
+            down_aligned.intersection_update(down)
+
+    return list(up_aligned), list(down_aligned)
+
+
+@st.cache(allow_output_mutation=True)
+def plot_trends(graph, ticker, start, end, period, plot_data,
+                show_vol, show_rsi, show_macd, show_sr, show_fib, 
+                show_bb, show_MAs, show_adv_MAs):
     '''
     Returns plot figure
 
@@ -278,7 +319,8 @@ def plot_trends(graph, ticker, start, end, period, minor_ma, secondary_ma, prima
     show_prices: display candlestick data on crowded charts
     '''
 
-    df = calculate_signals(ticker, start, end, period, minor_ma, secondary_ma, primary_ma)
+    MAs = plot_data['MAs']
+    df = calculate_signals(ticker, start, end, period, MAs)
     cname = SPY_info_df.loc[ticker, 'Security']
     nrows = 1 + show_vol + show_rsi + show_macd
     titles = [f'{cname} - {period} Chart'] + [''] * nrows
@@ -317,15 +359,18 @@ def plot_trends(graph, ticker, start, end, period, minor_ma, secondary_ma, prima
         data.append(xy)
 
     if show_MAs or show_adv_MAs:
-        MAs = [minor_ma, secondary_ma, primary_ma]
+        adv_MAs = plot_data['Adv MAs']
         colors = ['red', 'cyan', 'gold']
         if show_MAs and show_adv_MAs:
             dash = 'dot'
         else:
             dash = 'solid'
-        for ma, color in zip(MAs, colors): 
+        for ma, adv_ma, color in zip(MAs, adv_MAs, colors): 
             if show_MAs:
-                y = df[f'MA{ma}'].shift(-int(ma / 2)) # centre MA           
+                if f'MA{ma}' in df.columns:
+                    y = df[f'MA{ma}']
+                else:
+                    y = df['Close'].rolling(ma, center=True).mean()
                 sma = go.Scatter(x=df.index,
                                  y=y,
                                  name=f'MA{ma}',
@@ -334,9 +379,10 @@ def plot_trends(graph, ticker, start, end, period, minor_ma, secondary_ma, prima
                                  connectgaps=True)
                 data.append(sma)
             if show_adv_MAs:
+                y = df['Close'].rolling(ma, center=True).mean().shift(adv_ma)
                 advanced_sma = go.Scatter(x=df.index,
-                                          y=df[f'Advanced MA{ma}'],
-                                          name=f'Advanced MA{ma}',
+                                          y=y,
+                                          name=f'MA{ma}+{adv_ma}',
                                           line_width=1.25,
                                           line_color=color,
                                           line_dash=dash,
@@ -361,6 +407,7 @@ def plot_trends(graph, ticker, start, end, period, minor_ma, secondary_ma, prima
                             connectgaps=True)   
 
     # Fibonacci retracements
+    ## PUT SECONDARY Y-AXIS OF FR LEVELS
     if show_fib:
         colors = ["darkgray", "indianred", "green", "blue", "cyan", "magenta", "gold"]
         ratios, levels = calculate_fibonacci_levels(df)
@@ -373,7 +420,6 @@ def plot_trends(graph, ticker, start, end, period, minor_ma, secondary_ma, prima
                             line_dash='dot',
                             connectgaps=True)
     
-
     # Bollinger bands
     if show_bb:
         up, mid, down = BBANDS(df['Close'], timeperiod=21, nbdevup=2, nbdevdn=2, matype=0)
@@ -436,40 +482,3 @@ def plot_trends(graph, ticker, start, end, period, minor_ma, secondary_ma, prima
     fig.layout.xaxis.rangeslider.visible = False
 
     return fig
-
-
-@st.cache
-def get_trending_stocks(start, end, period, MAs):
-    up = []
-    down = []
-    minor_ma, secondary_ma, primary_ma, *_ = MAs
-
-    for ticker in ticker_list:
-        try:
-            df = calculate_signals(ticker, start, end, period, minor_ma, secondary_ma, primary_ma)
-            if df[f'MA{primary_ma}'][-1] > df[f'MA{secondary_ma}'][-1] > df[f'MA{minor_ma}'][-1]:
-                down.append(ticker)
-            if df[f'MA{primary_ma}'][-1] < df[f'MA{secondary_ma}'][-1] < df[f'MA{minor_ma}'][-1]:
-                up.append(ticker)
-        except:
-            continue
-
-    return up, down
-
-
-@st.cache
-def get_trend_aligned_stocks(periods_data, periods, end_date):
-    for i, period in enumerate(periods):
-        period_d = periods_data[period]
-        days = period_d['days']
-        start = end_date - timedelta(days)
-        MAs = period_d['MA']
-        up, down = get_trending_stocks(start, end_date, period, MAs)
-        if i == 0:
-            up_aligned = set(up)
-            down_aligned = set(down)
-        else:
-            up_aligned.intersection_update(up) 
-            down_aligned.intersection_update(down)
-
-    return list(up_aligned), list(down_aligned)
