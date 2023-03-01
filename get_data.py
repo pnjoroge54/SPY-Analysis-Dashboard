@@ -249,7 +249,7 @@ def ratios_to_update():
         if file in os.listdir(f):
             df = pd.read_csv(os.path.join(f, file))
             if not df.empty and str(dt.now().year - 1) != df.columns[1]:
-                    not_current.append(ticker)
+                not_current.append(ticker)
             else:
                 no_data.append(ticker)
         else:
@@ -292,7 +292,7 @@ def get_financial_ratios(i=0, n=1):
             if e == '<urlopen error [Errno 11001] getaddrinfo failed>':
                 print('\r', e.ljust(100, ' '), end='', flush=True)
             elif n < 5:
-                print(f'\nAPI Key {n} has maxed out its requests\n')
+                print(f'\nAPI Key {n} has maxed out its requests')
                 n += 1
 
         return get_financial_ratios(i, n)
@@ -460,11 +460,11 @@ def get_financial_statements():
         
 
 if __name__ == "__main__":           
-    # get_SPY_companies()
-    # get_SPY_weights()
-    # get_risk_free_rates()
-    # get_factor_model_data()
-    # get_market_data()
+    get_SPY_companies()
+    get_SPY_weights()
+    get_risk_free_rates()
+    get_factor_model_data()
+    get_market_data()
     get_interval_market_data(intervals=['1m', '5m', '30m'])
     save_TTM_financial_ratios()
     get_financial_ratios()
