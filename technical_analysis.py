@@ -1,10 +1,12 @@
 import bisect
 import numpy as np
+import time
 from datetime import timedelta
 from itertools import zip_longest
 
 import holidays
 from scipy.signal import find_peaks
+from sklearn import preprocessing
 import cufflinks as cf
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -177,33 +179,199 @@ def isResistance(df, i):
     return resistance
 
 
+def convert_to_timestamp(x):
+    """Convert date objects to integers"""
+    
+    return time.mktime(x.timetuple())
+
+
+@st.cache(allow_output_mutation=True)
 def sr_levels(df):
     '''Returns key support/resistance levels for a security'''
 
+    # df.drop(columns='Adj Close', inplace=True)
+    df['SR Signal'] = 0
+    unit = 'minutes' if df.iloc[0].name.minute != 0 else 'days'  
+    spt = 0
+    rst = 0
     levels = []
+    s_levels = []
+    prev_date = df.iloc[0].name
+    sr_data = {}
+    many_tests = {} # dict of bars that test more than 1 level
     s = (df['High'] - df['Low']).mean()
 
     def isFarFromLevel(l):
-        '''
-        Given a price value, returns False 
-        if it is near some previously discovered key level
-        '''
+        '''Returns True if price is not near a previously discovered support or resistance'''
         
-        return np.sum([abs(l - x) < s for x in levels]) == 0
+        return np.sum([abs(l - x[1]) < s for x in levels]) == 0
 
     for i in range(2, df.shape[0] - 2):
+        date = df.iloc[i].name
+        s_date = date.strftime('%d-%m-%y')
+        high = df['High'][i]
+        low = df['Low'][i]
+        close = df['Close'][i]
+        new_spt = False
+        new_rst = False
+        sr_switch = False
+
         if isSupport(df, i):
-            l = df['Low'][i]
-            if isFarFromLevel(l):
-                levels.append((i, l))
-        elif isResistance(df, i):
-            l = df['High'][i]
-            if isFarFromLevel(l):
-                levels.append((i, l))
+            if isFarFromLevel(low):
+                new_spt = True
+                spt = low
+                levels.append((i, spt))
+                df.loc[date, 'Support'] = spt
+                # print('NS'.ljust(5), f'- {date.date()} - S: {spt:.2f}, R: {rst:.2f}, hi: {high:.2f}, lo: {low:.2f}')
+        
+        if isResistance(df, i):
+            if isFarFromLevel(high):
+                new_rst = True
+                rst = high
+                levels.append((i, rst))
+                df.loc[date, 'Resistance'] = rst
+                # print('NR'.ljust(5), f'- {date.date()} - R: {rst:.2f}, S: {spt:.2f}, hi: {high:.2f}, lo: {low:.2f},')    
 
-    levels.sort(key=itemgetter(1))
+        # Switch support to resistance & vice versa
+        if len(levels) > 1:
+            s_levels = sorted([x[1] for x in levels])
+            if new_spt:
+                ix = bisect.bisect(s_levels, spt)
+                rst = s_levels[ix] if ix < len(s_levels) else s_levels[ix - 1]
+            if new_rst:
+                ix = bisect.bisect_left(s_levels, rst)
+                spt = s_levels[ix - 1] if ix > 0 else s_levels[ix]
+            if low > rst: # When resistance broken 
+                sr_switch = True
+                spt = rst
+                ix = bisect.bisect(s_levels, low)
+                rst = s_levels[ix] if ix < len(s_levels) else s_levels[ix - 1]
+                print('R-S'.ljust(5), f'- {date.date()} - S: {spt:.2f}, R: {rst:.2f}, hi: {high:.2f}, lo: {low:.2f}')
+            if high < spt: # When support broken 
+                sr_switch = True
+                rst = spt
+                ix = bisect.bisect_left(s_levels, high)
+                spt = s_levels[ix - 1] if ix > 0 else s_levels[ix]
+                print('S-R'.ljust(5), f'- {date.date()} - R: {rst:.2f}, S: {spt:.2f}, hi: {high:.2f}, lo: {low:.2f}')
+        
+        if new_rst or new_spt or sr_switch:
+            cum_vol = df.loc[prev_date:date, 'Volume'].sum()
+            delta = date - prev_date # time it takes level to form
+            delta = delta.days if unit == 'days' else delta.total_seconds() / 60
+            prev_date = date
+            d = {'Date': [], 'Timedelta': [], 'Volume': [], 'SR': [], 'Tested': 0, 'Tested Date': []}
+            sr_data.setdefault(spt, d)
+            sr_data[spt]['Date'].append(s_date)
+            sr_data[spt]['Timedelta'].append(delta)
+            sr_data[spt]['Volume'].append(cum_vol)
+            sr_data[spt]['SR'].append('S')
+            # Prevents double-counting when lowest/highest is both support & resistance
+            if spt != rst:
+                sr_data.setdefault(rst, d)
+                sr_data[rst]['Date'].append(s_date)
+                sr_data[rst]['Timedelta'].append(delta)
+                sr_data[rst]['Volume'].append(cum_vol)
+                sr_data[rst]['SR'].append('R')
+                                  
+        if spt:
+            if close < spt:
+                df.loc[date, 'SR Signal'] = 1 # Generate signal
+            # Check if S/R levels are tested       
+            if high > spt and low < spt:
+                sr_data[spt]['Tested'] += 1
+                sr_data[spt]['Tested Date'].append(date)
+                # print('ST'.ljust(5), f'- {date.date()} - S: {spt:.2f}, R: {rst:.2f}, hi: {high:.2f}, lo: {low:.2f}')
+                ix = bisect.bisect_left(s_levels, spt)
+                n_spt = s_levels[ix - 1] if ix > 0 else s_levels[ix]    
+                while low < n_spt and spt != rst and spt != n_spt:
+                    # print(f'SH-SL - {date.date()} - NS: {n_spt:.2f}, S: {spt:.2f}, R: {rst:.2f}, hi: {high:.2f}, lo: {low:.2f}')
+                    rst = spt
+                    spt = n_spt
+                    many_tests.setdefault(i, []).extend([spt, rst])
+                    if ix > 0:
+                        ix -= 1
+                        # print(f'ix: {ix}, {s_levels}')
+                        n_spt = s_levels[ix]
+                        sr_data[n_spt]['Date'].append(s_date)
+                        sr_data[n_spt]['Timedelta'].append(delta)
+                        sr_data[n_spt]['Volume'].append(cum_vol)
+                        sr_data[n_spt]['SR'].append('S')            
+   
+        if rst:
+            if close > rst:
+                df.loc[date, 'SR Signal'] = 1 # Generate signal
+            # Check if S/R levels are tested       
+            if high > rst and low < rst:
+                if spt != rst: # Prevents double-counting
+                    sr_data[rst]['Tested'] += 1
+                    sr_data[rst]['Tested Date'].append(date)
+                    # print('RT'.ljust(5), f'- {date.date()} - R: {rst:.2f}, S: {spt:.2f}, hi: {high:.2f}, lo: {low:.2f}')
+                    ix = bisect.bisect(s_levels, rst)
+                    n_rst = s_levels[ix] if ix < len(s_levels) else s_levels[ix - 1]
+                    while high > n_rst and spt != rst and rst != n_rst:
+                        # print(f'RL-RH - {date.date()} - NR: {n_rst:.2f}, R: {rst:.2f}, S: {spt:.2f}, hi: {high:.2f}, lo: {low:.2f}')
+                        spt = rst
+                        rst = n_rst
+                        many_tests.setdefault(i, []).extend([spt, rst])
+                        if ix < len(s_levels):
+                            ix += 1
+                            # print(f'ix: {ix}, {s_levels}')
+                            n_rst = s_levels[ix]
+                            sr_data[n_rst]['Date'].append(s_date)
+                            sr_data[n_rst]['Timedelta'].append(delta)
+                            sr_data[n_rst]['Volume'].append(cum_vol)
+                            sr_data[n_rst]['SR'].append('R')        
+            
+        df.loc[date:, 'Support'] = spt
+        df.loc[date:, 'Resistance'] = rst
 
-    return levels
+    del sr_data[0]    
+
+    # Calculate significance of levels       
+    d = {'SR Level': [], 'Volume': [], 'Timedelta': [], 'Tested': [], 'Date': []}
+
+    for k, v in sr_data.items():
+        d['SR Level'].append(k)
+        d['Volume'].append(sum(v['Volume']))
+        d['Timedelta'].append(sum(v['Timedelta']))
+        d['Tested'].append(v['Tested'])
+        d['Date'].append(v['Date'][-1])
+        # print(v['Date'][-1])
+
+    ix = 'SR Level'
+    sr_df = pd.DataFrame(d, index=d[ix]).drop(columns=ix)
+    sr_df['Date'] = pd.to_datetime(sr_df['Date'])
+    sr_df['Date'] = sr_df['Date'].apply(convert_to_timestamp)
+    scaler = preprocessing.MinMaxScaler(feature_range=(1, 5))
+    sd = scaler.fit_transform(sr_df)
+    scaled_df = pd.DataFrame(sd, columns=sr_df.columns, index=d[ix])
+    scaled_df['Signal'] = scaled_df.mean(axis=1)
+    # print(sr_df)
+    # print(scaled_df)
+    
+    # Make 'SR Signal' last column
+    cols = list(df.columns)
+    cols.append(cols.pop(cols.index('SR Signal')))
+    df = df[cols]
+    nr, nc = df.shape
+    j = nc - 1 # 'SR Signal' column num
+
+    for i in range(nr):
+        if df['SR Signal'][i]:
+            if i in many_tests:
+                signal = 0
+                for l in many_tests[i]:
+                    signal += scaled_df.loc[l, 'Signal']
+            else:
+                if df['Close'][i] > df['Resistance'][i]:
+                    l = df['Resistance'][i]
+                if df['Close'][i] < df['Support'][i]:
+                    l = df['Support'][i]
+                signal = scaled_df.loc[l, 'Signal']
+            
+            df.iloc[i, j] = signal        
+    
+    return levels, df
 
 
 @st.cache
@@ -246,12 +414,13 @@ def calculate_signals(ticker, start, end, period, MAs):
         df = get_interval_market_data(ticker, period)[start:end]
     else:
         df = get_ticker_data(ticker)[start:end]
-        
+
+    df = df.copy()    
     df.drop(columns=['Adj Close'], inplace=True)
 
     # Calculate moving averages (MAs)
     for ma in MAs:
-        df[f'MA{ma}'] = df['Close'].rolling(ma, center=True).mean()
+        df[f'MA{ma}'] = df['Close'].rolling(ma).mean()
         df[f'Adv MA{ma}'] = df[f'MA{ma}'].shift(int(ma**(1/2)))
         # df[f'MA{ma} Peak-and-Trough Reversal'] = 0
         # peaks, _ = find_peaks(df['Close'], height=0)
@@ -370,7 +539,7 @@ def plot_trends(graph, ticker, start, end, period, plot_data,
                 if f'MA{ma}' in df.columns:
                     y = df[f'MA{ma}']
                 else:
-                    y = df['Close'].rolling(ma, center=True).mean()
+                    y = df['Close'].rolling(ma).mean()
                 sma = go.Scatter(x=df.index,
                                  y=y,
                                  name=f'MA{ma}',
@@ -379,7 +548,7 @@ def plot_trends(graph, ticker, start, end, period, plot_data,
                                  connectgaps=True)
                 data.append(sma)
             if show_adv_MAs:
-                y = df['Close'].rolling(ma, center=True).mean().shift(adv_ma)
+                y = df['Close'].rolling(ma).mean().shift(adv_ma)
                 advanced_sma = go.Scatter(x=df.index,
                                           y=y,
                                           name=f'MA{ma}+{adv_ma}',
@@ -394,7 +563,7 @@ def plot_trends(graph, ticker, start, end, period, plot_data,
 
     # Support & resistance lines
     if show_sr:
-        levels = sr_levels(df)
+        levels, _ = sr_levels(df)
         for i, l in levels:
             n = df.shape[0] - i
             fig.add_scatter(x=df.index[i:],

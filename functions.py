@@ -48,7 +48,10 @@ def get_ticker_data(ticker):
     
     file = os.path.join('data/market_data/daily', f'{ticker}.csv')
     df = pd.read_csv(file, index_col=0, parse_dates=True)
-    
+    df.rename(columns={'adjclose': 'adj close'}, inplace=True)
+    df.drop(columns='ticker', inplace=True)
+    df.columns = df.columns.str.title()
+
     return df
 
 
@@ -73,7 +76,12 @@ def get_interval_market_data(ticker, interval):
     col = df.columns[0]
     df.index = pd.to_datetime(df[col].apply(lambda x: x.split(fmt)[0]))
     df.drop(columns=col, inplace=True)
-    
+
+    if interval == 'Weekly' or interval == 'Monthly':
+        df.rename(columns={'adjclose': 'adj close'}, inplace=True)
+        df.drop(columns='ticker', inplace=True)
+        df.columns = df.columns.str.title()
+
     return df
 
 
@@ -364,7 +372,7 @@ def get_TTM_ratios(ratios, ratio):
 
 
 @st.cache(allow_output_mutation=True)
-def plot_sma_returns(ticker, start_date, end_date, window):
+def plot_sma_returns(ticker, start_date, end_date, sma):
     '''Returns line charts of simple moving average of returns for ticker and S&P 500'''
 
     ticker_df = get_ticker_data(ticker)[start_date:end_date]
@@ -379,7 +387,7 @@ def plot_sma_returns(ticker, start_date, end_date, window):
     fig = go.Figure([
             go.Scatter(
                 x=SPY_df.index,
-                y=SPY_df['Return'].rolling(window=window).mean(),
+                y=SPY_df['Return'].rolling(sma).mean(),
                 name='S&P 500',
                 mode='lines',
                 line_width=1.25,
@@ -387,7 +395,7 @@ def plot_sma_returns(ticker, start_date, end_date, window):
                 showlegend=True),
             go.Scatter(
                 x=ticker_df.index,
-                y=ticker_df['Return'].rolling(window=window).mean(),
+                y=ticker_df['Return'].rolling(sma).mean(),
                 name=ticker,
                 mode='lines',
                 line_width=1.25,
@@ -395,7 +403,7 @@ def plot_sma_returns(ticker, start_date, end_date, window):
                 showlegend=True)     
             ])
     fig.layout.yaxis.tickformat = ',.2%'
-    fig.update_layout(title=f'{window}-Day Moving Average of Returns',
+    fig.update_layout(title=f'{sma}-Day Moving Average of Returns',
                       xaxis=dict(title=f'{years:.0f}y Beta = {beta:,.2f}',
                       showgrid=False), 
                       yaxis_title='Return')

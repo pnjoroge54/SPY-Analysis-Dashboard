@@ -33,32 +33,40 @@ def get_ticker_data(ticker):
     '''Load ticker's market data'''
     
     file = os.path.join('data/market_data/daily', f'{ticker}.csv')
-    df = pd.read_csv(file) # , index_col=0, parse_dates=True
-    df.index = pd.to_datetime(df['Date'].apply(lambda x: x.split(' ')[0]))
-    df.drop(columns='Date', inplace=True)
-    
+    df = pd.read_csv(file, index_col=0, parse_dates=True)
+    df.rename(columns={'adjclose': 'adj close'}, inplace=True)
+    df.drop(columns='ticker', inplace=True)
+    df.columns = df.columns.str.title()
+
     return df
 
 
 def get_interval_market_data(ticker, interval):
     '''Load ticker's market data'''
     
+    fmt = ' '
+    
     if interval.endswith('Min'):
         folder = interval.split(' Min')[0] + 'm'
-        col = 'Datetime'
         fmt = ':00-0'
-    elif interval == 'Weekly':
+
+    if interval == 'Weekly':
         folder = '1wk'
-        col = 'Date'
-        fmt = ' '
-    elif interval == 'Monthly':
+
+    if interval == 'Monthly':
         folder = '1mo'
 
     file = os.path.join(f'data/market_data/{folder}', f'{ticker}.csv')
     df = pd.read_csv(file)
+    col = df.columns[0]
     df.index = pd.to_datetime(df[col].apply(lambda x: x.split(fmt)[0]))
     df.drop(columns=col, inplace=True)
-    
+
+    if interval == 'Weekly' or interval == 'Monthly':
+        df.rename(columns={'adjclose': 'adj close'}, inplace=True)
+        df.drop(columns='ticker', inplace=True)
+        df.columns = df.columns.str.title()
+
     return df
 
 
@@ -66,7 +74,7 @@ def get_financial_statements():
     '''Load dict of available financial statements of S&P 500 stocks'''
 
     file = r'data\financial_statements\financial_statements.pickle'
-
+    
     with open(file, 'rb') as f:
         d = pickle.load(f)
     
@@ -75,6 +83,7 @@ def get_financial_statements():
 
 def get_ticker_info():
     fname = 'data/spy_data/spy_tickers_info.pickle'
+    
     with open(fname, 'rb') as f:
         info = pickle.load(f)
 
