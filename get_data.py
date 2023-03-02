@@ -248,9 +248,9 @@ def ratios_to_update():
         file = ticker + '.csv'   
         if file in os.listdir(f):
             df = pd.read_csv(os.path.join(f, file))
-            if not df.empty and str(dt.now().year - 1) != df.columns[1]:
+            if str(dt.now().year - 1) != df.columns[1]:
                 not_current.append(ticker)
-            else:
+            if df.empty:
                 no_data.append(ticker)
         else:
             not_downloaded.append(ticker)
@@ -439,15 +439,18 @@ def get_financial_statements():
                     dfs = [df1, df2, df3]
                     fname = f'{ticker}.xlsx'
                     folders = ['sofp', 'soci', 'socf']
+
                     for df, f in zip(dfs, folders):
-                        df.set_index("Unnamed: 0", inplace=True)
+                        df.set_index(df.columns[0], inplace=True)
                         df.index.name = 'Item'
                         columns = [x.strftime("%Y-%m-%d") for x in df.columns]
                         df.columns = columns
                         fpath = os.path.join(path, f, fname)
                         df.to_excel(fpath)
+
                     df = pd.concat(dfs) # combining all extracted information
                     statements[ticker] = df
+                    
                 except Exception as e:
                     print(f'\r{i}/{n}: {ticker} - {e}'.ljust(70, ' '))
             
@@ -460,13 +463,13 @@ def get_financial_statements():
         
 
 if __name__ == "__main__":           
-    get_SPY_companies()
-    get_SPY_weights()
-    get_risk_free_rates()
-    get_factor_model_data()
-    get_market_data()
-    get_interval_market_data(intervals=['1m', '5m', '30m'])
-    save_TTM_financial_ratios()
+    # get_SPY_companies()
+    # get_SPY_weights()
+    # get_risk_free_rates()
+    # get_factor_model_data()
+    # get_market_data()
+    get_interval_market_data(intervals=['1mo'])
+    # save_TTM_financial_ratios()
     get_financial_ratios()
     get_financial_statements()
     get_tickers_info()

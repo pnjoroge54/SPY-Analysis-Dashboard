@@ -185,11 +185,11 @@ def convert_to_timestamp(x):
     return time.mktime(x.timetuple())
 
 
-@st.cache(allow_output_mutation=True)
+@st.cache
 def sr_levels(df):
     '''Returns key support/resistance levels for a security'''
 
-    # df.drop(columns='Adj Close', inplace=True)
+    df = df.copy()
     df['SR Signal'] = 0
     unit = 'minutes' if df.iloc[0].name.minute != 0 else 'days'  
     spt = 0
@@ -220,21 +220,22 @@ def sr_levels(df):
             if isFarFromLevel(low):
                 new_spt = True
                 spt = low
-                levels.append((i, spt))
                 df.loc[date, 'Support'] = spt
-                # print('NS'.ljust(5), f'- {date.date()} - S: {spt:.2f}, R: {rst:.2f}, hi: {high:.2f}, lo: {low:.2f}')
+                levels.append((i, spt))
+                s_levels = sorted([x[1] for x in levels])
+                print('NS'.ljust(5), f'- {date.date()} - S: {spt:.2f}, R: {rst:.2f}, hi: {high:.2f}, lo: {low:.2f}')
         
         if isResistance(df, i):
             if isFarFromLevel(high):
                 new_rst = True
                 rst = high
-                levels.append((i, rst))
                 df.loc[date, 'Resistance'] = rst
-                # print('NR'.ljust(5), f'- {date.date()} - R: {rst:.2f}, S: {spt:.2f}, hi: {high:.2f}, lo: {low:.2f},')    
+                levels.append((i, rst))
+                s_levels = sorted([x[1] for x in levels])
+                print('NR'.ljust(5), f'- {date.date()} - R: {rst:.2f}, S: {spt:.2f}, hi: {high:.2f}, lo: {low:.2f},')    
 
         # Switch support to resistance & vice versa
         if len(levels) > 1:
-            s_levels = sorted([x[1] for x in levels])
             if new_spt:
                 ix = bisect.bisect(s_levels, spt)
                 rst = s_levels[ix] if ix < len(s_levels) else s_levels[ix - 1]
@@ -246,13 +247,13 @@ def sr_levels(df):
                 spt = rst
                 ix = bisect.bisect(s_levels, low)
                 rst = s_levels[ix] if ix < len(s_levels) else s_levels[ix - 1]
-                print('R-S'.ljust(5), f'- {date.date()} - S: {spt:.2f}, R: {rst:.2f}, hi: {high:.2f}, lo: {low:.2f}')
+                # print('R-S'.ljust(5), f'- {date.date()} - S: {spt:.2f}, R: {rst:.2f}, hi: {high:.2f}, lo: {low:.2f}')
             if high < spt: # When support broken 
                 sr_switch = True
                 rst = spt
                 ix = bisect.bisect_left(s_levels, high)
                 spt = s_levels[ix - 1] if ix > 0 else s_levels[ix]
-                print('S-R'.ljust(5), f'- {date.date()} - R: {rst:.2f}, S: {spt:.2f}, hi: {high:.2f}, lo: {low:.2f}')
+                # print('S-R'.ljust(5), f'- {date.date()} - R: {rst:.2f}, S: {spt:.2f}, hi: {high:.2f}, lo: {low:.2f}')
         
         if new_rst or new_spt or sr_switch:
             cum_vol = df.loc[prev_date:date, 'Volume'].sum()
@@ -265,7 +266,7 @@ def sr_levels(df):
             sr_data[spt]['Timedelta'].append(delta)
             sr_data[spt]['Volume'].append(cum_vol)
             sr_data[spt]['SR'].append('S')
-            # Prevents double-counting when lowest/highest is both support & resistance
+            # Prevents double-counting when lowest/highest level is both support & resistance
             if spt != rst:
                 sr_data.setdefault(rst, d)
                 sr_data[rst]['Date'].append(s_date)
@@ -279,18 +280,17 @@ def sr_levels(df):
             # Check if S/R levels are tested       
             if high > spt and low < spt:
                 sr_data[spt]['Tested'] += 1
-                sr_data[spt]['Tested Date'].append(date)
-                # print('ST'.ljust(5), f'- {date.date()} - S: {spt:.2f}, R: {rst:.2f}, hi: {high:.2f}, lo: {low:.2f}')
+                sr_data[spt]['Tested Date'].append(s_date)
+                print('ST'.ljust(5), f'- {date.date()} - S: {spt:.2f}, R: {rst:.2f}, hi: {high:.2f}, lo: {low:.2f}')
                 ix = bisect.bisect_left(s_levels, spt)
                 n_spt = s_levels[ix - 1] if ix > 0 else s_levels[ix]    
                 while low < n_spt and spt != rst and spt != n_spt:
-                    # print(f'SH-SL - {date.date()} - NS: {n_spt:.2f}, S: {spt:.2f}, R: {rst:.2f}, hi: {high:.2f}, lo: {low:.2f}')
+                    print(f'SH-SL - {date.date()} - NS: {n_spt:.2f}, S: {spt:.2f}, R: {rst:.2f}, hi: {high:.2f}, lo: {low:.2f}')
                     rst = spt
                     spt = n_spt
-                    many_tests.setdefault(i, []).extend([spt, rst])
+                    many_tests.setdefault(i, set()).union([spt, rst])
                     if ix > 0:
                         ix -= 1
-                        # print(f'ix: {ix}, {s_levels}')
                         n_spt = s_levels[ix]
                         sr_data[n_spt]['Date'].append(s_date)
                         sr_data[n_spt]['Timedelta'].append(delta)
@@ -304,7 +304,7 @@ def sr_levels(df):
             if high > rst and low < rst:
                 if spt != rst: # Prevents double-counting
                     sr_data[rst]['Tested'] += 1
-                    sr_data[rst]['Tested Date'].append(date)
+                    sr_data[rst]['Tested Date'].append(s_date)
                     # print('RT'.ljust(5), f'- {date.date()} - R: {rst:.2f}, S: {spt:.2f}, hi: {high:.2f}, lo: {low:.2f}')
                     ix = bisect.bisect(s_levels, rst)
                     n_rst = s_levels[ix] if ix < len(s_levels) else s_levels[ix - 1]
@@ -312,7 +312,7 @@ def sr_levels(df):
                         # print(f'RL-RH - {date.date()} - NR: {n_rst:.2f}, R: {rst:.2f}, S: {spt:.2f}, hi: {high:.2f}, lo: {low:.2f}')
                         spt = rst
                         rst = n_rst
-                        many_tests.setdefault(i, []).extend([spt, rst])
+                        many_tests.setdefault(i, set()).union([spt, rst])
                         if ix < len(s_levels):
                             ix += 1
                             # print(f'ix: {ix}, {s_levels}')
@@ -321,9 +321,10 @@ def sr_levels(df):
                             sr_data[n_rst]['Timedelta'].append(delta)
                             sr_data[n_rst]['Volume'].append(cum_vol)
                             sr_data[n_rst]['SR'].append('R')        
-            
-        df.loc[date:, 'Support'] = spt
-        df.loc[date:, 'Resistance'] = rst
+
+        if spt and rst: 
+            df.loc[date:, 'Support'] = spt
+            df.loc[date:, 'Resistance'] = rst
 
     del sr_data[0]    
 
@@ -336,7 +337,6 @@ def sr_levels(df):
         d['Timedelta'].append(sum(v['Timedelta']))
         d['Tested'].append(v['Tested'])
         d['Date'].append(v['Date'][-1])
-        # print(v['Date'][-1])
 
     ix = 'SR Level'
     sr_df = pd.DataFrame(d, index=d[ix]).drop(columns=ix)

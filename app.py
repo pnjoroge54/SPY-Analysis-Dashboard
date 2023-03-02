@@ -394,16 +394,10 @@ if option == 'Technical Analysis':
         trend = c2.radio('Trend', ('Up', 'Down'), horizontal=True)
         if data == 'Trending':
             up_tickers, down_tickers = get_trending_stocks(start, end, period, MAs)
-            if trend == 'Up':
-                tickers = up_tickers
-            else:
-                tickers = down_tickers
+            tickers = up_tickers if trend == 'Up' else down_tickers
         else:
             up_aligned, down_aligned = get_trend_aligned_stocks(TA_PERIODS, periods, end)
-            if trend == 'Up':
-                tickers = up_aligned
-            else:
-                tickers = down_aligned        
+            tickers = up_tickers if trend == 'Up' else down_tickers    
     else:
         c2.empty()
         tickers = ticker_list
@@ -491,8 +485,7 @@ if option == 'Technical Analysis':
         #     with c1.expander("Watchlist", expanded=False):
         #         st.write(watchlist)
             
-
-        
+ 
         # Add option to view stocks in watchlist
         # save = c1.button('Add Stock to Watchlist')
         
