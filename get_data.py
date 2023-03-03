@@ -139,17 +139,16 @@ def get_market_data():
 
     if not_downloaded:
         for ticker in not_downloaded:
-            fname = os.path.join(path, f'{ticker}.csv')
-            df = si.get_data(ticker)
-            if not df.empty:
-                df.to_csv(fname)
-            end = time.time()
-            mm, ss = divmod(end - start, 60)
-            print(f"\r{mm:.0f}m:{ss:.0f}s Re-downloading: {i}/{n} ({i / n:.2%})" \
-                    f" of {s} SPY market data downloaded".ljust(70, ' '),
-                    end='', flush=True)
-
-        # print(f'{len(not_downloaded)} stocks not downloaded \n')
+            if ticker in crnt_tickers:
+                fname = os.path.join(path, f'{ticker}.csv')
+                df = si.get_data(ticker)
+                if not df.empty:
+                    df.to_csv(fname)
+                end = time.time()
+                mm, ss = divmod(end - start, 60)
+                print(f"\r{mm:.0f}m:{ss:.0f}s Re-downloading: {i}/{n} ({i / n:.2%})" \
+                      f" of {s} SPY market data downloaded".ljust(70, ' '),
+                      end='', flush=True)
     
     return not_downloaded
 
@@ -348,8 +347,7 @@ def get_TTM_financial_ratios(i=0, n=1, d=dict()):
 def save_TTM_financial_ratios():
     '''Save ratios as pickle file'''
 
-    # Set datetime object to EST timezone
-    date = dt.now(tz=timezone('EST'))
+    date = dt.now(tz=timezone('EST'))  # Set datetime object to EST timezone
 
     # Sets file name to today's date only after US stock market
     # closes, otherwise uses previous day's date. Also sets
@@ -463,13 +461,13 @@ def get_financial_statements():
         
 
 if __name__ == "__main__":           
-    # get_SPY_companies()
-    # get_SPY_weights()
-    # get_risk_free_rates()
-    # get_factor_model_data()
-    # get_market_data()
-    get_interval_market_data(intervals=['1mo'])
-    # save_TTM_financial_ratios()
+    get_SPY_companies()
+    get_SPY_weights()
+    get_risk_free_rates()
+    get_factor_model_data()
+    get_market_data()
+    get_interval_market_data(intervals=['1m', '5m', '30m'])
+    save_TTM_financial_ratios()
     get_financial_ratios()
     get_financial_statements()
     get_tickers_info()

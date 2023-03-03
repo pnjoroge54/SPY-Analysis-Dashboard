@@ -200,13 +200,14 @@ def sr_levels(df):
     sr_data = {}
     many_tests = {} # dict of bars that test more than 1 level
     s = (df['High'] - df['Low']).mean()
+    nr, nc = df.shape
 
     def isFarFromLevel(l):
         '''Returns True if price is not near a previously discovered support or resistance'''
         
         return np.sum([abs(l - x[1]) < s for x in levels]) == 0
 
-    for i in range(2, df.shape[0] - 2):
+    for i in range(2, nr):
         date = df.iloc[i].name
         s_date = date.strftime('%d-%m-%y')
         high = df['High'][i]
@@ -216,23 +217,24 @@ def sr_levels(df):
         new_rst = False
         sr_switch = False
 
-        if isSupport(df, i):
-            if isFarFromLevel(low):
-                new_spt = True
-                spt = low
-                df.loc[date, 'Support'] = spt
-                levels.append((i, spt))
-                s_levels = sorted([x[1] for x in levels])
-                print('NS'.ljust(5), f'- {date.date()} - S: {spt:.2f}, R: {rst:.2f}, hi: {high:.2f}, lo: {low:.2f}')
-        
-        if isResistance(df, i):
-            if isFarFromLevel(high):
-                new_rst = True
-                rst = high
-                df.loc[date, 'Resistance'] = rst
-                levels.append((i, rst))
-                s_levels = sorted([x[1] for x in levels])
-                print('NR'.ljust(5), f'- {date.date()} - R: {rst:.2f}, S: {spt:.2f}, hi: {high:.2f}, lo: {low:.2f},')    
+        if i < nr - 2:
+            if isSupport(df, i):
+                if isFarFromLevel(low):
+                    new_spt = True
+                    spt = low
+                    df.loc[date, 'Support'] = spt
+                    levels.append((i, spt))
+                    s_levels = sorted([x[1] for x in levels])
+                    # print('NS'.ljust(5), f'- {date.date()} - S: {spt:.2f}, R: {rst:.2f}, hi: {high:.2f}, lo: {low:.2f}')
+            
+            if isResistance(df, i):
+                if isFarFromLevel(high):
+                    new_rst = True
+                    rst = high
+                    df.loc[date, 'Resistance'] = rst
+                    levels.append((i, rst))
+                    s_levels = sorted([x[1] for x in levels])
+                    # print('NR'.ljust(5), f'- {date.date()} - R: {rst:.2f}, S: {spt:.2f}, hi: {high:.2f}, lo: {low:.2f},')    
 
         # Switch support to resistance & vice versa
         if len(levels) > 1:
@@ -281,11 +283,11 @@ def sr_levels(df):
             if high > spt and low < spt:
                 sr_data[spt]['Tested'] += 1
                 sr_data[spt]['Tested Date'].append(s_date)
-                print('ST'.ljust(5), f'- {date.date()} - S: {spt:.2f}, R: {rst:.2f}, hi: {high:.2f}, lo: {low:.2f}')
+                # print('ST'.ljust(5), f'- {date.date()} - S: {spt:.2f}, R: {rst:.2f}, hi: {high:.2f}, lo: {low:.2f}')
                 ix = bisect.bisect_left(s_levels, spt)
                 n_spt = s_levels[ix - 1] if ix > 0 else s_levels[ix]    
                 while low < n_spt and spt != rst and spt != n_spt:
-                    print(f'SH-SL - {date.date()} - NS: {n_spt:.2f}, S: {spt:.2f}, R: {rst:.2f}, hi: {high:.2f}, lo: {low:.2f}')
+                    # print(f'SH-SL - {date.date()} - NS: {n_spt:.2f}, S: {spt:.2f}, R: {rst:.2f}, hi: {high:.2f}, lo: {low:.2f}')
                     rst = spt
                     spt = n_spt
                     many_tests.setdefault(i, set()).union([spt, rst])
@@ -313,7 +315,7 @@ def sr_levels(df):
                         spt = rst
                         rst = n_rst
                         many_tests.setdefault(i, set()).union([spt, rst])
-                        if ix < len(s_levels):
+                        if ix < len(s_levels) - 1:
                             ix += 1
                             # print(f'ix: {ix}, {s_levels}')
                             n_rst = s_levels[ix]
