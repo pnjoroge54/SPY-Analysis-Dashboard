@@ -163,9 +163,8 @@ def get_interval_market_data(intervals):
         days += end.weekday() - 4
     elif end.hour < 24: # 24h is 16h in EST timezone
         days += 1
-    
+        
     end -= timedelta(days)
-
     for interval in intervals:
         path = fr'data\market_data\{interval}'
         os.makedirs(path, exist_ok=True)
@@ -173,6 +172,7 @@ def get_interval_market_data(intervals):
         n = len(tickers)
         j = 0
         start = end - timedelta(7 - days) if interval == '1m' else end - timedelta(60 - days)
+        
         for i, ticker in enumerate(tickers, 1):
             try:
                 fname = os.path.join(path, f'{ticker}.csv')
@@ -466,7 +466,7 @@ if __name__ == "__main__":
     get_risk_free_rates()
     get_factor_model_data()
     get_market_data()
-    get_interval_market_data(intervals=['1m', '5m', '30m'])
+    get_interval_market_data(['1m', '5m', '30m', '60m'])
     save_TTM_financial_ratios()
     get_financial_ratios()
     get_financial_statements()
@@ -474,5 +474,5 @@ if __name__ == "__main__":
     
     end = time.time()
     mm, ss = divmod(end - start, 60)
-    print(f'Done in {mm:.0f}m:{ss:.0f}s')
     winsound.Beep(440, 500)
+    print(f'Done in {mm:.0f}m:{ss:.0f}s')

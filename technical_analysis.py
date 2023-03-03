@@ -328,11 +328,10 @@ def sr_levels(df):
             df.loc[date:, 'Support'] = spt
             df.loc[date:, 'Resistance'] = rst
 
-    del sr_data[0]    
-
     # Calculate significance of levels       
     d = {'SR Level': [], 'Volume': [], 'Timedelta': [], 'Tested': [], 'Date': []}
-
+    del sr_data[0]    
+    
     for k, v in sr_data.items():
         d['SR Level'].append(k)
         d['Volume'].append(sum(v['Volume']))
