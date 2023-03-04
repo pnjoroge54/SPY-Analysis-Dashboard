@@ -32,7 +32,7 @@ def get_SPY_data():
 def get_ticker_data(ticker):
     '''Load ticker's market data'''
     
-    file = os.path.join('data/market_data/daily', f'{ticker}.csv')
+    file = os.path.join('data/market_data/1d', f'{ticker}.csv')
     df = pd.read_csv(file, index_col=0, parse_dates=True)
     df.rename(columns={'adjclose': 'adj close'}, inplace=True)
     df.drop(columns='ticker', inplace=True)
@@ -41,33 +41,44 @@ def get_ticker_data(ticker):
     return df
 
 
-def get_interval_market_data(ticker, interval):
+def resample_data(ticker, interval):
     '''Load ticker's market data'''
-    
-    fmt = ' '
-    
-    if interval.endswith('Min'):
-        folder = interval.split(' Min')[0] + 'm'
+        
+    if interval.endswith('m'):
         fmt = ':00-0'
-
-    if interval == 'Weekly':
-        folder = '1wk'
-
-    if interval == 'Monthly':
-        folder = '1mo'
+        x = int(interval.split('m')[0])
+        folder = '5m' if x >= 5 else '1m'
+        freq = f'{x}T'
+    else:
+        fmt = ' '
+        folder = '1d'
+        freq = 'W-FRI' if interval == 'Weekly' else 'BM'
 
     file = os.path.join(f'data/market_data/{folder}', f'{ticker}.csv')
     df = pd.read_csv(file)
     col = df.columns[0]
     df.index = pd.to_datetime(df[col].apply(lambda x: x.split(fmt)[0]))
     df.drop(columns=col, inplace=True)
+    df.index.name = 'Date'
 
-    if interval == 'Weekly' or interval == 'Monthly':
+    if not interval.endswith('m'):
         df.rename(columns={'adjclose': 'adj close'}, inplace=True)
         df.drop(columns='ticker', inplace=True)
         df.columns = df.columns.str.title()
 
+    if interval not in ('1m', '5m'):
+        resampled_df = pd.DataFrame()
+        resampled_df['Open'] = df['Open'].resample(freq).first()
+        resampled_df['High'] = df['High'].resample(freq).max()
+        resampled_df['Low'] = df['Low'].resample(freq).min()
+        resampled_df['Close'] = df['Close'].resample(freq).last()
+        resampled_df['Adj Close'] = df['Adj Close'].resample(freq).last()
+        resampled_df['Volume'] = df['Volume'].resample(freq).sum()
+        resampled_df.dropna(inplace=True)
+        df = resampled_df
+
     return df
+
 
 
 def get_financial_statements():

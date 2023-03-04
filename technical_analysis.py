@@ -363,14 +363,14 @@ def sr_levels(df):
                 signal = 0
                 for l in many_tests[i]:
                     signal += scaled_df.loc[l, 'Signal']
+                df.iloc[i, j] = signal
             else:
                 if df['Close'][i] > df['Resistance'][i]:
                     l = df['Resistance'][i]
+                    df.iloc[i, j] = scaled_df.loc[l, 'Signal']        
                 if df['Close'][i] < df['Support'][i]:
                     l = df['Support'][i]
-                signal = scaled_df.loc[l, 'Signal']
-            
-            df.iloc[i, j] = signal        
+                    df.iloc[i, j] = scaled_df.loc[l, 'Signal']        
     
     return levels, df
 
@@ -407,17 +407,17 @@ def calculate_fibonacci_levels(df):
     return ratios, levels
 
 
-@st.cache(allow_output_mutation=True)
+@st.cache
 def calculate_signals(ticker, start, end, period, MAs):
     if period != 'Daily':
-        if period.endswith('Min'):
+        if period.endswith('m'):
             end += timedelta(1)
-        df = get_interval_market_data(ticker, period)[start:end]
+        df = resample_data(ticker, period)[start:end]
     else:
         df = get_ticker_data(ticker)[start:end]
 
-    df = df.copy()    
-    df.drop(columns=['Adj Close'], inplace=True)
+    df = df.copy()
+    df.drop(columns='Adj Close', inplace=True)
 
     # Calculate moving averages (MAs)
     for ma in MAs:
@@ -439,9 +439,9 @@ def get_trending_stocks(start, end, period, MAs):
     for ticker in ticker_list:
         try:
             df = calculate_signals(ticker, start, end, period, MAs)
-            minor = df[f'MA{minor_ma}'].dropna()[-1]
-            secondary = df[f'MA{secondary_ma}'].dropna()[-1]
-            primary = df[f'MA{primary_ma}'].dropna()[-1]
+            minor = df[f'MA{minor_ma}'][-1]
+            secondary = df[f'MA{secondary_ma}'][-1]
+            primary = df[f'MA{primary_ma}'][-1]
             if primary > secondary > minor:
                 down.append(ticker)
             if primary < secondary < minor:
@@ -455,6 +455,7 @@ def get_trending_stocks(start, end, period, MAs):
 @st.cache
 def get_trend_aligned_stocks(periods_data, periods, end_date):
     for i, period in enumerate(periods):
+        # if period != 'Monthly':
         period_d = periods_data[period]
         days = period_d['days']
         start = end_date - timedelta(days)
@@ -510,11 +511,11 @@ def plot_trends(graph, ticker, start, end, period, plot_data,
 
     if graph == 'Candlesticks':
         cs = go.Candlestick(x=df.index, 
-                    open=df['Open'], 
-                    high=df['High'],
-                    low=df['Low'], 
-                    close=df['Close'],
-                    name=ticker)  
+                            open=df['Open'], 
+                            high=df['High'],
+                            low=df['Low'], 
+                            close=df['Close'],
+                            name=ticker)  
         cs.increasing.fillcolor = 'green'
         cs.increasing.line.color = 'darkgreen'
         cs.decreasing.fillcolor = 'red'
@@ -522,10 +523,10 @@ def plot_trends(graph, ticker, start, end, period, plot_data,
         data.append(cs)
     else:
         xy = go.Scatter(x=df.index,
-                y=df['Close'],
-                name='Close',
-                line_width=1.5,
-                connectgaps=True)
+                        y=df['Close'],
+                        name='Close',
+                        line_width=1.5,
+                        connectgaps=True)
         data.append(xy)
 
     if show_MAs or show_adv_MAs:
@@ -644,8 +645,8 @@ def plot_trends(graph, ticker, start, end, period, plot_data,
     
     if period != 'Weekly':
         us_holidays = list(holidays.US(range(start.year, end.year + 1)).keys())
-        rangebreaks = [dict(bounds=["sat", "mon"]), dict(values=us_holidays)]
-        if period.endswith('Min'):
+        rangebreaks = [dict(values=us_holidays), dict(bounds=["sat", "mon"])]
+        if period.endswith('m'):
             rangebreaks.extend([dict(bounds=[16, 9.5], pattern="hour")])
         fig.update_xaxes(rangebreaks=rangebreaks)
 

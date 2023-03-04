@@ -12,7 +12,7 @@ SPY_INFO = '''
    
     1. Market capitalization must be greater than or equal to US$12.7 billion.
     2. Annual dollar value traded to float-adjusted market capitalization is greater than 0.75.
-    3. Minimum monthly trading volume of 250,000 shares in each of the six months leading up to the evaluation date.
+    3.mimum monthly trading volume of 250,000 shares in each of the six months leading up to the evaluation date.
     4. Must be publicly listed on either the New York Stock Exchange (including NYSE Arca or NYSE American) or NASDAQ (NASDAQ Global Select Market, NASDAQ Select Market or the NASDAQ Capital Market).
     5. The company should be from the U.S.
     6. Securities that are ineligible for inclusion in the index are limited partnerships, master limited partnerships and their investment trust units, OTC Bulletin Board issues, closed-end funds, exchange-traded funds, Exchange-traded notes, royalty trusts, tracking stocks, preferred stock, unit trusts, equity warrants, convertible bonds, investment trusts, American depositary receipts, and American depositary shares.
@@ -269,8 +269,9 @@ FINANCIAL_RATIOS = {'formulas': FORMULAS, 'definitions': DEFINITIONS, 'ratios': 
 TA_PERIODS = {
     'Weekly': {'MA': [10, 20, 40], 'days': 365 * 2},
     'Daily': {'MA': [10, 20, 50, 200], 'days': 180},
-    '30 Min': {'MA': [7, 17, 33, 65], 'days': 20},
-    '15 Min': {'MA': [14, 34, 66, 130], 'days': 15},
-    '5 Min': {'MA': [40, 100, 200], 'days': 5},
-    '1 Min': {'MA': [50, 100, 200], 'days': 0}
+    '30m': {'MA': [7, 17, 33, 65], 'days': 20},
+    '10m': {'MA': [20, 50, 100, 195], 'days': 7},
+    '5m': {'MA': [40, 100, 200], 'days': 3},
+    '2m': {'MA': [20, 50, 100], 'days': 1},
+    '1m': {'MA': [50, 100, 200], 'days': 0}
     }

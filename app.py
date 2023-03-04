@@ -370,11 +370,11 @@ if option == 'Technical Analysis':
     setup = c1.selectbox('Trader Setup', ('Investor', 'Swing Trader', 'Day Trader'))
     
     if setup == 'Investor':
-        periods = ('Weekly', 'Daily', '30 Min')
+        periods = ('Weekly', 'Daily', '30m')
     elif setup == 'Swing Trader':
-        periods = ('Daily', '30 Min', '5 Min')
+        periods = ('Daily', '30m', '10m', '5m')
     else:
-        periods = ('30 Min', '5 Min', '1 Min')
+        periods = ('30m', '10m', '5m', '2m', '1m')
 
     period = c2.radio('Timeframe', periods, horizontal=True)
 
