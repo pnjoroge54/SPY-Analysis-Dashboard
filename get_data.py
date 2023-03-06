@@ -134,7 +134,7 @@ def get_market_data():
     print('\nS&P 500 stock data downloaded \n')
 
     
-def get_interval_market_data(intervals):
+def get_interval_market_data(intervals=('1m', '5m')):
     t_start = time.time()
     tickers, _ = get_tickers()
     end = dt.now()
@@ -156,7 +156,7 @@ def get_interval_market_data(intervals):
         for i, ticker in enumerate(tickers, 1):
             try:
                 fname = os.path.join(path, f'{ticker}.csv')
-                if interval == '1wk' or interval == '1mo':
+                if interval == '1d':
                     df = si.get_data(ticker, interval=interval)
                 else:
                     df = yf.download(ticker, start=start, end=end, interval=interval, progress=False)
@@ -440,7 +440,7 @@ def get_financial_statements():
     print(f'\nFinancial statements saved\n')
 
 
-def redownload_market_data():
+def redownload_market_data(path = r'data\market_data'):
     t_start = time.time()
     end = dt.now()
     days = 0
@@ -451,7 +451,6 @@ def redownload_market_data():
         days += 1
         
     end -= timedelta(days)
-    path = r'data\market_data'
 
     for f in os.listdir(path):
         fpath = os.path.join(path, f)
@@ -472,8 +471,8 @@ def redownload_market_data():
             fname = os.path.split(filepath)[1]
             ticker = os.path.splitext(fname)[0]
             try:
-                if f == '1wk' or f == '1mo' or f == '1d':
-                    df = si.get_data(ticker, interval=f)
+                if f == '1d':
+                    df = si.get_data(ticker)
                 else:
                     df = yf.download(ticker, start=start, end=end, interval=f, progress=False)
                 if not df.empty:
@@ -497,11 +496,11 @@ if __name__ == "__main__":
     # get_risk_free_rates()
     # get_factor_model_data()
     # get_market_data()
-    # get_interval_market_data(['1m', '5m', '30m', '60m'])
+    get_interval_market_data()
     # save_TTM_financial_ratios()
     # get_financial_ratios()
     # get_financial_statements()
-    # get_tickers_info()
+    get_tickers_info()
     redownload_market_data()
     
     end = time.time()

@@ -445,7 +445,7 @@ if option == 'Technical Analysis':
         show_vol = c1.checkbox('Volume', True)
         show_rsi = c1.checkbox('RSI')
         show_macd = c1.checkbox('MACD')
-        show_sr = c2.checkbox('Support / Resistance (S/R)', True)
+        show_sr = c2.checkbox('Support / Resistance (SR)', True)
         show_fib = c2.checkbox('Fibonacci Retracements')
         show_bb = c2.checkbox('Bollinger Bands (BB)')
         show_MAs = c3.checkbox('Moving Averages (MA)')

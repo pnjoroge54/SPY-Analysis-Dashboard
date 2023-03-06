@@ -89,8 +89,7 @@ def resample_data(ticker, interval):
         resampled_df['Close'] = df['Close'].resample(freq).last()
         resampled_df['Adj Close'] = df['Adj Close'].resample(freq).last()
         resampled_df['Volume'] = df['Volume'].resample(freq).sum()
-        resampled_df.dropna(inplace=True)
-        df = resampled_df
+        df = resampled_df.dropna()
 
     return df
 
@@ -252,7 +251,6 @@ def plot_returns_histogram(df):
 def calculate_beta(ticker, start_date, end_date):
     '''Stock's beta relative to S&P 500'''
     
-    end_date += timedelta(1)
     df1 = get_SPY_data()[start_date:end_date]
     df1['Return'] = np.log1p(df1['Close'].pct_change())
     df1.rename(columns={'Return': 'SPY'}, inplace=True)
@@ -441,12 +439,12 @@ def plot_sector_metric(df1, df2, metric):
         fig.layout.yaxis.tickformat = ',.2%'
         text1 = f'S&P 500 ({df2[metric]:.2%})'
         fig.add_hline(y=df2[metric],
-                  line_color='red',
-                  line_width=1,
-                  annotation_text=text1, 
-                  annotation_position='top right',
-                  annotation_bgcolor='indianred',
-                  annotation_bordercolor='red')
+                      line_color='red',
+                      line_width=1,
+                      annotation_text=text1, 
+                      annotation_position='top right',
+                      annotation_bgcolor='indianred',
+                      annotation_bordercolor='red')
     else:
         fig.layout.yaxis.tickformat = ',.2f'
         text1 = f'S&P 500 ({df2[metric]:,.2f})'
@@ -768,8 +766,6 @@ def get_financial_statements():
         d = pickle.load(f)
     
     return d
-
-
 
 
 rf_rates = get_rf_data()

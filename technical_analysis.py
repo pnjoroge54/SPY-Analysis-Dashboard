@@ -417,7 +417,7 @@ def calculate_signals(ticker, start, end, period, MAs):
         df = get_ticker_data(ticker)[start:end]
 
     df = df.copy()
-    df.drop(columns='Adj Close', inplace=True)
+    # df.drop(columns='Adj Close', inplace=True)
 
     # Calculate moving averages (MAs)
     for ma in MAs:
@@ -570,7 +570,7 @@ def plot_trends(graph, ticker, start, end, period, plot_data,
             n = df.shape[0] - i
             fig.add_scatter(x=df.index[i:],
                             y=[l] * n,
-                            name='S/R',
+                            name='SR',
                             line_width=0.5,
                             line_color='orange',
                             mode='lines',
@@ -643,13 +643,19 @@ def plot_trends(graph, ticker, start, end, period, plot_data,
                         row=fig_row, col=1)
         fig.update_layout({f'yaxis{fig_row}': {'type': 'linear'}})
     
-    if period != 'Weekly':
-        us_holidays = list(holidays.US(range(start.year, end.year + 1)).keys())
-        rangebreaks = [dict(values=us_holidays), dict(bounds=["sat", "mon"])]
-        if period.endswith('m'):
-            rangebreaks.extend([dict(bounds=[16, 9.5], pattern="hour")])
+    us_holidays = pd.to_datetime(list(holidays.US(range(start.year, end.year + 1)).keys()))
+
+    if period == 'Daily':
+        rangebreaks = [dict(bounds=["sat", "mon"]), dict(values=us_holidays)]
         fig.update_xaxes(rangebreaks=rangebreaks)
 
+    if period.endswith('m'):
+        us_holidays += pd.offsets.Hour(9) + pd.offsets.Minute(30)
+        rangebreaks = [dict(bounds=[16, 9.5], pattern="hour"), 
+                       dict(bounds=["sat", "mon"]), 
+                       dict(values=us_holidays)]
+        fig.update_xaxes(rangebreaks=rangebreaks)
+    
     fig.layout.xaxis.rangeslider.visible = False
 
     return fig
