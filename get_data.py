@@ -474,6 +474,10 @@ def redownload_market_data(path = r'data\market_data'):
             delta2 = end - date
             if delta1.days > 0 and delta2.days > 0:
                 to_update.append(file)
+            if delta1.days == 0 or delta2.days == 0:
+                df = pd.read_csv(file)
+                if df.empty:
+                    to_update.append(file)
         n = len(to_update)
         j = 0
         for i, filepath in enumerate(to_update, 1):
