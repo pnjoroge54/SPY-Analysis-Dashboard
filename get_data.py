@@ -98,13 +98,22 @@ def get_SPY_weights():
 def get_market_data():  
     '''Get historical data for S&P 500 index & for each constituent stock'''
 
-    start = time.time()
-    df = yf.Ticker('^GSPC').history('max') # download index data
+    t_start = time.time()
+    end = dt.now()
+    days = 0
+    
+    if end.weekday() > 4:
+        days += end.weekday() - 4
+    elif end.hour < 24: # 24h is 16h in EST timezone
+        days += 1
+        
+    end -= timedelta(days)
+    df = yf.Ticker('^GSPC').history('max', end=end) # download index data
 
     if not df.empty:
         df.to_csv(r'data\spy_data\SPY.csv')
 
-    end = time.time()
+    t_end = time.time()
     mm, ss = divmod(end - start, 60)
     print(f'\r{mm:.0f}m:{ss:.0f}s S&P 500 index data downloaded')
 
@@ -117,18 +126,18 @@ def get_market_data():
         for i, ticker in enumerate(tickers, 1):
             try:
                 fname = os.path.join(path, f'{ticker}.csv')
-                df = si.get_data(ticker)
+                df = si.get_data(ticker, end_date=end)
                 if not df.empty:
                     df.to_csv(fname)
-                end = time.time()
-                mm, ss = divmod(end - start, 60)
+                t_end = time.time()
+                mm, ss = divmod(t_end - t_start, 60)
                 print(f"\r{mm:.0f}m:{ss:.0f}s {i}/{n} ({i / n:.2%}) " \
                       f"of {s} SPY market data downloaded".ljust(70, ' '),
                       end='', flush=True)
             except Exception as e:
                 j += 1
-                end = time.time()
-                mm, ss = divmod(end - start, 60)
+                t_end = time.time()
+                mm, ss = divmod(t_end - t_start, 60)
                 print(f'\r{mm:.0f}m:{ss:.0f}s {j}/{n}: {ticker} - {e}'.ljust(70, ' '))
 
     print('\nS&P 500 stock data downloaded \n')
@@ -157,7 +166,7 @@ def get_interval_market_data(intervals=('1m', '5m')):
             try:
                 fname = os.path.join(path, f'{ticker}.csv')
                 if interval == '1d':
-                    df = si.get_data(ticker, interval=interval)
+                    df = si.get_data(ticker, end_date=end, interval=interval)
                 else:
                     df = yf.download(ticker, start=start, end=end, interval=interval, progress=False)
                 if not df.empty:
@@ -181,7 +190,7 @@ def get_tickers_info():
     crnt_tickers, hist_tickers = get_tickers()
     fname = r'data\spy_data\spy_tickers_info.pickle'
     
-    if os.path.isfile:
+    if os.path.isfile(fname):
         with open(fname, 'rb') as f:
             info = pickle.load(f)
     else:
@@ -472,7 +481,7 @@ def redownload_market_data(path = r'data\market_data'):
             ticker = os.path.splitext(fname)[0]
             try:
                 if f == '1d':
-                    df = si.get_data(ticker)
+                    df = si.get_data(ticker, end_date=end)
                 else:
                     df = yf.download(ticker, start=start, end=end, interval=f, progress=False)
                 if not df.empty:
@@ -496,11 +505,11 @@ if __name__ == "__main__":
     # get_risk_free_rates()
     # get_factor_model_data()
     # get_market_data()
-    get_interval_market_data()
+    # get_interval_market_data()
     # save_TTM_financial_ratios()
     # get_financial_ratios()
     # get_financial_statements()
-    get_tickers_info()
+    # get_tickers_info()
     redownload_market_data()
     
     end = time.time()

@@ -436,47 +436,55 @@ if option == 'Technical Analysis':
     
     ticker = c3.selectbox(ticker_lbl, sorted(tickers), help=text)
     minor_ma, secondary_ma, primary_ma, *_ = MAs
+    plot_MAs = [minor_ma, secondary_ma, primary_ma]
+    plot_data = {'MAs': plot_MAs,
+                 'Adv MAs': [int(ma**(1/2)) for ma in plot_MAs]}
     
     if tickers:
+        ticker = ticker.split(' - ')[0]
+
         st.subheader('Chart Setup')
         graph = st.radio('Price Display', ('Candlesticks', 'Line'), horizontal=True)
-        c1, c2, c3 = st.columns(3)
-        ticker = ticker.split(' - ')[0]
-        show_vol = c1.checkbox('Volume', True)
-        show_rsi = c1.checkbox('RSI')
-        show_macd = c1.checkbox('MACD')
-        show_sr = c2.checkbox('Support / Resistance (SR)', True)
-        show_fib = c2.checkbox('Fibonacci Retracements')
-        show_bb = c2.checkbox('Bollinger Bands (BB)')
-        show_MAs = c3.checkbox('Moving Averages (MA)')
-        show_adv_MAs = c3.checkbox('Advanced MAs')
-        placeholder = c3.empty()
+        tab1, tab2 = st.tabs(('Subplots', 'Patterns'))
 
-        plot_MAs = [minor_ma, secondary_ma, primary_ma]
-        plot_data = {'MAs': plot_MAs,
-                     'Adv MAs': [int(ma**(1/2)) for ma in plot_MAs]}
+        with tab1:
+            c1, c2 = st.columns(2)
+            show_sr = c1.checkbox('Support / Resistance (SR)', True)
+            show_fr = c1.checkbox('Fibonacci Retracements (FR)')
+            show_bb = c1.checkbox('Bollinger Bands (BB)')
+            show_trends_c = c2.checkbox('Trendlines (Close)')
+            show_trends_hl = c2.checkbox('Trendlines (High-Low)')
+            show_MAs = c2.checkbox('Moving Averages (MA)')
+            show_adv_MAs = c2.checkbox('Advanced MAs')
+            placeholder = c2.empty()
 
-        if show_MAs or show_adv_MAs:
-            adjust_MAs = placeholder.checkbox('Adjust MA Windows')
-            c1, c2, c3 = st.columns(3)
-            if adjust_MAs:
-                if show_MAs:
-                    minor_ma = c1.number_input('Minor MA', value=MAs[0])
-                    secondary_ma  = c2.number_input('Secondary MA', value=MAs[1])
-                    primary_ma  = c3.number_input('Primary MA', value=MAs[2])
-                    plot_MAs = [minor_ma, secondary_ma, primary_ma]
-                    plot_data['MAs'] = plot_MAs
-                if show_adv_MAs:
-                    advanced_MAs = plot_data['Adv MAs']
-                    minor_adv_ma = c1.number_input(f'Advance MA{minor_ma}', value=advanced_MAs[0])
-                    secondary_adv_ma = c2.number_input(f'Advance MA{secondary_ma}', value=advanced_MAs[1])
-                    primary_adv_ma = c3.number_input(f'Advance MA{primary_ma}', value=advanced_MAs[2])
-                    plot_adv_MAs = [minor_adv_ma, secondary_adv_ma, primary_adv_ma]
-                    plot_data['Adv MAs'] = plot_adv_MAs
+            if show_MAs or show_adv_MAs:
+                adjust_MAs = placeholder.checkbox('Adjust MA Windows')
+                c1, c2, c3 = st.columns(3)
+                if adjust_MAs:
+                    if show_MAs:
+                        minor_ma = c1.number_input('Minor MA', value=MAs[0])
+                        secondary_ma  = c2.number_input('Secondary MA', value=MAs[1])
+                        primary_ma  = c3.number_input('Primary MA', value=MAs[2])
+                        plot_MAs = [minor_ma, secondary_ma, primary_ma]
+                        plot_data['MAs'] = plot_MAs
+                    if show_adv_MAs:
+                        advanced_MAs = plot_data['Adv MAs']
+                        minor_adv_ma = c1.number_input(f'Advance MA{minor_ma}', value=advanced_MAs[0])
+                        secondary_adv_ma = c2.number_input(f'Advance MA{secondary_ma}', value=advanced_MAs[1])
+                        primary_adv_ma = c3.number_input(f'Advance MA{primary_ma}', value=advanced_MAs[2])
+                        plot_adv_MAs = [minor_adv_ma, secondary_adv_ma, primary_adv_ma]
+                        plot_data['Adv MAs'] = plot_adv_MAs
+
+        with tab2:
+            show_vol = st.checkbox('Volume', True)
+            show_rsi = st.checkbox('Relative Strength Index (RSI)')
+            show_macd = st.checkbox('Moving Average Convergence Divergence (MACD)')
+        
 
         fig = plot_trends(graph, ticker, start, end, period, plot_data,
-                          show_vol, show_rsi, show_macd, show_sr, show_fib, show_bb,
-                          show_MAs, show_adv_MAs)
+                          show_vol, show_rsi, show_macd, show_sr, show_fr, show_bb,
+                          show_MAs, show_adv_MAs, show_trends_c, show_trends_hl)
         st.plotly_chart(fig)
 
         # file = 'watchlist.pickle'

@@ -113,7 +113,7 @@ def get_first_dates():
 
     for ticker in ticker_list:
         df = get_ticker_data(ticker)
-        first_date = df.iloc[0].name
+        first_date = df.index[0]
         first_dates.append((ticker, first_date))
         first_dates = sorted(first_dates, key=itemgetter(1))
 
@@ -774,7 +774,7 @@ SPY_info_df = get_SPY_info()
 tickers_info = get_ticker_info()
 ticker_list = SPY_info_df.index.to_list()
 sector_list = sorted(SPY_info_df['Sector'].unique().tolist())
-first_date = SPY_df.iloc[0].name
-last_date = SPY_df.iloc[-1].name
+first_date = SPY_df.index[0]
+last_date = SPY_df.index[-1]
 yr_ago = last_date - timedelta(days=365)
 TTM_ratios, ratios_data_report = load_TTM_ratios()

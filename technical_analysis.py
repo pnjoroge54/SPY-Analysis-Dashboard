@@ -1,11 +1,14 @@
 import bisect
 import numpy as np
 import time
+from datetime import datetime as dt
 from datetime import timedelta
 from itertools import zip_longest
+import math
 
 import holidays
-from scipy.signal import find_peaks
+from scipy.signal import argrelextrema
+from scipy.stats import linregress
 from sklearn import preprocessing
 import cufflinks as cf
 import plotly.graph_objects as go
@@ -191,12 +194,12 @@ def sr_levels(df):
 
     df = df.copy()
     df['SR Signal'] = 0
-    unit = 'minutes' if df.iloc[0].name.minute != 0 else 'days'  
+    unit = 'minutes' if df.index[0].minute != 0 else 'days'  
     spt = 0
     rst = 0
     levels = []
     s_levels = []
-    prev_date = df.iloc[0].name
+    prev_date = df.index[0]
     sr_data = {}
     many_tests = {} # dict of bars that test more than 1 level
     s = (df['High'] - df['Low']).mean()
@@ -208,7 +211,7 @@ def sr_levels(df):
         return np.sum([abs(l - x[1]) < s for x in levels]) == 0
 
     for i in range(2, nr):
-        date = df.iloc[i].name
+        date = df.index[i]
         s_date = date.strftime('%d-%m-%y')
         high = df['High'][i]
         low = df['Low'][i]
@@ -376,7 +379,7 @@ def sr_levels(df):
 
 
 @st.cache
-def calculate_fibonacci_levels(df):
+def fibonacci_levels(df):
     highest_swing = -1
     lowest_swing = -1
     high = df['High']
@@ -405,6 +408,196 @@ def calculate_fibonacci_levels(df):
         levels.append(level)
 
     return ratios, levels
+
+
+@st.cache
+def peaks_valleys_trendlines(df):
+    '''
+    df: DataFrame
+    trendline: str 'hl' or 'close', 
+               'hl' drawing trendlines from High or Low prices,
+               and 'close' from Closing prices
+    '''
+
+    df = df.copy().drop(columns='Adj Close')
+    close = df['Close']
+    peaks = argrelextrema(close.to_numpy(), np.greater)[0]
+    valleys = argrelextrema(close.to_numpy(), np.less)[0]
+    PV = sorted(list(peaks) + list(valleys))
+    first = 'Peak' if min(peaks[0], valleys[0]) == peaks[0] else 'Valley'
+    second = 'Peak' if first == 'Valley' else 'Valley'
+    first_vals = set(peaks) if first == 'Peak' else set(valleys)
+    second_vals = set(peaks) if second == 'Peak' else set(valleys)
+    ix = PV[0]
+    d0 = abs(close[ix] - close[0])
+    dist = [d0]   
+    valid_PV = [ix]
+    df.loc[df.index[peaks], 'isPeak'] = 1
+    df.loc[df.index[valleys], 'isValley'] = 1
+    df['Peak'] = close[peaks]
+    df['Valley'] = close[valleys]
+    trend = -1 if first == 'Valley' else 1
+    df['PV Trend'] = trend
+    trendlines_c = []
+    trendlines_hl = []
+    i, j = 0, 1
+    cnt = 0
+    print(f'nPeaks: {len(peaks)}, nValleys: {len(valleys)}, nPV: {len(PV)}' \
+          f'\nfirst peak, valley: {peaks[0], valleys[0]}' \
+          f'\nlast peak, valley: {peaks[-1], valleys[-1]}\n')
+    
+    while j < len(PV):
+        col = first if not cnt % 2 else second
+        o_col = first if cnt % 2 else second
+        cnt += 1
+        ix = df.index[PV[j]]
+        d1 = dist[-1]
+        d2 = close[PV[j]] - close[PV[i]]
+        retracement = abs(d2) / d1
+        # print(f'{cnt}. i: {i}, j: {j} \nPV[{i}]: {PV[i]}, PV[{j}]: {PV[j]}')
+        # print(f'd2: {close[PV[j]]:.2f} - {close[PV[i]]:.2f} = {d2:.2f}',
+        #       f'\nRetraced: {abs(d2):.2f} / {d1:.2f} = {retracement:.2f}')
+        
+        if retracement >= 1/3:
+            # print(f'Add {o_col} {close[PV[j]]:.2f} on {ix.date()}')
+            d1 = abs(close[PV[j]] - close[valid_PV[-1]])
+            dist.append(d1)
+            valid_PV.append(PV[j])    
+            if j < len(PV):
+                j += 1      
+                i = j - 1
+        elif j < len(PV):
+            # print(f'Skip {o_col} {close[PV[j]]:.2f} on {ix.date()}')
+            df.loc[ix, f'is{o_col}'] = 0
+            if len(dist) > 1:
+                dist.pop()
+            if len(valid_PV) > 1:
+                invalid = valid_PV.pop()
+                ix = df.index[invalid]
+                df.loc[ix, f'is{col}'] = 0
+                # print(f'Remove {col} {close[invalid]:.2f} on {ix.date()}') 
+            i = PV.index(valid_PV[-1])
+            j += 1
+
+        # print(f'i: {i}, j: {j}, \n{[round(x, 2) for x in dist]}\n{valid_PV}\n')
+            
+    # Add last highest peak & last lowest valley if not in valid_PV
+    print(f'Last {second} is {close[valid_PV[-1]]:.2f} on {df.index[valid_PV[-1]].date()}')
+    print(f'Last {first} is {close[valid_PV[-2]]:.2f} on {df.index[valid_PV[-2]].date()}\n')
+    df_ix_list = df.index.to_list()
+    nr = df.shape[0]
+
+    if valid_PV[-1] < nr - 1:
+        ix = df.index[valid_PV[-1] + 1]
+        val = df.loc[ix:, first].dropna() 
+        if not val.empty:
+            f_ix = val.idxmax() if first == 'Peak' else val.idxmin() # last higest/lowest index
+            f_ix_pos = df_ix_list.index(f_ix) # index position    
+            if f_ix_pos not in valid_PV and f_ix_pos < nr - 1:
+                valid_PV.append(f_ix_pos)
+                ix = df.index[f_ix_pos + 1]
+                val = df.loc[ix:, second].dropna()
+                if not val.empty:
+                    s_ix = val.idxmax() if second == 'Peak' else val.idxmin()
+                    s_ix_pos = df_ix_list.index(s_ix)
+                    valid_PV.append(s_ix_pos)
+
+            # print(f'Updated: \nLast {first} is {close[f_ix_pos]:.2f} on {f_ix.date()} iloc[{f_ix_pos}]\n' \
+            #     f'Last {second} is {close[s_ix_pos]:.2f} on {s_ix.date()} iloc[{s_ix_pos}]\n')
+    
+    first_vals.intersection_update(set(valid_PV[::2]))
+    second_vals.intersection_update(set(valid_PV[1::2]))
+    first_vals = sorted(list(first_vals))
+    second_vals = sorted(list(second_vals))
+    print(f'n{first}: {len(first_vals)}, n{second}: {len(second_vals)}\n')
+    n = len(min(first_vals, second_vals, key=len))
+    
+    # Identify trends
+    for i in range(1, n):
+        a, pa = first_vals[i], first_vals[i - 1]
+        b, pb = second_vals[i], second_vals[i - 1]
+        start = df.index[min(pa, pb)] if i == 1 else end
+        end = df.index[max(a, b)]
+        if close[a] - close[pa] < 0 and close[b] - close[pb] < 0:
+            trend = -1
+        elif close[a] - close[pa] > 0 and close[b] - close[pb] > 0:
+            trend = 1
+        else:
+            trend = 0
+        df.loc[start:, 'PV Trend'] = trend
+        # print(f'{i}. start: {start.date()}, end: {end.date()}'\
+        #       f'\nprev. {first}: {close[pa]:.2f} on {df.index[pa].date()}, {first}: {close[a]:.2f} on {df.index[a].date()}' \
+        #       f'\nprev. {second}: {close[pb]:.2f} on {df.index[pb].date()}, {second}: {close[b]:.2f} on {df.index[b].date()}' \
+        #       f'\ntrend: {trend}\n')
+    
+    # Identify potential trendline ranges  
+    df['PV Changepoint'] = df['PV Trend'].diff()
+    df['Row'] = np.arange(nr)
+    mask = (df['PV Changepoint'] != 0) & (df['PV Changepoint'].notna())
+    c_points = df[mask].index
+    # print(c_points)
+    
+    for i in range(1, len(c_points)):
+        start = df.index[0] if i == 1 else end
+        end = c_points[i]
+        npeaks = df.loc[start:end, 'isPeak'].sum()
+        nvalleys = df.loc[start:end, 'isValley'].sum()
+        uptrend = False
+        downtrend = False
+        if df.loc[start, 'PV Trend'] < 0 and npeaks >= 2:
+            downtrend = True
+            indices = df[df['isPeak'] == 1][start:end].index
+        if df.loc[start, 'PV Trend'] > 0 and nvalleys >= 2:
+            uptrend = True
+            indices = df[df['isValley'] == 1][start:end].index
+        # print(f"{i}.".ljust(3), 
+        #       f"{dt.strftime(start, '%d.%m.%y')} - {dt.strftime(end, '%d.%m.%y')}, " \
+        #       f"peaks: {npeaks:.0f}, valleys: {nvalleys:.0f}, " \
+        #       f"trend: {df.loc[start, 'PV Trend']:.0f}, c: {df.loc[start, 'PV Changepoint']:.0f}")
+    
+        if uptrend or downtrend:    
+            xs = np.array(df['Row'][indices])
+            ys = np.array(close[indices])
+            m, c, r, *_ = linregress(xs, ys)
+            x0, x2 = indices[0], indices[-1]
+            xn = df_ix_list.index(x2) + 4
+            xn = xn if xn < nr else nr - 1
+            y0 = close[x0]
+            yn = m * xn + c
+            trendlines_c.append(((x0, df.index[xn]), (y0, yn)))
+            r2 = r**2
+            slope_angle = math.atan(m)  # slope angle in radians
+            slope_angle_degrees = math.degrees(slope_angle)  # slope angle in degrees
+            # print('Close Trendline')
+            # print(linregress(xs, ys))
+            # print(f'R2: {r2:.2f} \nangle_radians: {slope_angle:.2f} \nangle_deg: {slope_angle_degrees:.2f}')
+            # print(f'y = mx + c \n{yn:.2f} = {m:.2f} x {xn:.0f} + {c:.2f}')
+            # print(f'xs: {xs}, \nys: {ys}\n')
+            if uptrend:
+                ys = np.array(df.Low[indices])
+                m, c, r, *_ = linregress(xs, ys)
+                y0 = df.Low[x0]
+            if downtrend:
+                ys = np.array(df.High[indices])
+                m, c, r, *_ = linregress(xs, ys)
+                y0 = df.High[x0]
+                            
+            yn = m * xn + c
+            trendlines_hl.append(((x0, df.index[xn]), (y0, yn)))
+            r2 = r**2
+            slope_angle = math.atan(m)  # slope angle in radians
+            slope_angle_degrees = math.degrees(slope_angle)  # slope angle in degrees
+            # print('HL Trendline')
+            # print(linregress(xs, ys))
+            # print(f'R2: {r2:.2f} \nangle_radians: {slope_angle:.2f} \nangle_deg: {slope_angle_degrees:.2f}')
+            # print(f'y = mx + c \n{yn:.2f} = {m:.2f} x {xn:.0f} + {c:.2f}')
+            # print(f'xs: {xs}, \nys: {ys}\n')
+        
+    # cols = ['isPeak', 'isValley', 'Peak', 'Valley', 'Row', 'PV Changepoint']
+    cols = df.columns[:3].tolist() + ['Volume', 'Row']
+    df.drop(columns=cols, inplace=True)
+    
+    return df, peaks, valleys, valid_PV, trendlines_c, trendlines_hl
 
 
 @st.cache
@@ -455,7 +648,6 @@ def get_trending_stocks(start, end, period, MAs):
 @st.cache
 def get_trend_aligned_stocks(periods_data, periods, end_date):
     for i, period in enumerate(periods):
-        # if period != 'Monthly':
         period_d = periods_data[period]
         days = period_d['days']
         start = end_date - timedelta(days)
@@ -473,8 +665,8 @@ def get_trend_aligned_stocks(periods_data, periods, end_date):
 
 @st.cache(allow_output_mutation=True)
 def plot_trends(graph, ticker, start, end, period, plot_data,
-                show_vol, show_rsi, show_macd, show_sr, show_fib, 
-                show_bb, show_MAs, show_adv_MAs):
+                show_vol, show_rsi, show_macd, show_sr, show_fr, 
+                show_bb, show_MAs, show_adv_MAs, show_trends_c, show_trends_hl):
     '''
     Returns plot figure
 
@@ -579,9 +771,9 @@ def plot_trends(graph, ticker, start, end, period, plot_data,
 
     # Fibonacci retracements
     ## PUT SECONDARY Y-AXIS OF FR LEVELS
-    if show_fib:
+    if show_fr:
         colors = ["darkgray", "indianred", "green", "blue", "cyan", "magenta", "gold"]
-        ratios, levels = calculate_fibonacci_levels(df)
+        ratios, levels = fibonacci_levels(df)
         for i in range(len(ratios)):
             fig.add_scatter(x=df.index,
                             y=[levels[i]] * df.shape[0],
@@ -603,7 +795,46 @@ def plot_trends(graph, ticker, start, end, period, plot_data,
                             line_width=1,
                             line_dash=dash,
                             mode='lines',
-                            connectgaps=True)   
+                            connectgaps=True)
+            
+    # Trendlines
+    if show_trends_c or show_trends_hl:
+        pv_df, peaks, valleys, PV, trendlines_c, trendlines_hl = peaks_valleys_trendlines(df)
+        fig.add_scatter(x=df.Close[peaks].index,
+                        y=df.Close[peaks],
+                        name='Peaks',
+                        mode='markers',
+                        marker=dict(symbol='x', color='yellow'), 
+                        opacity=0.5)
+        fig.add_scatter(x=df.Close[valleys].index,
+                        y=df.Close[valleys],
+                        name='Valleys',
+                        mode='markers',
+                        marker=dict(symbol='x', color='red'), 
+                        opacity=0.5)
+        fig.add_scatter(x=df.Close[PV].index,
+                        y=df.Close[PV],
+                        name='Valid Peaks_Valleys',
+                        mode='markers',
+                        marker=dict(symbol='circle-open', color='lightgreen', size=10))
+        if show_trends_c:      
+            for x, y in trendlines_c:
+                fig.add_scatter(x=x,
+                                y=y,
+                                name='Trendline (Close)',
+                                mode='lines',
+                                line_color='magenta',
+                                opacity=0.5,
+                                showlegend=False)
+        if show_trends_hl:      
+            for x, y in trendlines_hl:
+                fig.add_scatter(x=x,
+                                y=y,
+                                name='Trendline (HL)',
+                                mode='lines',
+                                line_color='cyan',
+                                opacity=0.5,
+                                showlegend=False)
 
     # Volume subplot
     if show_vol:   
