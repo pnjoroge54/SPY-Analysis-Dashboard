@@ -147,13 +147,7 @@ def get_interval_market_data(intervals=('1m', '5m')):
     t_start = time.time()
     tickers, _ = get_tickers()
     end = dt.now()
-    days = 0
-
-    if end.weekday() > 4:
-        days += end.weekday() - 4
-    elif end.hour < 24: # 24h is 16h in EST timezone
-        days += 1
-        
+    days = end.weekday() - 5 if end.weekday() >= 5 else 0
     end -= timedelta(days)
     
     for interval in intervals:
@@ -166,7 +160,7 @@ def get_interval_market_data(intervals=('1m', '5m')):
             try:
                 fname = os.path.join(path, f'{ticker}.csv')
                 if interval == '1d':
-                    df = si.get_data(ticker, end_date=end, interval=interval)
+                    df = si.get_data(ticker, interval=interval)
                 else:
                     df = yf.download(ticker, start=start, end=end, interval=interval, progress=False)
                 if not df.empty:
@@ -426,7 +420,6 @@ def get_financial_statements():
                     dfs = [df1, df2, df3]
                     fname = f'{ticker}.xlsx'
                     folders = ['sofp', 'soci', 'socf']
-
                     for df, f in zip(dfs, folders):
                         df.set_index(df.columns[0], inplace=True)
                         df.index.name = 'Item'
@@ -434,10 +427,8 @@ def get_financial_statements():
                         df.columns = columns
                         fpath = os.path.join(path, f, fname)
                         df.to_excel(fpath)
-
                     df = pd.concat(dfs) # combining all extracted information
                     statements[ticker] = df
-                    
                 except Exception as e:
                     print(f'\r{i}/{n}: {ticker} - {e}'.ljust(70, ' '))
             
@@ -452,13 +443,7 @@ def get_financial_statements():
 def redownload_market_data(path = r'data\market_data'):
     t_start = time.time()
     end = dt.now()
-    days = 0
-
-    if end.weekday() > 4:
-        days += end.weekday() - 4
-    elif end.hour < 24: # 24h is 16h in EST timezone
-        days += 1
-        
+    days = end.weekday() - 5 if end.weekday() >= 5 else 0
     end -= timedelta(days)
 
     for f in os.listdir(path):
@@ -474,10 +459,7 @@ def redownload_market_data(path = r'data\market_data'):
             delta2 = end - date
             if delta1.days > 0 and delta2.days > 0:
                 to_update.append(file)
-            if delta1.days == 0 or delta2.days == 0:
-                df = pd.read_csv(file)
-                if df.empty:
-                    to_update.append(file)
+
         n = len(to_update)
         j = 0
         for i, filepath in enumerate(to_update, 1):
@@ -504,16 +486,16 @@ def redownload_market_data(path = r'data\market_data'):
 
 
 if __name__ == "__main__":           
-    # get_SPY_companies()
-    # get_SPY_weights()
-    # get_risk_free_rates()
-    # get_factor_model_data()
-    # get_market_data()
-    # get_interval_market_data()
-    # save_TTM_financial_ratios()
-    # get_financial_ratios()
-    # get_financial_statements()
-    # get_tickers_info()
+    get_SPY_companies()
+    get_SPY_weights()
+    get_risk_free_rates()
+    get_factor_model_data()
+    get_market_data()
+    get_interval_market_data()
+    save_TTM_financial_ratios()
+    get_financial_ratios()
+    get_financial_statements()
+    get_tickers_info()
     redownload_market_data()
     
     end = time.time()

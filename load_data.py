@@ -80,7 +80,6 @@ def resample_data(ticker, interval):
     return df
 
 
-
 def get_financial_statements():
     '''Load dict of available financial statements of S&P 500 stocks'''
 

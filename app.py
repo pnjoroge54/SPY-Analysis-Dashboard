@@ -480,7 +480,6 @@ if option == 'Technical Analysis':
             show_vol = st.checkbox('Volume', True)
             show_rsi = st.checkbox('Relative Strength Index (RSI)')
             show_macd = st.checkbox('Moving Average Convergence Divergence (MACD)')
-        
 
         fig = plot_trends(graph, ticker, start, end, period, plot_data,
                           show_vol, show_rsi, show_macd, show_sr, show_fr, show_bb,
