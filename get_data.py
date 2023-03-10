@@ -16,7 +16,7 @@ import streamlit as st
 import winsound
 
 
-start = time.time()
+f_start = time.time()
 
 def get_SPY_companies():
     '''Get a list of the companies comprising the S&P 500'''
@@ -39,8 +39,8 @@ def get_SPY_companies():
     current['Symbol'] = current['Symbol'].str.replace('.', '-', regex=False)
     hist['Ticker'] = hist['Ticker'].str.replace('.', '-', regex=False)
     
-    current_fname = r'data\spy_data\SPY_Info.csv'
-    hist_fname = r'data\spy_data\SPY_Historical.csv'
+    current_fname = r'data\market_data\spy_data\SPY_Info.csv'
+    hist_fname = r'data\market_data\spy_data\SPY_Historical.csv'
     o_current = pd.read_csv(current_fname)
     o_hist = pd.read_csv(hist_fname)
 
@@ -58,13 +58,10 @@ def get_SPY_companies():
 
 
 def get_tickers():
-    df1 = pd.read_csv(r'data\spy_data\SPY_Info.csv')
-    df2 = pd.read_csv(r'data\spy_data\SPY_Historical.csv', index_col='Date')
-    
-    tickers = df1['Symbol'].to_list()
-    hist_tickers = df2[df2['inSPY'] == False]['Ticker'].to_list()
+    df = pd.read_csv(r'data\market_data\spy_data\SPY_Info.csv')
+    tickers = df['Symbol'].to_list()
 
-    return tickers, hist_tickers
+    return tickers
 
 
 def url_get_contents(url):
@@ -91,76 +88,39 @@ def get_SPY_weights():
     df['Weight'] = pd.to_numeric(df['Weight'])
     df['Symbol'] = df['Symbol'].str.replace('.', '-', regex=False)
     df.set_index('Symbol', inplace=True)
-    df.to_csv(r'data\spy_data\SPY_Weights.csv')
+    df.to_csv(r'data\market_data\spy_data\SPY_Weights.csv')
     print('S&P 500 weights updated \n')
 
-
-def get_market_data():  
-    '''Get historical data for S&P 500 index & for each constituent stock'''
-
-    t_start = time.time()
-    end = dt.now()
-    days = 0
     
-    if end.weekday() > 4:
-        days += end.weekday() - 4
-    elif end.hour < 24: # 24h is 16h in EST timezone
-        days += 1
-        
-    end -= timedelta(days)
-    df = yf.Ticker('^GSPC').history('max', end=end) # download index data
-
-    if not df.empty:
-        df.to_csv(r'data\spy_data\SPY.csv')
-
-    t_end = time.time()
-    mm, ss = divmod(end - start, 60)
-    print(f'\r{mm:.0f}m:{ss:.0f}s S&P 500 index data downloaded')
-
-    crnt_tickers, hist_tickers = get_tickers()
-    path = r'data\market_data\1d'
-
-    for tickers, s in zip((crnt_tickers, hist_tickers), ('current', 'historical')):
-        n = len(tickers)
-        j = 0
-        for i, ticker in enumerate(tickers, 1):
-            try:
-                fname = os.path.join(path, f'{ticker}.csv')
-                df = si.get_data(ticker, end_date=end)
-                if not df.empty:
-                    df.to_csv(fname)
-                t_end = time.time()
-                mm, ss = divmod(t_end - t_start, 60)
-                print(f"\r{mm:.0f}m:{ss:.0f}s {i}/{n} ({i / n:.2%}) " \
-                      f"of {s} SPY market data downloaded".ljust(70, ' '),
-                      end='', flush=True)
-            except Exception as e:
-                j += 1
-                t_end = time.time()
-                mm, ss = divmod(t_end - t_start, 60)
-                print(f'\r{mm:.0f}m:{ss:.0f}s {j}/{n}: {ticker} - {e}'.ljust(70, ' '))
-
-    print('\nS&P 500 stock data downloaded \n')
-
-    
-def get_interval_market_data(intervals=('1m', '5m')):
+def get_interval_market_data(intervals=['5m'], path=r'data\market_data'):
     t_start = time.time()
-    tickers, _ = get_tickers()
+    tickers = get_tickers()
     end = dt.now()
     days = end.weekday() - 5 if end.weekday() >= 5 else 0
     end -= timedelta(days)
     
     for interval in intervals:
-        path = fr'data\market_data\{interval}'
+        t_path = os.path.join(path, interval)
+        spy_path = os.path.join(path, 'spy_data', interval)
+        os.makedirs(spy_path, exist_ok=True)
         os.makedirs(path, exist_ok=True)
         n = len(tickers)
         j = 0
         start = end - timedelta(7 - days) if interval == '1m' else end - timedelta(60 - days)
+        f_end = end - timedelta(1)
+        f_date = dt.strftime(f_end, "%d.%m.%y")
+        if interval == '1d':
+            df = yf.Ticker('^GSPC').history('max', end=f_end) # download index data
+        else:
+            df = yf.download('^GSPC', start=start, end=end, interval=interval, progress=False)
+        if not df.empty:
+            fname = os.path.join(spy_path, f'SPY{f_date}.csv')
+            df.to_csv(fname)
         for i, ticker in enumerate(tickers, 1):
             try:
-                fname = os.path.join(path, f'{ticker}.csv')
+                fname = os.path.join(t_path, f'{ticker}.csv')
                 if interval == '1d':
-                    df = si.get_data(ticker, interval=interval)
+                    df = si.get_data(ticker, end_date=f_end)
                 else:
                     df = yf.download(ticker, start=start, end=end, interval=interval, progress=False)
                 if not df.empty:
@@ -176,13 +136,17 @@ def get_interval_market_data(intervals=('1m', '5m')):
                 mm, ss = divmod(t_end - t_start, 60)
                 print(f'\r{mm:.0f}m:{ss:.0f}s{j}/{n}: {ticker} - {e}',
                       end='', flush=True) 
-
-        print(f'\n{n - j}/{n} of S&P 500 stock {interval} data downloaded \n')
+        
+        t_end = time.time()
+        mm, ss = divmod(t_end - t_start, 60)
+        print(f'\n{n - j}/{n} of S&P 500 stock {interval} data downloaded in {mm:.0f}m:{ss:.0f}s\n')
 
 
 def get_tickers_info():
-    crnt_tickers, hist_tickers = get_tickers()
-    fname = r'data\spy_data\spy_tickers_info.pickle'
+    t_start = time.time()
+    tickers = get_tickers()
+    n = len(tickers)
+    fname = r'data\market_data\spy_data\spy_tickers_info.pickle'
     
     if os.path.isfile(fname):
         with open(fname, 'rb') as f:
@@ -190,33 +154,35 @@ def get_tickers_info():
     else:
         info = {}
     
-    for tickers, s in zip((crnt_tickers, hist_tickers), ('current', 'historical')):
-        n = len(tickers)
-        for i, ticker in enumerate(tickers, 1):
-            if ticker not in info:
-                info[ticker] = {}
-                try:
-                    ticker_info = yf.Ticker(ticker).info
-                    info[ticker]['Security'] = ticker_info['longName']
-                    info[ticker]['Sector'] = ticker_info['sector']
-                    info[ticker]['Industry'] = ticker_info['industry']
-                    info[ticker]['Business Summary'] = ticker_info['longBusinessSummary']
-                    info[ticker]['Website'] = ticker_info['website']
-                except Exception as e:
-                    info[ticker]['Security'] = 'N/A'
-                    info[ticker]['Sector'] = 'N/A'
-                    info[ticker]['Industry'] = 'N/A'
-                    info[ticker]['Business Summary'] = 'N/A'
-                    info[ticker]['Website'] = 'N/A'
-                    print(f'\r{i}/{n}: {ticker} - {e}'.ljust(70, ' '))
-            
-            print(f'\r{i}/{n} ({i / n:.2%}) {s} business summaries downloaded',
-                  end='', flush=True)
+    for i, ticker in enumerate(tickers, 1):
+        if ticker not in info:
+            info[ticker] = {}
+            try:
+                ticker_info = yf.Ticker(ticker).info
+                info[ticker]['Security'] = ticker_info['longName']
+                info[ticker]['Sector'] = ticker_info['sector']
+                info[ticker]['Industry'] = ticker_info['industry']
+                info[ticker]['Business Summary'] = ticker_info['longBusinessSummary']
+                info[ticker]['Website'] = ticker_info['website']
+            except Exception as e:
+                info[ticker]['Security'] = 'N/A'
+                info[ticker]['Sector'] = 'N/A'
+                info[ticker]['Industry'] = 'N/A'
+                info[ticker]['Business Summary'] = 'N/A'
+                info[ticker]['Website'] = 'N/A'
+                print(f'\r{i}/{n}: {ticker} - {e}'.ljust(70, ' '))
+        
+        t_end = time.time()
+        mm, ss = divmod(t_end - t_start, 60)
+        print(f'\r{mm:.0f}m:{ss:.0f}s: {i}/{n} ({i / n:.2%}) business summaries downloaded',
+                end='', flush=True)
 
     with open(fname, 'wb') as f:
         pickle.dump(info, f)
     
-    print('\nBusiness summaries saved\n')
+    t_end = time.time()
+    mm, ss = divmod(t_end - t_start, 60)
+    print(f'\nBusiness summaries saved in {mm:.0f}m:{ss:.0f}s\n')
     
         
 def ratios_to_update():
@@ -255,6 +221,7 @@ def get_financial_ratios(i=0, n=1):
         Calls the API key according to the number, e.g., key{n}
     '''
 
+    t_start = time.time()
     f = 'data/financial_ratios/Annual'
     to_update = ratios_to_update()
     
@@ -268,6 +235,8 @@ def get_financial_ratios(i=0, n=1):
                                              period='annual')
                 ratios.to_csv(os.path.join(f, f'{ticker}.csv'))
                 i += 1
+                t_end = time.time()
+                mm, ss = divmod(t_end - t_start, 60)
                 print(f"\r{i}/{len(to_update)} outdated financial ratios downloaded",
                       end='', flush=True)
         except Exception as e:
@@ -280,10 +249,12 @@ def get_financial_ratios(i=0, n=1):
         return get_financial_ratios(i, n)
 
     else:
-        print('\nAnnual financial ratios are up to date!\n')       
+        t_end = time.time()
+        mm, ss = divmod(t_end - t_start, 60)
+        print(f'\nAnnual financial ratios downloaded in {mm:.0f}m:{ss:.0f}s\n')       
 
 
-def get_TTM_financial_ratios(i=0, n=1, d=dict()):
+def get_TTM_financial_ratios(i=0, n=1, d={}):
     '''
     Downloads trailing twelve month (TTM) financial ratios
 
@@ -297,6 +268,7 @@ def get_TTM_financial_ratios(i=0, n=1, d=dict()):
         Dictionary of the ratios downloaded for each ticker
     '''
     
+    t_start = time.time()
     tickers = get_tickers()[0]
     ntickers = len(tickers)
 
@@ -311,7 +283,9 @@ def get_TTM_financial_ratios(i=0, n=1, d=dict()):
                                              TTM=True)
                 d[ticker] = ratios.to_dict()
                 i += 1
-                print(f"\r{i}/{ntickers} ({i / ntickers:.2%}) TTM financial ratios downloaded",
+                t_end = time.time()
+                mm, ss = divmod(t_end - t_start, 60)
+                print(f"\r{mm:.0f}m:{ss:.0f}s {i}/{ntickers} ({i / ntickers:.2%}) TTM financial ratios downloaded",
                       end='', flush=True)
         except Exception as e:
             if e == '<urlopen error [Errno 11001] getaddrinfo failed>':
@@ -330,6 +304,7 @@ def get_TTM_financial_ratios(i=0, n=1, d=dict()):
 def save_TTM_financial_ratios():
     '''Save ratios as pickle file'''
 
+    t_start = time.time()
     date = dt.now(tz=timezone('EST'))  # Set datetime object to EST timezone
 
     # Sets file name to today's date only after US stock market
@@ -354,9 +329,12 @@ def save_TTM_financial_ratios():
     else:
         print(f'{ntickers - nd}/{ntickers} ratios not downloaded\n')
 
+    t_end = time.time()
+    mm, ss = divmod(t_end - t_start, 60)
+    print(f'TTM financial ratios downloaded in {mm:.0f}m:{ss:.0f}s')
+
 
 def get_risk_free_rates():
-    # df = pdr.fred.FredReader('DTB3', dt(1954, 1, 4), dt.now()).read()
     df = si.get_data('^IRX')
     df.columns = df.columns.str.title()
     df.to_csv(r'data\T-Bill Rates.csv')
@@ -381,10 +359,10 @@ def get_factor_model_data():
 
 
 def get_financial_statements():
-    crnt_tickers, hist_tickers = get_tickers()
+    tickers = get_tickers()
+    n = len(tickers)
     path = r'data\financial_statements'
-    d_tickers = {'META': 'FB',
-                 'BALL': 'BLL'}
+    d_tickers = {'META': 'FB', 'BALL': 'BLL'}
     dict_file = os.path.join(path, 'financial_statements.pickle')
 
     if os.path.isfile(dict_file):
@@ -393,51 +371,53 @@ def get_financial_statements():
     else:
         statements = {}
 
-    for tickers, s in zip((crnt_tickers, hist_tickers), ('current', 'historical')):
-        n = len(tickers)
-        for i, ticker in enumerate(tickers, 1):
-            if ticker in d_tickers:
-                d_ticker = d_tickers[ticker]
-            else:
-                d_ticker = ticker.replace('-', '.')
-            base_url = f"https://stockrow.com/api/companies/{d_ticker}/" \
-                        "financials.xlsx?dimension=Q&section="
-            sofp = f"{base_url}Balance%20Sheet&sort=desc"
-            soci = f"{base_url}Income%20Statement&sort=desc"
-            socf = f"{base_url}Cash%20Flow&sort=desc"
-            download = False
+    for i, ticker in enumerate(tickers, 1):
+        if ticker in d_tickers:
+            d_ticker = d_tickers[ticker]
+        else:
+            d_ticker = ticker.replace('-', '.')
+        base_url = f"https://stockrow.com/api/companies/{d_ticker}/" \
+                    "financials.xlsx?dimension=Q&section="
+        sofp = f"{base_url}Balance%20Sheet&sort=desc"
+        soci = f"{base_url}Income%20Statement&sort=desc"
+        socf = f"{base_url}Cash%20Flow&sort=desc"
+        download = False
 
-            if ticker not in statements:
-                download = True
-            elif dt.strptime(statements[ticker].columns[0], "%Y-%m-%d").year < dt.now().year - 2:
-                download = True            
+        if ticker not in statements:
+            download = True
+        elif dt.strptime(statements[ticker].columns[0], "%Y-%m-%d").year < dt.now().year - 2:
+            download = True            
 
-            if download:
-                try:        
-                    df1 = pd.read_excel(sofp) # balance sheet data           
-                    df2 = pd.read_excel(soci) # income statement data
-                    df3 = pd.read_excel(socf) # cashflow statement data
-                    dfs = [df1, df2, df3]
-                    fname = f'{ticker}.xlsx'
-                    folders = ['sofp', 'soci', 'socf']
-                    for df, f in zip(dfs, folders):
-                        df.set_index(df.columns[0], inplace=True)
-                        df.index.name = 'Item'
-                        columns = [x.strftime("%Y-%m-%d") for x in df.columns]
-                        df.columns = columns
-                        fpath = os.path.join(path, f, fname)
-                        df.to_excel(fpath)
-                    df = pd.concat(dfs) # combining all extracted information
-                    statements[ticker] = df
-                except Exception as e:
-                    print(f'\r{i}/{n}: {ticker} - {e}'.ljust(70, ' '))
-            
-            print(f"\r{i}/{n} ({i / n:.2%}) {s} statements downloaded", end='', flush=True)
+        if download:
+            try:        
+                df1 = pd.read_excel(sofp) # balance sheet data           
+                df2 = pd.read_excel(soci) # income statement data
+                df3 = pd.read_excel(socf) # cashflow statement data
+                dfs = [df1, df2, df3]
+                fname = f'{ticker}.xlsx'
+                folders = ['sofp', 'soci', 'socf']
+                for df, f in zip(dfs, folders):
+                    df.set_index(df.columns[0], inplace=True)
+                    df.index.name = 'Item'
+                    columns = [x.strftime("%Y-%m-%d") for x in df.columns]
+                    df.columns = columns
+                    fpath = os.path.join(path, f, fname)
+                    df.to_excel(fpath)
+                df = pd.concat(dfs) # combining all extracted information
+                statements[ticker] = df
+                t_end = time.time()
+                mm, ss = divmod(t_end - t_start, 60)
+            except Exception as e:
+                print(f'\r{i}/{n}: {ticker} - {e}'.ljust(70, ' '))
+        
+        print(f"\r{mm:.0f}m:{ss:.0f}s {i}/{n} ({i / n:.2%}) {s} statements downloaded", end='', flush=True)
 
     with open(dict_file, 'wb') as f:
         pickle.dump(statements, f)
 
-    print(f'\nFinancial statements saved\n')
+    t_end = time.time()
+    mm, ss = divmod(t_end - t_start, 60)
+    print(f'\nFinancial statements downloaded in {mm:.0f}m:{ss:.0f}s\n')
 
 
 def redownload_market_data(path = r'data\market_data'):
@@ -450,55 +430,60 @@ def redownload_market_data(path = r'data\market_data'):
         fpath = os.path.join(path, f)
         files = os.listdir(fpath)
         to_update = []
-        start = end - timedelta(7 - days) if f == '1m' else end - timedelta(60 - days)
-        for file in files:
-            file = os.path.join(fpath, file)
-            ti_m = os.path.getmtime(file)
-            date = dt.fromtimestamp(ti_m)
-            delta1 = dt.now() - date
-            delta2 = end - date
-            if delta1.days > 0 and delta2.days > 0:
-                to_update.append(file)
-
-        n = len(to_update)
-        j = 0
-        for i, filepath in enumerate(to_update, 1):
-            fname = os.path.split(filepath)[1]
-            ticker = os.path.splitext(fname)[0]
-            try:
-                if f == '1d':
-                    df = si.get_data(ticker, end_date=end)
-                else:
-                    df = yf.download(ticker, start=start, end=end, interval=f, progress=False)
-                if not df.empty:
-                    df.to_csv(filepath)
-                t_end = time.time()
-                mm, ss = divmod(t_end - t_start, 60)
-                print(f"\r{mm:.0f}m:{ss:.0f}s {i}/{n} ({i / n:.2%})" \
-                        f" of {f} SPY market data downloaded".ljust(70, ' '),
-                        end='', flush=True)
-            except Exception as e:
-                j += 1
-                t_end = time.time()
-                mm, ss = divmod(t_end - t_start, 60)
-                print(f'\r{mm:.0f}m:{ss:.0f}s {j}/{n}: {ticker} - {e}',
-                        end='', flush=True) 
-
+        if f != 'spy_data':
+            start = end - timedelta(7) if f == '1m' else end - timedelta(60)
+            for file in files:
+                file = os.path.join(fpath, file)
+                ti_m = os.path.getmtime(file)
+                date = dt.fromtimestamp(ti_m)
+                delta1 = dt.now() - date
+                delta2 = end - date
+                if delta1.days > 0 and delta2.days > 0:
+                    to_update.append(file)
+                    t_end = time.time()
+                    mm, ss = divmod(t_end - t_start, 60)
+                    print(f"\r{f} scanned in {mm:.0f}m:{ss:.3f}s".ljust(70, ' '))
+            n = len(to_update)
+            j = 0
+            for i, filepath in enumerate(to_update, 1):
+                fname = os.path.split(filepath)[1]
+                ticker = os.path.splitext(fname)[0]
+                try:
+                    if f == '1d':
+                        df = si.get_data(ticker)
+                    else:
+                        df = yf.download(ticker, start=start, end=end, interval=f, progress=False)
+                    if not df.empty:
+                        df.to_csv(filepath)
+                    t_end = time.time()
+                    mm, ss = divmod(t_end - t_start, 60)
+                    print(f"\r{mm:.0f}m:{ss:.0f}s {i}/{n} ({i / n:.2%})" \
+                            f" of {f} SPY market data downloaded".ljust(70, ' '),
+                            end='', flush=True)
+                except Exception as e:
+                    j += 1
+                    t_end = time.time()
+                    mm, ss = divmod(t_end - t_start, 60)
+                    print(f'\r{mm:.0f}m:{ss:.0f}s {j}/{n}: {ticker} - {e}',
+                            end='', flush=True) 
+    
+    t_end = time.time()
+    mm, ss = divmod(t_end - t_start, 60)
+    print(f'\nRedownloaded in {mm:.0f}m:{ss:.0f}s') 
 
 if __name__ == "__main__":           
-    get_SPY_companies()
-    get_SPY_weights()
-    get_risk_free_rates()
-    get_factor_model_data()
-    get_market_data()
+    # get_SPY_companies()
+    # get_SPY_weights()
+    # get_risk_free_rates()
+    # get_factor_model_data()
     get_interval_market_data()
-    save_TTM_financial_ratios()
-    get_financial_ratios()
-    get_financial_statements()
+    # save_TTM_financial_ratios()
+    # get_financial_ratios()
+    # get_financial_statements()
     get_tickers_info()
-    redownload_market_data()
+    # redownload_market_data()
     
-    end = time.time()
-    mm, ss = divmod(end - start, 60)
+    f_end = time.time()
+    mm, ss = divmod(f_end - f_start, 60)
     winsound.Beep(440, 500)
-    print(f'\n Done in {mm:.0f}m:{ss:.0f}s \n')
+    print(f'\nDone in {mm:.0f}m:{ss:.0f}s!!!\n')

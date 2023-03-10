@@ -24,7 +24,7 @@ def get_rf_data():
 def get_SPY_info():
     '''Returns DataFrame of info about S&P 500 companies'''
     
-    df = pd.read_csv('data/spy_data/SPY_Info.csv', index_col=0)
+    df = pd.read_csv('data/market_data/spy_data/SPY_Info.csv', index_col=0)
     cols = {'GICS Sector': 'Sector', 'GICS Sub-Industry': 'Sub-Industry'}
     df.rename(columns=cols, inplace=True)
 
@@ -35,7 +35,7 @@ def get_SPY_info():
 def get_SPY_data():
     '''Returns DataFrame of S&P 500 market data'''
 
-    df = pd.read_csv('data/spy_data/SPY.csv') # , index_col=0, parse_dates=True
+    df = pd.read_csv('data/market_data/spy_data/SPY.csv') # , index_col=0, parse_dates=True
     df.index = pd.to_datetime(df['Date'].apply(lambda x: x.split(' ')[0]))
     df.drop(columns='Date', inplace=True)
 
@@ -97,7 +97,7 @@ def resample_data(ticker, interval):
 
 @st.cache
 def get_ticker_info():
-    fname = 'data/spy_data/spy_tickers_info.pickle'
+    fname = 'data/market_data/spy_data/spy_tickers_info.pickle'
 
     with open(fname, 'rb') as f:
         info = pickle.load(f)
@@ -179,7 +179,7 @@ def load_TTM_ratios():
 def get_weights():
     '''Assign market cap weights by sector, sub-industry & ticker'''
     
-    weights_df = pd.read_csv('data/spy_data/SPY_Weights.csv', index_col='Symbol')
+    weights_df = pd.read_csv('data/market_data/spy_data/SPY_Weights.csv', index_col='Symbol')
     sectors, subIndustries, tickers = {}, {}, {}
 
     for sector in sector_list:
@@ -766,6 +766,29 @@ def get_financial_statements():
         d = pickle.load(f)
     
     return d
+
+
+def previous_current_next(iterable):
+    """
+    Make an iterator that yields an (previous, current, next) tuple per element.
+    Returns None if the value does not make sense (i.e. previous before
+    first and next after last).
+    """
+    iterable = iter(iterable)
+    prv = None
+    cur = next(iterable)
+    try:
+        while True:
+            nxt = next(iterable)
+            yield (prv, cur, nxt)
+            prv = cur
+            cur = nxt
+    except StopIteration:
+        yield (prv, cur, None)
+
+
+def prev_next_button(option, prv, nxt):
+    return nxt if option == 'next' else prv
 
 
 rf_rates = get_rf_data()

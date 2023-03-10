@@ -379,7 +379,7 @@ def sr_levels(df):
 
 
 @st.cache
-def fibonacci_levels(df):
+def fibonacci_retracements(df):
     highest_swing = -1
     lowest_swing = -1
     high = df['High']
@@ -442,9 +442,9 @@ def peaks_valleys_trendlines(df):
     trendlines_hl = []
     i, j = 0, 1
     cnt = 0
-    print(f'nPeaks: {len(peaks)}, nValleys: {len(valleys)}, nPV: {len(PV)}' \
-          f'\nfirst peak, valley: {peaks[0], valleys[0]}' \
-          f'\nlast peak, valley: {peaks[-1], valleys[-1]}\n')
+    # print(f'nPeaks: {len(peaks)}, nValleys: {len(valleys)}, nPV: {len(PV)}' \
+    #       f'\nfirst peak, valley: {peaks[0], valleys[0]}' \
+    #       f'\nlast peak, valley: {peaks[-1], valleys[-1]}\n')
     
     while j < len(PV):
         col = first if not cnt % 2 else second
@@ -505,11 +505,11 @@ def peaks_valleys_trendlines(df):
             # print(f'Updated: \nLast {first} is {close[f_ix_pos]:.2f} on {f_ix.date()} iloc[{f_ix_pos}]\n' \
             #     f'Last {second} is {close[s_ix_pos]:.2f} on {s_ix.date()} iloc[{s_ix_pos}]\n')
     
-    first_vals.intersection_update(set(valid_PV[::2]))
-    second_vals.intersection_update(set(valid_PV[1::2]))
+    first_vals &= (set(valid_PV[::2]))
+    second_vals &= (set(valid_PV[1::2]))
     first_vals = sorted(list(first_vals))
     second_vals = sorted(list(second_vals))
-    print(f'n{first}: {len(first_vals)}, n{second}: {len(second_vals)}\n')
+    # print(f'n{first}: {len(first_vals)}, n{second}: {len(second_vals)}\n')
     n = len(min(first_vals, second_vals, key=len))
     
     # Identify trends
@@ -666,7 +666,8 @@ def get_trend_aligned_stocks(periods_data, periods, end_date):
 @st.cache(allow_output_mutation=True)
 def plot_trends(graph, ticker, start, end, period, plot_data,
                 show_vol, show_rsi, show_macd, show_sr, show_fr, 
-                show_bb, show_MAs, show_adv_MAs, show_trends_c, show_trends_hl):
+                show_bb, show_MAs, show_adv_MAs, show_trends_c, 
+                show_trends_hl):
     '''
     Returns plot figure
 
@@ -773,7 +774,7 @@ def plot_trends(graph, ticker, start, end, period, plot_data,
     ## PUT SECONDARY Y-AXIS OF FR LEVELS
     if show_fr:
         colors = ["darkgray", "indianred", "green", "blue", "cyan", "magenta", "gold"]
-        ratios, levels = fibonacci_levels(df)
+        ratios, levels = fibonacci_retracements(df)
         for i in range(len(ratios)):
             fig.add_scatter(x=df.index,
                             y=[levels[i]] * df.shape[0],
@@ -800,23 +801,21 @@ def plot_trends(graph, ticker, start, end, period, plot_data,
     # Trendlines
     if show_trends_c or show_trends_hl:
         pv_df, peaks, valleys, PV, trendlines_c, trendlines_hl = peaks_valleys_trendlines(df)
-        fig.add_scatter(x=df.Close[peaks].index,
-                        y=df.Close[peaks],
-                        name='Peaks',
-                        mode='markers',
-                        marker=dict(symbol='x', color='yellow'), 
-                        opacity=0.5)
-        fig.add_scatter(x=df.Close[valleys].index,
-                        y=df.Close[valleys],
-                        name='Valleys',
-                        mode='markers',
-                        marker=dict(symbol='x', color='red'), 
-                        opacity=0.5)
+        # fig.add_scatter(x=df.Close[peaks].index,
+        #                 y=df.Close[peaks],
+        #                 name='Peaks',
+        #                 mode='markers',
+        #                 marker=dict(symbol='x', color='yellow', size=5))
+        # fig.add_scatter(x=df.Close[valleys].index,
+        #                 y=df.Close[valleys],
+        #                 name='Valleys',
+        #                 mode='markers',
+        #                 marker=dict(symbol='x', color='red', size=5))
         fig.add_scatter(x=df.Close[PV].index,
                         y=df.Close[PV],
-                        name='Valid Peaks_Valleys',
+                        name='Valid Peaks / Valleys',
                         mode='markers',
-                        marker=dict(symbol='circle-open', color='lightgreen', size=10))
+                        marker=dict(symbol='x', color='yellow', size=5))
         if show_trends_c:      
             for x, y in trendlines_c:
                 fig.add_scatter(x=x,
