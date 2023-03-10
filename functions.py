@@ -46,8 +46,8 @@ def get_SPY_data():
 def get_ticker_data(ticker):
     '''Load ticker's market data'''
     
-    file = os.path.join('data/market_data/1d', f'{ticker}.csv')
-    df = pd.read_csv(file, index_col=0, parse_dates=True)
+    fname = os.path.join('data/market_data/1d', f'{ticker}.csv')
+    df = pd.read_csv(fname, index_col=0, parse_dates=True)
     df.rename(columns={'adjclose': 'adj close'}, inplace=True)
     df.drop(columns='ticker', inplace=True)
     df.columns = df.columns.str.title()
@@ -58,6 +58,11 @@ def get_ticker_data(ticker):
 @st.cache
 def resample_data(ticker, interval):
     '''Load ticker's market data'''
+
+    fpath = f'data/market_data/spy_data/{folder}'
+    fname = os.listdir((fpath))[-1]
+    fname = os.path.join(fpath, f'{fname}.csv')
+    df = pd.read_csv(fname)    
         
     if interval.endswith('m'):
         fmt = ':00-0'
@@ -68,9 +73,9 @@ def resample_data(ticker, interval):
         fmt = ' '
         folder = '1d'
         freq = 'W-FRI' if interval == 'Weekly' else 'BM'
-
-    file = os.path.join(f'data/market_data/{folder}', f'{ticker}.csv')
-    df = pd.read_csv(file)
+        
+    fname = os.path.join(f'data/market_data/{folder}', f'{ticker}.csv')
+    df = pd.read_csv(fname)
     col = df.columns[0]
     df.index = pd.to_datetime(df[col].apply(lambda x: x.split(fmt)[0]))
     df.drop(columns=col, inplace=True)
@@ -157,19 +162,19 @@ def load_TTM_ratios():
 
     tz = timezone('EST')
     cdate = dt.now(tz)  # Set datetime object to EST timezone
-    file = cdate.strftime('%d-%m-%Y') + '.pickle'
+    fname = cdate.strftime('%d-%m-%Y') + '.pickle'
     path = 'data/financial_ratios/Current'
     
-    if file in os.listdir(path):
+    if fname in os.listdir(path):
         s = "The data reported is today's."
     else:
         dates = sorted([dt.strptime(os.path.splitext(x)[0], '%d-%m-%Y')
                         for x in os.listdir(path)])
         date = dt.strftime(dates[-1], '%B %d, %Y')
-        file = dt.strftime(dates[-1], '%d-%m-%Y') + '.pickle'
+        fname = dt.strftime(dates[-1], '%d-%m-%Y') + '.pickle'
         s = f'Data as of {date}'
 
-    with open(os.path.join(path, file), 'rb') as f:
+    with open(os.path.join(path, fname), 'rb') as f:
         d = pickle.load(f)
     
     return d, s
@@ -760,9 +765,9 @@ def get_news(ticker, date):
 def get_financial_statements():
     '''Load dict of available financial statements of S&P 500 stocks'''
 
-    file = 'data/financial_statements/financial_statements.pickle'
+    fname = 'data/financial_statements/financial_statements.pickle'
 
-    with open(file, 'rb') as f:
+    with open(fname, 'rb') as f:
         d = pickle.load(f)
     
     return d

@@ -92,7 +92,7 @@ def get_SPY_weights():
     print('S&P 500 weights updated \n')
 
     
-def get_interval_market_data(intervals=['5m'], path=r'data\market_data'):
+def get_interval_market_data(intervals=['1d', '1m', '5m'], path=r'data\market_data'):
     t_start = time.time()
     tickers = get_tickers()
     end = dt.now()
@@ -193,9 +193,9 @@ def ratios_to_update():
     f = 'data/financial_ratios/Annual'
 
     for ticker in tickers:
-        file = ticker + '.csv'   
-        if file in os.listdir(f):
-            df = pd.read_csv(os.path.join(f, file))
+        fname = ticker + '.csv'   
+        if fname in os.listdir(f):
+            df = pd.read_csv(os.path.join(f, fname))
             if str(dt.now().year - 1) != df.columns[1]:
                 not_current.append(ticker)
             if df.empty:
@@ -315,7 +315,7 @@ def save_TTM_financial_ratios():
     elif date.hour < 16:
         date -= timedelta(1)
         
-    file = date.strftime('%d-%m-%Y') + '.pickle'
+    fname = date.strftime('%d-%m-%Y') + '.pickle'
     path = r'data\financial_ratios\Current'
     d = get_TTM_financial_ratios()
     nd = len(d)
@@ -323,9 +323,9 @@ def save_TTM_financial_ratios():
     ntickers = len(tickers)
 
     if nd == ntickers:
-        with open(os.path.join(path, file), 'wb') as f:
+        with open(os.path.join(path, fname), 'wb') as f:
             pickle.dump(d, f)
-        print(file, 'saved\n')
+        print(fname, 'saved\n')
     else:
         print(f'{ntickers - nd}/{ntickers} ratios not downloaded\n')
 
@@ -432,14 +432,14 @@ def redownload_market_data(path = r'data\market_data'):
         to_update = []
         if f != 'spy_data':
             start = end - timedelta(7) if f == '1m' else end - timedelta(60)
-            for file in files:
-                file = os.path.join(fpath, file)
-                ti_m = os.path.getmtime(file)
+            for fname in files:
+                fname = os.path.join(fpath, fname)
+                ti_m = os.path.getmtime(fname)
                 date = dt.fromtimestamp(ti_m)
                 delta1 = dt.now() - date
                 delta2 = end - date
                 if delta1.days > 0 and delta2.days > 0:
-                    to_update.append(file)
+                    to_update.append(fname)
                     t_end = time.time()
                     mm, ss = divmod(t_end - t_start, 60)
                     print(f"\r{f} scanned in {mm:.0f}m:{ss:.3f}s".ljust(70, ' '))
