@@ -114,7 +114,7 @@ def get_interval_market_data(intervals=['1d', '1m', '5m'], path=r'data\market_da
         else:
             df = yf.download('^GSPC', start=start, end=end, interval=interval, progress=False)
         if not df.empty:
-            fname = os.path.join(spy_path, f'SPY{f_date}.csv')
+            fname = os.path.join(spy_path, f'SPY_{f_date}.csv')
             df.to_csv(fname)
         for i, ticker in enumerate(tickers, 1):
             try:
