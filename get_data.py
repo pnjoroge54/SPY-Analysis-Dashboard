@@ -367,6 +367,7 @@ def get_factor_model_data():
 
 
 def get_financial_statements():
+    t_start = time.time()
     tickers = get_tickers()
     n = len(tickers)
     path = r'data\financial_statements'
@@ -418,7 +419,9 @@ def get_financial_statements():
             except Exception as e:
                 print(f'\r{i}/{n}: {ticker} - {e}'.ljust(70, ' '))
         
-        print(f"\r{mm:.0f}m:{ss:.0f}s {i}/{n} ({i / n:.2%}) {s} statements downloaded", end='', flush=True)
+        t_end = time.time()
+        mm, ss = divmod(t_end - t_start, 60)
+        print(f"\r{mm:.0f}m:{ss:.0f}s {i}/{n} ({i / n:.2%}) statements downloaded", end='', flush=True)
 
     with open(dict_file, 'wb') as f:
         pickle.dump(statements, f)
@@ -447,7 +450,7 @@ def redownload_market_data(path = r'data\market_data'):
         files += list(missing_files)
         to_update = []
         if f != 'spy_data':
-            start = end - timedelta(7 - days) if interval == '1m' else end - timedelta(60 - days)
+            start = end - timedelta(7 - days) if f == '1m' else end - timedelta(60 - days)
             f_end = end - timedelta(1)
             for fname in files:
                 fname = os.path.join(fpath, fname)
@@ -495,12 +498,12 @@ if __name__ == "__main__":
     # get_SPY_weights()
     # get_risk_free_rates()
     # get_factor_model_data()
-    get_interval_market_data()
+    # get_interval_market_data()
     # save_TTM_financial_ratios()
     # get_financial_ratios()
     # get_financial_statements()
     # get_tickers_info()
-    # redownload_market_data()
+    redownload_market_data()
     
     f_end = time.time()
     mm, ss = divmod(f_end - f_start, 60)
