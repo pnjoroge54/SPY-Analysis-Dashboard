@@ -35,7 +35,7 @@ def get_SPY_info():
 def get_SPY_data():
     '''Returns DataFrame of S&P 500 market data'''
 
-    df = pd.read_csv('data/market_data/spy_data/SPY.csv') # , index_col=0, parse_dates=True
+    df = pd.read_csv('data/market_data/spy_data/1d/SPY.csv') # , index_col=0, parse_dates=True
     df.index = pd.to_datetime(df['Date'].apply(lambda x: x.split(' ')[0]))
     df.drop(columns='Date', inplace=True)
 
@@ -59,10 +59,7 @@ def get_ticker_data(ticker):
 def resample_data(ticker, interval):
     '''Load ticker's market data'''
 
-    fpath = f'data/market_data/spy_data/{folder}'
-    fname = os.listdir((fpath))[-1]
-    fname = os.path.join(fpath, f'{fname}.csv')
-    df = pd.read_csv(fname)    
+    path = 'data/market_data'  
         
     if interval.endswith('m'):
         fmt = ':00-0'
@@ -72,9 +69,14 @@ def resample_data(ticker, interval):
     else:
         fmt = ' '
         folder = '1d'
-        freq = 'W-FRI' if interval == 'Weekly' else 'BM'
-        
-    fname = os.path.join(f'data/market_data/{folder}', f'{ticker}.csv')
+        freq = 'W-FRI' if interval == '1wk' else 'BM'
+    
+    if ticker == '^GSPC':
+        fpath = os.path.join(path, 'spy_data', folder)
+        fname = os.path.join(fpath, os.listdir(fpath)[-1])
+    else:
+        fname = os.path.join(path, folder, f'{ticker}.csv')
+
     df = pd.read_csv(fname)
     col = df.columns[0]
     df.index = pd.to_datetime(df[col].apply(lambda x: x.split(fmt)[0]))
@@ -99,7 +101,6 @@ def resample_data(ticker, interval):
     return df
 
 
-
 @st.cache
 def get_ticker_info():
     fname = 'data/market_data/spy_data/spy_tickers_info.pickle'
@@ -108,6 +109,16 @@ def get_ticker_info():
         info = pickle.load(f)
 
     return info
+
+
+def ticker_index(ticker, lst):
+    try:
+        res = lst.index(ticker)
+    except Exception as e:
+        print('ticker_index', e)
+        res = 0
+    
+    return res
 
 
 @st.cache
@@ -779,9 +790,11 @@ def previous_current_next(iterable):
     Returns None if the value does not make sense (i.e. previous before
     first and next after last).
     """
+    
     iterable = iter(iterable)
     prv = None
     cur = next(iterable)
+
     try:
         while True:
             nxt = next(iterable)

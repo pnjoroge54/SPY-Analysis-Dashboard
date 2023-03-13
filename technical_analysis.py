@@ -333,8 +333,10 @@ def sr_levels(df):
 
     # Calculate significance of levels       
     d = {'SR Level': [], 'Volume': [], 'Timedelta': [], 'Tested': [], 'Date': []}
-    del sr_data[0]    
-    
+
+    try: del sr_data[0]    
+    except: pass
+
     for k, v in sr_data.items():
         d['SR Level'].append(k)
         d['Volume'].append(sum(v['Volume']))
@@ -468,13 +470,13 @@ def peaks_valleys_trendlines(df):
                 i = j - 1
         elif j < len(PV):
             # print(f'Skip {o_col} {close[PV[j]]:.2f} on {ix.date()}')
-            df.loc[ix, f'is{o_col}'] = 0
+            # df.loc[ix, f'is{o_col}'] = 0
             if len(dist) > 1:
                 dist.pop()
             if len(valid_PV) > 1:
                 invalid = valid_PV.pop()
                 ix = df.index[invalid]
-                df.loc[ix, f'is{col}'] = 0
+                # df.loc[ix, f'is{col}'] = 0
                 # print(f'Remove {col} {close[invalid]:.2f} on {ix.date()}') 
             i = PV.index(valid_PV[-1])
             j += 1
@@ -505,8 +507,8 @@ def peaks_valleys_trendlines(df):
             # print(f'Updated: \nLast {first} is {close[f_ix_pos]:.2f} on {f_ix.date()} iloc[{f_ix_pos}]\n' \
             #     f'Last {second} is {close[s_ix_pos]:.2f} on {s_ix.date()} iloc[{s_ix_pos}]\n')
     
-    first_vals &= (set(valid_PV[::2]))
-    second_vals &= (set(valid_PV[1::2]))
+    first_vals.intersection_update(valid_PV[::2])
+    second_vals.intersection_update(valid_PV[1::2])
     first_vals = sorted(list(first_vals))
     second_vals = sorted(list(second_vals))
     # print(f'n{first}: {len(first_vals)}, n{second}: {len(second_vals)}\n')
@@ -601,25 +603,12 @@ def peaks_valleys_trendlines(df):
 
 
 @st.cache
-def calculate_signals(ticker, start, end, period, MAs):
-    if period != 'Daily':
-        if period.endswith('m'):
-            end += timedelta(1)
-        df = resample_data(ticker, period)[start:end]
+def calculate_signals(ticker, period, MAs):
+    if period == '1d':
+        df = get_ticker_data(ticker).copy()
     else:
-        df = get_ticker_data(ticker)[start:end]
+        df = resample_data(ticker, period)
 
-    df = df.copy()
-    # df.drop(columns='Adj Close', inplace=True)
-
-    # Calculate moving averages (MAs)
-    for ma in MAs:
-        df[f'MA{ma}'] = df['Close'].rolling(ma).mean()
-        df[f'Adv MA{ma}'] = df[f'MA{ma}'].shift(int(ma**(1/2)))
-        # df[f'MA{ma} Peak-and-Trough Reversal'] = 0
-        # peaks, _ = find_peaks(df['Close'], height=0)
-        # troughs, _ = find_peaks(df['Close'] * -1, height=0)
-    
     return df
 
 
@@ -628,10 +617,15 @@ def get_trending_stocks(start, end, period, MAs):
     up = []
     down = []
     minor_ma, secondary_ma, primary_ma, *_ = MAs
-
+    end = end + timedelta(1) if period.endswith('m') else end
+    
     for ticker in ticker_list:
         try:
-            df = calculate_signals(ticker, start, end, period, MAs)
+            df = calculate_signals(ticker, period, MAs)[start:end]
+            # Calculate moving averages (MAs)
+            for ma in MAs:
+                df[f'MA{ma}'] = df['Close'].rolling(ma).mean()
+                df[f'Adv MA{ma}'] = df[f'MA{ma}'].shift(int(ma**(1/2)))
             minor = df[f'MA{minor_ma}'][-1]
             secondary = df[f'MA{secondary_ma}'][-1]
             primary = df[f'MA{primary_ma}'][-1]
@@ -646,13 +640,13 @@ def get_trending_stocks(start, end, period, MAs):
 
 
 @st.cache
-def get_trend_aligned_stocks(periods_data, periods, end_date):
+def get_trend_aligned_stocks(periods_data, periods, end):
     for i, period in enumerate(periods):
         period_d = periods_data[period]
         days = period_d['days']
-        start = end_date - timedelta(days)
         MAs = period_d['MA']
-        up, down = get_trending_stocks(start, end_date, period, MAs)
+        start = end - timedelta(days)
+        up, down = get_trending_stocks(start, end, period, MAs)
         if i == 0:
             up_aligned = set(up)
             down_aligned = set(down)
@@ -683,11 +677,10 @@ def plot_trends(graph, ticker, start, end, period, plot_data,
     show_prices: display candlestick data on crowded charts
     '''
 
+    ticker = ticker.split(' - ')[0]
     MAs = plot_data['MAs']
-    df = calculate_signals(ticker, start, end, period, MAs)
-    cname = SPY_info_df.loc[ticker, 'Security']
+    df = calculate_signals(ticker, period, MAs)[start:end]
     nrows = 1 + show_vol + show_rsi + show_macd
-    titles = [f'{cname} - {period} Chart'] + [''] * nrows
     r1 = 1 - 0.1 * nrows
     r2 = (1 - r1) / (nrows - 1)
     row_heights = [r1] + [r2] * (nrows - 1)
@@ -697,7 +690,7 @@ def plot_trends(graph, ticker, start, end, period, plot_data,
     fig = make_subplots(rows=nrows, cols=1,
                         shared_xaxes=True, 
                         vertical_spacing=0.05,
-                        subplot_titles=titles, 
+                        subplot_titles=[''] * nrows, 
                         row_heights=row_heights)
     fig.update_xaxes(showgrid=True)          
     fig.update_yaxes(showgrid=False, type='log')
@@ -725,16 +718,10 @@ def plot_trends(graph, ticker, start, end, period, plot_data,
     if show_MAs or show_adv_MAs:
         adv_MAs = plot_data['Adv MAs']
         colors = ['red', 'cyan', 'gold']
-        if show_MAs and show_adv_MAs:
-            dash = 'dot'
-        else:
-            dash = 'solid'
+        dash = 'dot' if show_MAs and show_adv_MAs else 'solid'
         for ma, adv_ma, color in zip(MAs, adv_MAs, colors): 
             if show_MAs:
-                if f'MA{ma}' in df.columns:
-                    y = df[f'MA{ma}']
-                else:
-                    y = df['Close'].rolling(ma).mean()
+                y = df['Close'].rolling(ma).mean()
                 sma = go.Scatter(x=df.index,
                                  y=y,
                                  name=f'MA{ma}',
@@ -801,21 +788,21 @@ def plot_trends(graph, ticker, start, end, period, plot_data,
     # Trendlines
     if show_trends_c or show_trends_hl:
         pv_df, peaks, valleys, PV, trendlines_c, trendlines_hl = peaks_valleys_trendlines(df)
-        # fig.add_scatter(x=df.Close[peaks].index,
-        #                 y=df.Close[peaks],
-        #                 name='Peaks',
-        #                 mode='markers',
-        #                 marker=dict(symbol='x', color='yellow', size=5))
-        # fig.add_scatter(x=df.Close[valleys].index,
-        #                 y=df.Close[valleys],
-        #                 name='Valleys',
-        #                 mode='markers',
-        #                 marker=dict(symbol='x', color='red', size=5))
+        fig.add_scatter(x=df.Close[peaks].index,
+                        y=df.Close[peaks],
+                        name='Peaks',
+                        mode='markers',
+                        marker=dict(symbol='x', color='yellow', size=5))
+        fig.add_scatter(x=df.Close[valleys].index,
+                        y=df.Close[valleys],
+                        name='Valleys',
+                        mode='markers',
+                        marker=dict(symbol='x', color='red', size=5))
         fig.add_scatter(x=df.Close[PV].index,
                         y=df.Close[PV],
                         name='Valid Peaks / Valleys',
                         mode='markers',
-                        marker=dict(symbol='x', color='yellow', size=5))
+                        marker=dict(symbol='circle-open', color='limegreen', size=8))
         if show_trends_c:      
             for x, y in trendlines_c:
                 fig.add_scatter(x=x,
@@ -875,17 +862,33 @@ def plot_trends(graph, ticker, start, end, period, plot_data,
     
     us_holidays = pd.to_datetime(list(holidays.US(range(start.year, end.year + 1)).keys()))
 
-    if period == 'Daily':
-        rangebreaks = [dict(bounds=["sat", "mon"]), dict(values=us_holidays)]
-        fig.update_xaxes(rangebreaks=rangebreaks)
-
-    if period.endswith('m'):
+    if period == '1d':
+        rangebreaks = [dict(bounds=["sat", "mon"])]
+    elif period.endswith('m'):
         us_holidays += pd.offsets.Hour(9) + pd.offsets.Minute(30)
         rangebreaks = [dict(bounds=[16, 9.5], pattern="hour"), 
-                       dict(bounds=["sat", "mon"]), 
-                       dict(values=us_holidays)]
+                       dict(bounds=["sat", "mon"])]
+        
+    
+    if period == '1wk':
+        rangeselector = dict(buttons=[
+                                dict(count=1, label="YTD", step="year", stepmode="todate"),
+                                dict(count=6, label="6m", step="month", stepmode="backward"),
+                                dict(count=1, label="1y", step="year", stepmode="backward"),
+                                dict(count=2, label="2y", step="year", stepmode="backward"),
+                                dict(count=3, label="3y", step="year", stepmode="backward"),
+                                dict(step="all")
+                                ]
+                            )
+        fig.update_layout(xaxis1=dict(rangeselector=rangeselector))
+    else:
+        rangebreaks.append(dict(values=us_holidays))
         fig.update_xaxes(rangebreaks=rangebreaks)
     
+    cname = SPY_info_df.loc[ticker, 'Security']
+    title = f'{cname} - {period} Chart'
+
+    fig.update_layout(title=dict(text=title, xanchor='left'))
     fig.layout.xaxis.rangeslider.visible = False
 
     return fig

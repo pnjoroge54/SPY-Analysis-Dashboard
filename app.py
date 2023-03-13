@@ -365,62 +365,41 @@ if option == 'News':
 
 
 if option == 'Technical Analysis':
-    def ticker_index(ticker, lst):
-        try:
-            res = lst.index(ticker)
-        except Exception as e:
-            print(e)
-            res = 0
-        return res
+    st.subheader('Data Selection')
+    c1, c2 = st.columns(2)
+    setup = c1.selectbox('Trader Setup', ('Investor', 'Swing Trader', 'Day Trader'))
+    data = c2.radio('Stocks', ('All', 'Trend-Aligned', 'Trending'), horizontal=True)
+    
+    if setup == 'Investor':
+        periods = ['1wk', '1d', '30m']
+    elif setup == 'Swing Trader':
+        periods = ['1d', '30m', '10m']
+    else:
+        periods = ['30m', '10m', '5m', '1m']
 
-    tab1, tab2, tab3 = st.tabs(('Data Selection', 'Chart Setup', 'Chart View'))
+    period = periods[0]
+    period_d = TA_PERIODS[period]
+    MAs = period_d['MA']
+    days = period_d['days']
+    end = last_date
+    start = last_date - timedelta(days)
 
-    with tab1:
-        c1, c2 = st.columns(2)
-        setup = c1.selectbox('Trader Setup', ('Investor', 'Swing Trader', 'Day Trader'))
-        
-        if setup == 'Investor':
-            periods = ('Weekly', 'Daily', '30m')
-        elif setup == 'Swing Trader':
-            periods = ('Daily', '30m', '10m')
-        else:
-            periods = ('30m', '10m', '5m', '1m')
-
-        period = c2.radio('Timeframe', periods, horizontal=True)
-
-        period_d = TA_PERIODS[period]
-        MAs = period_d['MA']
-        minor_ma, secondary_ma, primary_ma, *_ = MAs
-        plot_MAs = [minor_ma, secondary_ma, primary_ma]
-        plot_data = {'MAs': plot_MAs, 'Adv MAs': [int(ma**(1/2)) for ma in plot_MAs]}
-        days = period_d['days']
-        start = last_date - timedelta(days)
-
-        c1, c2 = st.columns(2)
-        start = c1.date_input('Start Date', value=start, min_value=first_date, max_value=last_date)
-        end = c2.date_input('End Date', value=last_date, min_value=first_date, max_value=last_date)
-        
-        c1, c2 = st.columns(2)
-        data = c1.radio('Stocks', ('Trend-Aligned', 'Trending', 'All'), horizontal=True)
-
+    with st.expander('Options'):
         if data != 'All':
-            trend = c2.radio('Trend', ('Up', 'Down'), horizontal=True)
+            c1, c2 = st.columns(2)
+            trend = c1.radio('Trend', ('Up', 'Down'), horizontal=True)
             if data == 'Trending':
+                period = c2.radio('Timeframe', periods, horizontal=True, key='period1')
                 up_tickers, down_tickers = get_trending_stocks(start, end, period, MAs)
-                if trend == 'Up':
-                    tickers = up_tickers
-                else:
-                    tickers = down_tickers
+                tickers = up_tickers if trend == 'Up' else down_tickers
             else:
+                end = c2.date_input('End Date', value=last_date, min_value=first_date, 
+                                    max_value=last_date, key='end_date1')
                 up_aligned, down_aligned = get_trend_aligned_stocks(TA_PERIODS, periods, end)
-                if trend == 'Up':
-                    tickers = up_aligned
-                else:
-                    tickers = down_aligned        
+                tickers = up_aligned if trend == 'Up' else down_aligned        
         else:
-            c2.empty()
             tickers = ticker_list
-        
+               
         c1, c2, c3 = st.columns(3)
         sectors = ['-' * 30]
         sectors += SPY_info_df.loc[tickers, 'Sector'].unique().tolist()
@@ -446,24 +425,29 @@ if option == 'Technical Analysis':
         ticker_lbl = 'Ticker - Security' 
         names = SPY_info_df.loc[tickers, 'Security'].to_list()
         tickers = sorted([f'{ticker} - {name}' for ticker, name in zip(tickers, names)])
-        ticker_ix = st.session_state.setdefault('ticker_ix', 0)
-        print(f'({ticker_ix})')
-        ticker = c3.selectbox(ticker_lbl, tickers, help=text, key='ticker1', index=ticker_ix)
-        st.session_state.ticker_ix = ticker_index(ticker, tickers)
-
-
-    with tab2:
-        # st.subheader('Chart Setup')
+        ticker = c3.selectbox(ticker_lbl, tickers, help=text)
+        # ticker_ix = ticker_index(ticker, tickers)
+        # st.session_state['ticker_ix'] = ticker_ix
+    
+    if tickers:
+        st.subheader('Chart Setup')
         graph = st.radio('Price Display', ('Candlesticks', 'Line'), horizontal=True)
-        tab1, tab2 = st.tabs(('Patterns', 'Subplots'))
+
+        with st.expander('Options'):
+            tab1, tab2, tab3 = st.tabs(('Subplots', 'Signals', 'Timeframe'))
 
         with tab1:
+            show_vol = st.checkbox('Volume', True)
+            show_rsi = st.checkbox('Relative Strength Index (RSI)')
+            show_macd = st.checkbox('Moving Average Convergence Divergence (MACD)')
+
+        with tab2:
             c1, c2 = st.columns(2)
             show_sr = c1.checkbox('Support / Resistance (SR)', True)
             show_fr = c1.checkbox('Fibonacci Retracements (FR)')
             show_bb = c1.checkbox('Bollinger Bands (BB)')
-            show_trends_c = c2.checkbox('Trendlines (Close)')
-            show_trends_hl = c2.checkbox('Trendlines (High-Low)')
+            show_trends_c = c1.checkbox('Trendlines (Close)')
+            show_trends_hl = c1.checkbox('Trendlines (High-Low)')
             show_MAs = c2.checkbox('Moving Averages (MA)')
             show_adv_MAs = c2.checkbox('Advanced MAs')
             placeholder = c2.empty()
@@ -485,54 +469,57 @@ if option == 'Technical Analysis':
                         primary_adv_ma = c3.number_input(f'Advance MA{primary_ma}', value=advanced_MAs[2])
                         plot_adv_MAs = [minor_adv_ma, secondary_adv_ma, primary_adv_ma]
                         plot_data['Adv MAs'] = plot_adv_MAs
-
-        with tab2:
-            show_vol = st.checkbox('Volume', True)
-            show_rsi = st.checkbox('Relative Strength Index (RSI)')
-            show_macd = st.checkbox('Moving Average Convergence Divergence (MACD)')
-    
-    with tab3:
-        st.write(f'{data} Stocks')
-        c1, c2 = st.columns(2)
-        print((f'ticker_ix: {ticker_ix}'))
-        ticker = c1.selectbox(ticker_lbl, tickers, help=text, key='ticker2', index=ticker_ix)
-        period = c2.radio('Timeframe', periods, horizontal=True, key='chart_period')
-        c1, c2 = st.columns(2)
-
-        p_disabled = True if ticker_ix < 1 else False
-        n_disabled = True if ticker_ix >= len(tickers) - 2 else False
         
-        prv_btn = c1.button('Prev', disabled=p_disabled)
-        nxt_btn = c2.button('Next', disabled=n_disabled)
-        prv, cur, nxt = list(previous_current_next(tickers))[ticker_ix] 
-        if prv_btn:
-            ticker = prv
-            ticker_ix -= 1
-        elif nxt_btn:
-            ticker = nxt
-            ticker_ix += 1
+        with tab3:
+            periods = ['1wk', '1d', '30m', '10m', '5m', '1m']
+            if setup == 'Investor':
+                index = 0
+            elif setup == 'Swing Trader':
+                index = 1
+            else:
+                index = 2
+
+            period = st.radio('Timeframe', periods, index=index, horizontal=True, key='periods2')
+            period_d = TA_PERIODS[period]
+            MAs = period_d['MA']
+            days = period_d['days']
+            start = last_date - timedelta(days)
+            minor_ma, secondary_ma, primary_ma, *_ = MAs
+            plot_MAs = [minor_ma, secondary_ma, primary_ma]
+            plot_data = {'MAs': plot_MAs,
+                        'Adv MAs': [int(ma**(1/2)) for ma in plot_MAs]}
+
+            c1, c2 = st.columns(2)
+            start = c1.date_input('Start Date', value=start, min_value=first_date, max_value=last_date)
+            end = c2.date_input('End Date', value=last_date, min_value=first_date, max_value=last_date,
+                                key='end_date2')
+
+        # ticker_ix = st.session_state.ticker_ix
+        # prv, cur, nxt = list(previous_current_next(tickers))[ticker_ix]
+        # print(f'a. {ticker_ix}: {ticker}')
+        # n = len(tickers) - 1
         
+        # c1, c2 = st.columns(2)
+        # prv_btn = c1.button('Prev')
+        # nxt_btn = c2.button('Next')
+
+        # if prv_btn:
+        #     ticker = prv
+        # elif nxt_btn:
+        #     ticker = nxt
+
         # ticker_ix = ticker_index(ticker, tickers)
-        st.session_state.ticker_ix = ticker_ix
-        # if tickers and ticker:
-        #     ticker = ticker.split(' - ')[0]
-        #     fig = plot_trends(graph, ticker, start, end, period, plot_data,
-        #                     show_vol, show_rsi, show_macd, show_sr, show_fr, show_bb,
-        #                     show_MAs, show_adv_MAs, show_trends_c, show_trends_hl)
-            
-        #     st.plotly_chart(fig)
-
-        print(f'prv_btn: {prv_btn} nxt_btn: {nxt_btn}')
-        print((f'ticker_ix: {ticker_ix}'))
-        print(f'ticker: {ticker} \nprv: {prv}, cur: {cur}, nxt: {nxt}')
-    
-    if tickers and ticker:
-        ticker = ticker.split(' - ')[0]
-        fig = plot_trends(graph, ticker, start, end, period, plot_data,
-                          show_vol, show_rsi, show_macd, show_sr, show_fr, show_bb,
-                          show_MAs, show_adv_MAs, show_trends_c, show_trends_hl)
+        # st.session_state.ticker_ix = ticker_ix
+        # st.session_state['p_disabled'] = False if ticker_ix > 0 else True
+        # st.session_state['n_disabled'] = False if ticker_ix < n else True
         
-        st.plotly_chart(fig)
+        # print(f'b. {ticker_ix}: {ticker}, {[prv, cur, nxt]}')
+        
+        if ticker:
+            fig = plot_trends(graph, ticker, start, end, period, plot_data,
+                              show_vol, show_rsi, show_macd, show_sr, show_fr, show_bb,
+                              show_MAs, show_adv_MAs, show_trends_c, show_trends_hl)
+            st.plotly_chart(fig)
 
         # file = 'watchlist.pickle'
 
@@ -555,24 +542,3 @@ if option == 'Technical Analysis':
         #     with open(file, 'wb') as f:
         #         watchlist.append(ticker)
         #         pickle.dump(watchlist, f)
-
-
-# if option == 'Social Media':
-#     platform = st.selectbox('Platform', 'StockTwits')
-    
-#     if platform == 'StockTwits':
-#         ticker = st.selectbox('Ticker', ticker_list)
-#         try:
-#             url = f'https://api.stocktwits.com/api/2/streams/ticker/{ticker}.json'
-#             r = requests.get(url)
-#             data = r.json()
-
-#             for message in data['messages']:
-#                 st.image(message['user']['avatar_url'])
-#                 st.info(f'''
-#                         {message['user']['username']} \n
-#                         {message['created_at']} \n
-#                         {message['body']}
-#                         ''')
-#         except:
-#             st.error(f'{platform} API is unavailable')

@@ -96,12 +96,19 @@ def get_interval_market_data(intervals=['1d', '1m', '5m'], path=r'data\market_da
     t_start = time.time()
     tickers = get_tickers()
     end = dt.now()
-    days = end.weekday() - 5 if end.weekday() >= 5 else 0
+    weekday = end.weekday()
+    days = 0
+
+    if weekday >= 5:
+        days += weekday - 5
+    elif weekday == 0 and end.hour < 24:
+        days += 2
+    
     end -= timedelta(days)
+    spy_path = os.path.join(path, 'spy_data')
     
     for interval in intervals:
         t_path = os.path.join(path, interval)
-        spy_path = os.path.join(path, 'spy_data', interval)
         os.makedirs(spy_path, exist_ok=True)
         os.makedirs(path, exist_ok=True)
         n = len(tickers)
@@ -111,10 +118,11 @@ def get_interval_market_data(intervals=['1d', '1m', '5m'], path=r'data\market_da
         f_date = dt.strftime(f_end, "%d.%m.%y")
         if interval == '1d':
             df = yf.Ticker('^GSPC').history('max', end=f_end) # download index data
+            fname = os.path.join(spy_path, f'SPY.csv')
         else:
             df = yf.download('^GSPC', start=start, end=end, interval=interval, progress=False)
+            fname = os.path.join(spy_path, interval, f'SPY_{f_date}.csv')
         if not df.empty:
-            fname = os.path.join(spy_path, f'SPY_{f_date}.csv')
             df.to_csv(fname)
         for i, ticker in enumerate(tickers, 1):
             try:
@@ -134,7 +142,7 @@ def get_interval_market_data(intervals=['1d', '1m', '5m'], path=r'data\market_da
                 j += 1
                 t_end = time.time()
                 mm, ss = divmod(t_end - t_start, 60)
-                print(f'\r{mm:.0f}m:{ss:.0f}s{j}/{n}: {ticker} - {e}',
+                print(f'\r{mm:.0f}m:{ss:.0f}s {j}/{n}: {ticker} - {e}',
                       end='', flush=True) 
         
         t_end = time.time()
@@ -423,15 +431,24 @@ def get_financial_statements():
 def redownload_market_data(path = r'data\market_data'):
     t_start = time.time()
     end = dt.now()
-    days = end.weekday() - 5 if end.weekday() >= 5 else 0
-    end -= timedelta(days)
+    weekday = end.weekday() 
+    tickers = get_tickers()
+    days = 0
 
+    if weekday >= 5:
+        days += weekday - 5
+    elif weekday == 0 and end.hour < 24:
+        days += 2
+    
     for f in os.listdir(path):
         fpath = os.path.join(path, f)
         files = os.listdir(fpath)
+        missing_files = set([f'{x}.csv' for x in tickers]) - set(files)
+        files += list(missing_files)
         to_update = []
         if f != 'spy_data':
-            start = end - timedelta(7) if f == '1m' else end - timedelta(60)
+            start = end - timedelta(7 - days) if interval == '1m' else end - timedelta(60 - days)
+            f_end = end - timedelta(1)
             for fname in files:
                 fname = os.path.join(fpath, fname)
                 ti_m = os.path.getmtime(fname)
@@ -442,7 +459,8 @@ def redownload_market_data(path = r'data\market_data'):
                     to_update.append(fname)
                     t_end = time.time()
                     mm, ss = divmod(t_end - t_start, 60)
-                    print(f"\r{f} scanned in {mm:.0f}m:{ss:.3f}s".ljust(70, ' '))
+                    print(f"\r{f} scanned in {mm:.0f}m:{ss:.3f}s".ljust(70, ' '),
+                          end='', flush=True)
             n = len(to_update)
             j = 0
             for i, filepath in enumerate(to_update, 1):
@@ -450,7 +468,7 @@ def redownload_market_data(path = r'data\market_data'):
                 ticker = os.path.splitext(fname)[0]
                 try:
                     if f == '1d':
-                        df = si.get_data(ticker)
+                        df = si.get_data(ticker, end_date=f_end)
                     else:
                         df = yf.download(ticker, start=start, end=end, interval=f, progress=False)
                     if not df.empty:
@@ -458,18 +476,19 @@ def redownload_market_data(path = r'data\market_data'):
                     t_end = time.time()
                     mm, ss = divmod(t_end - t_start, 60)
                     print(f"\r{mm:.0f}m:{ss:.0f}s {i}/{n} ({i / n:.2%})" \
-                            f" of {f} SPY market data downloaded".ljust(70, ' '),
-                            end='', flush=True)
+                          f" of {f} SPY market data downloaded".ljust(70, ' '),
+                          end='', flush=True)
                 except Exception as e:
                     j += 1
                     t_end = time.time()
                     mm, ss = divmod(t_end - t_start, 60)
                     print(f'\r{mm:.0f}m:{ss:.0f}s {j}/{n}: {ticker} - {e}',
-                            end='', flush=True) 
+                          end='', flush=True) 
     
     t_end = time.time()
     mm, ss = divmod(t_end - t_start, 60)
     print(f'\nRedownloaded in {mm:.0f}m:{ss:.0f}s') 
+
 
 if __name__ == "__main__":           
     # get_SPY_companies()
@@ -480,7 +499,7 @@ if __name__ == "__main__":
     # save_TTM_financial_ratios()
     # get_financial_ratios()
     # get_financial_statements()
-    get_tickers_info()
+    # get_tickers_info()
     # redownload_market_data()
     
     f_end = time.time()
