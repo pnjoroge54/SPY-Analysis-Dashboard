@@ -50,6 +50,7 @@ def get_ticker_data(ticker):
     df = pd.read_csv(fname, index_col=0, parse_dates=True)
     df.rename(columns={'adjclose': 'adj close'}, inplace=True)
     df.drop(columns='ticker', inplace=True)
+    df.index.name = 'Date'
     df.columns = df.columns.str.title()
 
     return df
@@ -66,29 +67,25 @@ def resample_data(ticker, interval):
         x = int(interval.split('m')[0])
         folder = '5m' if x >= 5 else '1m'
         freq = f'{x}T'
+        
+        if ticker == '^GSPC':
+            fpath = os.path.join(path, 'spy_data', folder)
+            fname = os.path.join(fpath, os.listdir(fpath)[-1])
+        else:
+            fname = os.path.join(path, folder, f'{ticker}.csv')
+        
+        df = pd.read_csv(fname)
+        col = df.columns[0]
+        df.index = pd.to_datetime(df[col].apply(lambda x: x.split(fmt)[0]))
+        df.drop(columns=col, index=df.index[-1], inplace=True)
+        df.index.name = 'Date'
+
     else:
-        fmt = ' '
-        folder = '1d'
         freq = 'W-FRI' if interval == 'W1' else 'BM'
-    
-    if ticker == '^GSPC':
-        fpath = os.path.join(path, 'spy_data', folder)
-        fname = os.path.join(fpath, os.listdir(fpath)[-1])
-    else:
-        fname = os.path.join(path, folder, f'{ticker}.csv')
-
-    df = pd.read_csv(fname)
-    col = df.columns[0]
-    df.index = pd.to_datetime(df[col].apply(lambda x: x.split(fmt)[0]))
-    df.drop(columns=col, inplace=True)
-    df.index.name = 'Date'
-
-    if interval.endswith('m'):
-        df.drop(index=df.index[-1], inplace=True)
-    else:
-        df.rename(columns={'adjclose': 'adj close'}, inplace=True)
-        df.drop(columns='ticker', inplace=True)
-        df.columns = df.columns.str.title()
+        if ticker == '^GSPC':
+            df = get_SPY_data()
+        else:
+            df = get_ticker_data(ticker)
 
     if interval not in ('1m', '5m'):
         resampled_df = pd.DataFrame()

@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import pickle
+from datetime import timedelta, datetime as dt
 
 
 def get_rf_data():
@@ -32,10 +33,11 @@ def get_SPY_data():
 def get_ticker_data(ticker):
     '''Load ticker's market data'''
     
-    file = os.path.join('data/market_data/1d', f'{ticker}.csv')
-    df = pd.read_csv(file, index_col=0, parse_dates=True)
+    fname = os.path.join('data/market_data/1d', f'{ticker}.csv')
+    df = pd.read_csv(fname, index_col=0, parse_dates=True)
     df.rename(columns={'adjclose': 'adj close'}, inplace=True)
     df.drop(columns='ticker', inplace=True)
+    df.index.name = 'Date'
     df.columns = df.columns.str.title()
 
     return df
@@ -47,40 +49,39 @@ def resample_data(ticker, interval):
     path = 'data/market_data'  
         
     if interval.endswith('m'):
-        fmt = ':00-0'
         x = int(interval.split('m')[0])
         folder = '5m' if x >= 5 else '1m'
         freq = f'{x}T'
-    else:
-        fmt = ' '
-        folder = '1d'
-        freq = 'W-FRI' if interval == 'Weekly' else 'BM'
-    
-    if ticker == '^GSPC':
-        fpath = os.path.join(path, 'spy_data', folder)
-        fname = os.path.join(fpath, os.listdir(fpath)[-1])
-    else:
-        fname = os.path.join(path, folder, f'{ticker}.csv')
+        
+        if ticker == '^GSPC':
+            fpath = os.path.join(path, 'spy_data', folder)
+            fname = os.path.join(fpath, os.listdir(fpath)[-1])
+        else:
+            fname = os.path.join(path, folder, f'{ticker}.csv')
+        
+        df = pd.read_csv(fname)
+        col = df.columns[0]
+        fmt = ':00-0'
+        df.index = pd.to_datetime(df[col].apply(lambda x: x.split(fmt)[0]))
+        df.drop(columns=col, index=df.index[-1], inplace=True)
+        df.index.name = 'Date'
 
-    df = pd.read_csv(fname)
-    col = df.columns[0]
-    df.index = pd.to_datetime(df[col].apply(lambda x: x.split(fmt)[0]))
-    df.drop(columns=col, inplace=True)
-    df.index.name = 'Date'
-
-    if not interval.endswith('m'):
-        df.rename(columns={'adjclose': 'adj close'}, inplace=True)
-        df.drop(columns='ticker', inplace=True)
-        df.columns = df.columns.str.title()
+    else:
+        freq = 'W-FRI' if interval == 'W1' else 'BM'
+        if ticker == '^GSPC':
+            df = get_SPY_data()
+        else:
+            df = get_ticker_data(ticker)
 
     if interval not in ('1m', '5m'):
         resampled_df = pd.DataFrame()
-        resampled_df['Open'] = df['Open'].resample(freq).first()
-        resampled_df['High'] = df['High'].resample(freq).max()
-        resampled_df['Low'] = df['Low'].resample(freq).min()
-        resampled_df['Close'] = df['Close'].resample(freq).last()
-        resampled_df['Adj Close'] = df['Adj Close'].resample(freq).last()
-        resampled_df['Volume'] = df['Volume'].resample(freq).sum()
+        offset = timedelta(minutes=30)
+        resampled_df['Open'] = df['Open'].resample(freq, offset=offset).first()
+        resampled_df['High'] = df['High'].resample(freq, offset=offset).max()
+        resampled_df['Low'] = df['Low'].resample(freq, offset=offset).min()
+        resampled_df['Close'] = df['Close'].resample(freq, offset=offset).last()
+        resampled_df['Adj Close'] = df['Adj Close'].resample(freq, offset=offset).last()
+        resampled_df['Volume'] = df['Volume'].resample(freq, offset=offset).sum()
         df = resampled_df.dropna()
 
     return df
