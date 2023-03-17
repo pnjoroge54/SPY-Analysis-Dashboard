@@ -69,7 +69,7 @@ def resample_data(ticker, interval):
     else:
         fmt = ' '
         folder = '1d'
-        freq = 'W-FRI' if interval == '1wk' else 'BM'
+        freq = 'W-FRI' if interval == 'W1' else 'BM'
     
     if ticker == '^GSPC':
         fpath = os.path.join(path, 'spy_data', folder)
@@ -83,19 +83,22 @@ def resample_data(ticker, interval):
     df.drop(columns=col, inplace=True)
     df.index.name = 'Date'
 
-    if not interval.endswith('m'):
+    if interval.endswith('m'):
+        df.drop(index=df.index[-1], inplace=True)
+    else:
         df.rename(columns={'adjclose': 'adj close'}, inplace=True)
         df.drop(columns='ticker', inplace=True)
         df.columns = df.columns.str.title()
 
     if interval not in ('1m', '5m'):
         resampled_df = pd.DataFrame()
-        resampled_df['Open'] = df['Open'].resample(freq).first()
-        resampled_df['High'] = df['High'].resample(freq).max()
-        resampled_df['Low'] = df['Low'].resample(freq).min()
-        resampled_df['Close'] = df['Close'].resample(freq).last()
-        resampled_df['Adj Close'] = df['Adj Close'].resample(freq).last()
-        resampled_df['Volume'] = df['Volume'].resample(freq).sum()
+        offset = timedelta(minutes=30)
+        resampled_df['Open'] = df['Open'].resample(freq, offset=offset).first()
+        resampled_df['High'] = df['High'].resample(freq, offset=offset).max()
+        resampled_df['Low'] = df['Low'].resample(freq, offset=offset).min()
+        resampled_df['Close'] = df['Close'].resample(freq, offset=offset).last()
+        resampled_df['Adj Close'] = df['Adj Close'].resample(freq, offset=offset).last()
+        resampled_df['Volume'] = df['Volume'].resample(freq, offset=offset).sum()
         df = resampled_df.dropna()
 
     return df

@@ -371,9 +371,9 @@ if option == 'Technical Analysis':
     data = c2.radio('Stocks', ('All', 'Trend-Aligned', 'Trending'), horizontal=True)
     
     if setup == 'Investor':
-        periods = ['1wk', '1d', '30m']
+        periods = ['W1', 'D1', '30m']
     elif setup == 'Swing Trader':
-        periods = ['1d', '30m', '10m']
+        periods = ['D1', '30m', '10m']
     else:
         periods = ['30m', '10m', '5m', '1m']
 
@@ -384,64 +384,42 @@ if option == 'Technical Analysis':
     end = last_date
     start = last_date - timedelta(days)
 
-    with st.expander('Options'):
-        if data != 'All':
-            c1, c2 = st.columns(2)
-            trend = c1.radio('Trend', ('Up', 'Down'), horizontal=True)
-            if data == 'Trending':
-                period = c2.radio('Timeframe', periods, horizontal=True, key='period1')
-                up_tickers, down_tickers = get_trending_stocks(start, end, period, MAs)
-                tickers = up_tickers if trend == 'Up' else down_tickers
-            else:
-                end = c2.date_input('End Date', value=last_date, min_value=first_date, 
-                                    max_value=last_date, key='end_date1')
-                up_aligned, down_aligned = get_trend_aligned_stocks(TA_PERIODS, periods, end)
-                tickers = up_aligned if trend == 'Up' else down_aligned        
-        else:
-            tickers = ticker_list
-               
-        c1, c2, c3 = st.columns(3)
-        sectors = ['-' * 30]
-        sectors += SPY_info_df.loc[tickers, 'Sector'].unique().tolist()
-        sector = c1.selectbox('Sector', sorted(sectors))
+    # with st.expander('Options'):
+    if data != 'All':
+        c1, c2 = st.columns(2)
 
-        if sector != sectors[0]:
-            df = SPY_info_df[SPY_info_df['Sector'] == sector]
-            tickers = list(set(df.index.to_list()) & set(tickers))    
-        
-        subIndustries = ['-' * 30] 
-        subIndustries += SPY_info_df.loc[tickers, 'Sub-Industry'].unique().tolist()
-        subIndustry = c2.selectbox('Sub-Industry', sorted(subIndustries))
-        
-        if subIndustry != subIndustries[0]:
-            df = SPY_info_df[SPY_info_df['Sub-Industry'] == subIndustry]
-            tickers = list(set(df.index.to_list()) & set(tickers))
-            
-        if data == 'All':   
-            text = f'{len(tickers)} stocks'
+        if data == 'Trending':
+            if setup == 'Investor':
+                periods.insert(0, 'M1')
+            period = c1.radio('Timeframe', periods, horizontal=True, key='period1')
+            up_tickers, down_tickers = get_trending_stocks(start, end, period, MAs)
         else:
-            text = f'{len(tickers)} {trend.lower()}{data.lower()}'
-            
-        ticker_lbl = 'Ticker - Security' 
-        names = SPY_info_df.loc[tickers, 'Security'].to_list()
-        tickers = sorted([f'{ticker} - {name}' for ticker, name in zip(tickers, names)])
-        ticker = c3.selectbox(ticker_lbl, tickers, help=text)
-        # ticker_ix = ticker_index(ticker, tickers)
-        # st.session_state['ticker_ix'] = ticker_ix
+            end = c1.date_input('End Date', value=last_date, min_value=first_date, 
+                                max_value=last_date, key='end_date1')
+            up_tickers, down_tickers = get_trend_aligned_stocks(TA_PERIODS, periods, end)
+        
+        n = max(up_tickers, down_tickers, key=len)
+        index = 1 if len(up_tickers) == 0 else 0
+
+        if n:
+            trend = c2.radio('Trend', ('Up', 'Down'), index=index, horizontal=True)
+            tickers = up_tickers if trend == 'Up' else down_tickers
+            if not tickers:
+                c2.warning(f'No stocks {data} {trend}'.upper())
+        else:
+            c2.warning(f'No stocks {data}'.upper())
+            tickers = None        
+                
+    else:
+        tickers = ticker_list
     
     if tickers:
-        st.subheader('Chart Setup')
-        graph = st.radio('Price Display', ('Candlesticks', 'Line'), horizontal=True)
+        st.subheader('Chart')
 
-        with st.expander('Options'):
-            tab1, tab2, tab3 = st.tabs(('Subplots', 'Signals', 'Timeframe'))
+        with st.expander('Setup Options'):
+            tab1, tab2, tab3 = st.tabs(('Signals', 'Period', 'Subplots'))
 
         with tab1:
-            show_vol = st.checkbox('Volume', True)
-            show_rsi = st.checkbox('Relative Strength Index (RSI)')
-            show_macd = st.checkbox('Moving Average Convergence Divergence (MACD)')
-
-        with tab2:
             c1, c2 = st.columns(2)
             show_sr = c1.checkbox('Support / Resistance (SR)', True)
             show_fr = c1.checkbox('Fibonacci Retracements (FR)')
@@ -470,56 +448,68 @@ if option == 'Technical Analysis':
                         plot_adv_MAs = [minor_adv_ma, secondary_adv_ma, primary_adv_ma]
                         plot_data['Adv MAs'] = plot_adv_MAs
         
-        with tab3:
-            periods = ['1wk', '1d', '30m', '10m', '5m', '1m']
-            if setup == 'Investor':
-                index = 0
-            elif setup == 'Swing Trader':
-                index = 1
-            else:
-                index = 2
-
-            period = st.radio('Timeframe', periods, index=index, horizontal=True, key='periods2')
-            period_d = TA_PERIODS[period]
-            MAs = period_d['MA']
-            days = period_d['days']
-            start = last_date - timedelta(days)
-            minor_ma, secondary_ma, primary_ma, *_ = MAs
-            plot_MAs = [minor_ma, secondary_ma, primary_ma]
-            plot_data = {'MAs': plot_MAs,
-                        'Adv MAs': [int(ma**(1/2)) for ma in plot_MAs]}
-
+        with tab2:
             c1, c2 = st.columns(2)
             start = c1.date_input('Start Date', value=start, min_value=first_date, max_value=last_date)
             end = c2.date_input('End Date', value=last_date, min_value=first_date, max_value=last_date,
                                 key='end_date2')
-
-        # ticker_ix = st.session_state.ticker_ix
-        # prv, cur, nxt = list(previous_current_next(tickers))[ticker_ix]
-        # print(f'a. {ticker_ix}: {ticker}')
-        # n = len(tickers) - 1
         
-        # c1, c2 = st.columns(2)
-        # prv_btn = c1.button('Prev')
-        # nxt_btn = c2.button('Next')
+        with tab3:
+            show_vol = st.checkbox('Volume', True)
+            show_rsi = st.checkbox('Relative Strength Index (RSI)')
+            show_macd = st.checkbox('Moving Average Convergence / Divergence (MACD)')
 
-        # if prv_btn:
-        #     ticker = prv
-        # elif nxt_btn:
-        #     ticker = nxt
+        c1, c2, c3 = st.columns(3)
+        sectors = ['-' * 30]
+        sectors += SPY_info_df.loc[tickers, 'Sector'].unique().tolist()
+        sector = c1.selectbox('Sector', sorted(sectors))
 
-        # ticker_ix = ticker_index(ticker, tickers)
-        # st.session_state.ticker_ix = ticker_ix
-        # st.session_state['p_disabled'] = False if ticker_ix > 0 else True
-        # st.session_state['n_disabled'] = False if ticker_ix < n else True
+        if sector != sectors[0]:
+            df = SPY_info_df[SPY_info_df['Sector'] == sector]
+            tickers = list(set(df.index.to_list()) & set(tickers))    
         
-        # print(f'b. {ticker_ix}: {ticker}, {[prv, cur, nxt]}')
+        subIndustries = ['-' * 30] 
+        subIndustries += SPY_info_df.loc[tickers, 'Sub-Industry'].unique().tolist()
+        subIndustry = c2.selectbox('Sub-Industry', sorted(subIndustries))
         
-        if ticker:
-            fig = plot_trends(graph, ticker, start, end, period, plot_data,
-                              show_vol, show_rsi, show_macd, show_sr, show_fr, show_bb,
-                              show_MAs, show_adv_MAs, show_trends_c, show_trends_hl)
-            st.plotly_chart(fig)
+        if subIndustry != subIndustries[0]:
+            df = SPY_info_df[SPY_info_df['Sub-Industry'] == subIndustry]
+            tickers = list(set(df.index.to_list()) & set(tickers))
+            
+        if data == 'All':   
+            text = f'{len(tickers)} stocks'
+        else:
+            text = f'{len(tickers)} {trend.lower()}{data.lower()}'
+            
+        ticker_lbl = 'Ticker - Security' 
+        names = SPY_info_df.loc[tickers, 'Security'].to_list()
+        tickers = sorted([f'{ticker} - {name}' for ticker, name in zip(tickers, names)])
+        ticker = c3.selectbox(ticker_lbl, tickers, help=text)
+        periods = ['M1', 'W1', 'D1', '30m', '10m', '5m', '1m']
+
+        if setup == 'Investor':
+            index = 1
+        elif setup == 'Swing Trader':
+            index = 2
+        else:
+            index = 3
+
+        c1, c2 = st.columns(2)
+        graph = c1.radio('Price Display', ('Candlesticks', 'Line'))
+        period = c2.radio('Timeframe', periods, index=index, horizontal=True, key='periods2')
+        period_d = TA_PERIODS[period]
+        MAs = period_d['MA']
+        days = period_d['days']
+        start = last_date - timedelta(days)
+        minor_ma, secondary_ma, primary_ma, *_ = MAs
+        plot_MAs = [minor_ma, secondary_ma, primary_ma]
+        plot_data = {'MAs': plot_MAs,
+                    'Adv MAs': [int(ma**(1/2)) for ma in plot_MAs]}
+        
+        fig = plot_trends(graph, ticker, start, end, period, plot_data,
+                            show_vol, show_rsi, show_macd, show_sr, show_fr, show_bb,
+                            show_MAs, show_adv_MAs, show_trends_c, show_trends_hl)
+        st.plotly_chart(fig)
 
         # file = 'watchlist.pickle'
 

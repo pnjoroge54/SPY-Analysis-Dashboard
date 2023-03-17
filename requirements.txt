@@ -1,7 +1,7 @@
 # pipreqs --force ./ to create this file
 cufflinks==0.17.3
 fundamentalanalysis==0.2.14
-html_table_parser==0.1.0
+html-table-parser-python3==0.3.1
 newspaper==0.1.0.7
 newspaper3k==0.2.8
 numpy==1.21.5

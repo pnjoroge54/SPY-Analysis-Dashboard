@@ -267,8 +267,9 @@ FINANCIAL_RATIOS = {'formulas': FORMULAS, 'definitions': DEFINITIONS, 'ratios': 
 
 # p.106 of Brian Shannon - Technical Analysis Using Multiple Timeframes (2008)
 TA_PERIODS = {
-    '1wk': {'MA': [10, 20, 40], 'days': 365 * 2},
-    '1d': {'MA': [10, 20, 50, 200], 'days': 180},
+    'M1': {'MA': [3, 6, 9], 'days': 365 * 8},
+    'W1': {'MA': [10, 20, 40], 'days': 365 * 2},
+    'D1': {'MA': [10, 20, 50, 200], 'days': 180},
     '30m': {'MA': [7, 17, 33, 65], 'days': 20},
     '10m': {'MA': [20, 50, 100, 195], 'days': 7},
     '5m': {'MA': [40, 100, 200], 'days': 3},

@@ -603,8 +603,8 @@ def peaks_valleys_trendlines(df):
 
 
 @st.cache
-def calculate_signals(ticker, period, MAs):
-    if period == '1d':
+def make_dataframe(ticker, period, MAs):
+    if period == 'D1':
         df = get_ticker_data(ticker).copy()
     else:
         df = resample_data(ticker, period)
@@ -616,25 +616,19 @@ def calculate_signals(ticker, period, MAs):
 def get_trending_stocks(start, end, period, MAs):
     up = []
     down = []
-    minor_ma, secondary_ma, primary_ma, *_ = MAs
-    end = end + timedelta(1) if period.endswith('m') else end
+    end += timedelta(1)
     
     for ticker in ticker_list:
         try:
-            df = calculate_signals(ticker, period, MAs)[start:end]
-            # Calculate moving averages (MAs)
-            for ma in MAs:
-                df[f'MA{ma}'] = df['Close'].rolling(ma).mean()
-                df[f'Adv MA{ma}'] = df[f'MA{ma}'].shift(int(ma**(1/2)))
-            minor = df[f'MA{minor_ma}'][-1]
-            secondary = df[f'MA{secondary_ma}'][-1]
-            primary = df[f'MA{primary_ma}'][-1]
-            if primary > secondary > minor:
+            df = make_dataframe(ticker, period, MAs)[start:end]
+            all_MAs = [df['Close'].rolling(ma).mean()[-1] for ma in MAs] # moving averages
+            minor_ma, secondary_ma, primary_ma, *_ = all_MAs
+            if primary_ma > secondary_ma > minor_ma:
                 down.append(ticker)
-            if primary < secondary < minor:
+            elif primary_ma < secondary_ma < minor_ma:
                 up.append(ticker)
         except Exception as e:
-            print(f'{ticker} - {e}')
+            print(f'{period}: {ticker} - {e}')
 
     return up, down
 
@@ -642,9 +636,8 @@ def get_trending_stocks(start, end, period, MAs):
 @st.cache
 def get_trend_aligned_stocks(periods_data, periods, end):
     for i, period in enumerate(periods):
-        period_d = periods_data[period]
-        days = period_d['days']
-        MAs = period_d['MA']
+        days = periods_data[period]['days']
+        MAs = periods_data[period]['MA']
         start = end - timedelta(days)
         up, down = get_trending_stocks(start, end, period, MAs)
         if i == 0:
@@ -679,7 +672,8 @@ def plot_trends(graph, ticker, start, end, period, plot_data,
 
     ticker = ticker.split(' - ')[0]
     MAs = plot_data['MAs']
-    df = calculate_signals(ticker, period, MAs)[start:end]
+    end += timedelta(1)
+    df = make_dataframe(ticker, period, MAs)[start:end]
     nrows = 1 + show_vol + show_rsi + show_macd
     r1 = 1 - 0.1 * nrows
     r2 = (1 - r1) / (nrows - 1)
@@ -823,54 +817,70 @@ def plot_trends(graph, ticker, start, end, period, plot_data,
                                 showlegend=False)
 
     # Volume subplot
-    if show_vol:   
+    if show_vol:
+        name = 'Volume'
         fig.add_bar(x=df.index,
-                    y=df['Volume'],
-                    name='Volume',
+                    y=df[name],
+                    name=name,
                     marker={'color': 'steelblue'},
                     row=fig_row, col=1)
+        # fig.update_layout({f'yaxis{fig_row}': {'title': name}})
         fig_row += 1
 
     # RSI subplot
     if show_rsi:
         rsi = RSI(df['Close'], timeperiod=14)
+        name = 'RSI'
         fig.add_scatter(x=rsi.index,
                         y=rsi.values,
-                        name='RSI',
+                        name=name,
                         line_width=1,
                         mode='lines',
                         connectgaps=True,
+                        showlegend=False,
                         row=fig_row, col=1)
         fig.add_hline(70, line_width=0.5, line_dash='dot', line_color='red', 
                       row=fig_row, col=1)
         fig.add_hline(30, line_width=0.5, line_dash='dot', line_color='red', 
                       row=fig_row, col=1)
-        fig.update_layout({f'yaxis{fig_row}': {'type': 'linear'}})
+        fig.update_layout({f'yaxis{fig_row}': {'type': 'linear', 'title': name}})
         fig_row += 1
     
     # MACD subplot
     if show_macd:
         macd, *_ = MACD(df['Close'], fastperiod=12, slowperiod=26, signalperiod=9)
+        name = 'MACD'
         fig.add_scatter(x=macd.index,
                         y=macd.values,
-                        name='MACD',
+                        name=name,
                         line_width=1,
                         mode='lines',
                         connectgaps=True,
+                        showlegend=False,
                         row=fig_row, col=1)
-        fig.update_layout({f'yaxis{fig_row}': {'type': 'linear'}})
+        fig.update_layout({f'yaxis{fig_row}': {'type': 'linear', 'title': name}})
     
     us_holidays = pd.to_datetime(list(holidays.US(range(start.year, end.year + 1)).keys()))
 
-    if period == '1d':
+    if period == 'D1':
+        period = 'Daily'
         rangebreaks = [dict(bounds=["sat", "mon"])]
     elif period.endswith('m'):
         us_holidays += pd.offsets.Hour(9) + pd.offsets.Minute(30)
         rangebreaks = [dict(bounds=[16, 9.5], pattern="hour"), 
                        dict(bounds=["sat", "mon"])]
         
-    
-    if period == '1wk':
+    if period == 'W1':
+        period = 'Weekly'
+        rangeselector = dict(buttons=[
+                                dict(count=1, label="YTD", step="year", stepmode="todate"),
+                                dict(count=6, label="6m", step="month", stepmode="backward"),
+                                dict(count=1, label="1y", step="year", stepmode="backward"),
+                                dict(step="all")
+                                ])
+        fig.update_layout(xaxis1=dict(rangeselector=rangeselector))
+    elif period == 'M1':
+        period = 'Monthly'
         rangeselector = dict(buttons=[
                                 dict(count=1, label="YTD", step="year", stepmode="todate"),
                                 dict(count=6, label="6m", step="month", stepmode="backward"),
@@ -878,8 +888,7 @@ def plot_trends(graph, ticker, start, end, period, plot_data,
                                 dict(count=2, label="2y", step="year", stepmode="backward"),
                                 dict(count=3, label="3y", step="year", stepmode="backward"),
                                 dict(step="all")
-                                ]
-                            )
+                                ])
         fig.update_layout(xaxis1=dict(rangeselector=rangeselector))
     else:
         rangebreaks.append(dict(values=us_holidays))
