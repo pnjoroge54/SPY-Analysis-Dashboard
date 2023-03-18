@@ -513,6 +513,11 @@ def redownload_market_data(path=r'data\market_data'):
                         
                         if not df.empty:
                             df.to_csv(fname)
+                        
+                        t_end = time.time()
+                        mm, ss = divmod(t_end - t_start, 60)
+                        print(f"\r{mm:.0f}m:{ss:.0f}s {fname} downloaded".ljust(70, ' '),
+                              end='', flush=True)
         
     t_end = time.time()
     mm, ss = divmod(t_end - t_start, 60)
@@ -520,15 +525,15 @@ def redownload_market_data(path=r'data\market_data'):
 
 
 if __name__ == "__main__":           
-    get_SPY_companies()
-    get_SPY_weights()
-    get_risk_free_rates()
-    get_factor_model_data()
+    # get_SPY_companies()
+    # get_SPY_weights()
+    # get_risk_free_rates()
+    # get_factor_model_data()
     get_interval_market_data()
-    save_TTM_financial_ratios()
-    get_financial_ratios()
-    get_financial_statements()
-    get_tickers_info()
+    # save_TTM_financial_ratios()
+    # get_financial_ratios()
+    # get_financial_statements()
+    # get_tickers_info()
     redownload_market_data()
     
     f_end = time.time()

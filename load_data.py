@@ -43,13 +43,13 @@ def get_ticker_data(ticker):
     return df
 
 
-def resample_data(ticker, interval):
+def resample_data(ticker, timeframe):
     '''Load ticker's market data'''
 
     path = 'data/market_data'  
         
-    if interval.endswith('m'):
-        x = int(interval.split('m')[0])
+    if timeframe.endswith('m'):
+        x = int(timeframe.split('m')[0])
         folder = '5m' if x >= 5 else '1m'
         freq = f'{x}T'
         
@@ -67,13 +67,13 @@ def resample_data(ticker, interval):
         df.index.name = 'Date'
 
     else:
-        freq = 'W-FRI' if interval == 'W1' else 'BM'
+        freq = 'W-FRI' if timeframe == 'W1' else 'BM'
         if ticker == '^GSPC':
             df = get_SPY_data()
         else:
             df = get_ticker_data(ticker)
 
-    if interval not in ('1m', '5m'):
+    if timeframe not in ('1m', '5m'):
         resampled_df = pd.DataFrame()
         offset = timedelta(minutes=30)
         resampled_df['Open'] = df['Open'].resample(freq, offset=offset).first()

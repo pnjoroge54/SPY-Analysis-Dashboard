@@ -409,6 +409,10 @@ def fibonacci_retracements(df):
             level = min_level + (max_level - min_level) * ratio
         levels.append(level)
 
+    if highest_swing < lowest_swing:
+        ratios.reverse()
+        levels.reverse()
+
     return ratios, levels
 
 
