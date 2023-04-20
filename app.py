@@ -453,15 +453,6 @@ if option == 'Technical Analysis':
         periods = ['M1', 'W1', 'D1', '30m', '10m', '5m', '1m']
         
         graph = st.radio('Type', ('Candlesticks', 'Line'), horizontal=True)
-        period = st.radio('Timeframe', periods, index=index, horizontal=True, key='periods2')
-        period_d = TA_PERIODS[period]
-        MAs = period_d['MA']
-        days = period_d['days']
-        start = last_date - timedelta(days)
-        minor_ma, secondary_ma, primary_ma, *_ = MAs
-        plot_MAs = [minor_ma, secondary_ma, primary_ma]
-        plot_data = {'MAs': plot_MAs,
-                     'Adv MAs': [int(ma**(1/2)) for ma in plot_MAs]}
         
         with st.expander('Signal Settings'):
             tab1, tab2, tab3 = st.tabs(('Signals', 'Period', 'Subplots'))
@@ -473,13 +464,24 @@ if option == 'Technical Analysis':
             show_bb = c1.checkbox('Bollinger Bands (BB)')
             show_MAs = c1.checkbox('Moving Averages (MA)')
             show_adv_MAs = c1.checkbox('Advanced MAs')
-            placeholder = c1.empty()
+            placeholder1 = c1.empty()
+            placeholder2 = c1.empty()
             show_trend_analysis = c2.checkbox('Trend Analysis') 
             show_trendlines_c = c2.checkbox('Trendlines (Close)')
             show_trendlines_hl = c2.checkbox('Trendlines (High-Low)')
             
             if show_MAs or show_adv_MAs:
-                adjust_MAs = placeholder.checkbox('Adjust MA Windows')
+                period = placeholder1.radio('MA Timeframe', periods, index=index, horizontal=True, key='periods2')
+                period_d = TA_PERIODS[period]
+                MAs = period_d['MA']
+                days = period_d['days']
+                start = last_date - timedelta(days)
+                minor_ma, secondary_ma, primary_ma, *_ = MAs
+                plot_MAs = [minor_ma, secondary_ma, primary_ma]
+                plot_data = {'MAs': plot_MAs,
+                            'Adv MAs': [int(ma**(1/2)) for ma in plot_MAs]}
+                
+                adjust_MAs = placeholder2.checkbox('Adjust MA Windows')
                 c1, c2, c3 = st.columns(3)
                 if adjust_MAs:
                     if show_MAs:
@@ -507,7 +509,17 @@ if option == 'Technical Analysis':
             show_rsi = st.checkbox('Relative Strength Index (RSI)')
             show_macd = st.checkbox('Moving Average Convergence / Divergence (MACD)')
 
-        ticker = st.selectbox(ticker_lbl, tickers, help=text)
+        c1, c2 = st.columns(2)
+        ticker = c1.selectbox(ticker_lbl, tickers, help=text)
+        period = c2.radio('Timeframe', periods, index=index, horizontal=True, key='periods3')
+        period_d = TA_PERIODS[period]
+        MAs = period_d['MA']
+        days = period_d['days']
+        start = last_date - timedelta(days)
+        minor_ma, secondary_ma, primary_ma, *_ = MAs
+        plot_MAs = [minor_ma, secondary_ma, primary_ma]
+        plot_data = {'MAs': plot_MAs,
+                    'Adv MAs': [int(ma**(1/2)) for ma in plot_MAs]}
         
         fig = plot_signals(graph, ticker, start, end, period, plot_data,
                            show_vol, show_rsi, show_macd, show_sr, show_fr, show_bb,

@@ -655,46 +655,141 @@ def get_trend_aligned_stocks(periods_data, periods, end):
     return list(up_aligned), list(down_aligned)
 
 @st.cache
+def order_peaks_valleys(df):
+    '''Remove smallest peak if peaks not followed by valleys & vice versa'''
+    
+    P = argrelextrema(df.Close.to_numpy(), np.greater)[0].tolist() # peaks
+    V = argrelextrema(df.Close.to_numpy(), np.less)[0].tolist() # valleys
+    first = 'P' if P[0] < V[0] else 'V'
+    lst = P if first == 'P' else V
+    fn = min if first == 'P' else max
+    removed_vals = []
+    
+    for i, (p, v) in enumerate(zip(P, V)):
+        a = p if first == 'P' else v
+        b = v if first == 'P' else p
+        if i < len(lst) - 1:
+            c = P[i + 1] if first == 'P' else V[i + 1]
+            if c < b:
+                val = fn((a, df.Close[a]), (c, df.Close[c]), key=itemgetter(1))[0]
+                lst.remove(val)
+                removed_vals.append(val)
+    
+    return P, V, removed_vals
+
+
+@st.cache
+def valid_peaks_valleys(df):
+    '''
+    Remove peaks/valleys with retracement < 1/3
+
+    Parameters
+    ----------
+    df: DataFrame of a security's market data
+    '''
+
+    close = df.Close
+    P, V, _ = order_peaks_valleys(df)
+    PV = sorted(P + V)
+    n = len(PV)
+    a, b, c = PV[0], PV[1], PV[2]
+    d1 = abs(close[b] - close[a])
+    d2 = abs(close[c] - close[b])
+    first = 'P' if P[0] < V[0] else 'V'
+    lst = P if first == 'P' else V
+    pv = {'P', 'V'}
+    second = list(pv - {first})[0]
+    third = first if c in lst else list(pv - {first})[0]
+    valid = [(a, first), (b, second), (c, third)]
+    removed_vals = []
+    retracement = 1 / 3 * 0.95
+    i = 2
+    
+    while i < n - 1:   
+        x = first if c in lst else list(pv - {first})[0]
+        y = list(pv - {x})[0] 
+        r = d2 / d1
+
+        if r < retracement and i > 2:
+            removed_vals.append((c, x))
+            rm, px = valid[-1]
+            reverse = True if y == 'V' else False
+            val = sorted([(b, close[b]), (d, close[d])],
+                         key=itemgetter(1), reverse=reverse)
+            removed, kept = val[0][0], val[1][0]
+            removed_vals.append((removed, y))
+            if kept == d:
+                i = PV.index(kept)
+                try:
+                    valid.pop()
+                except:
+                    pass
+                if i == n - 1:
+                    valid.append((kept, y))
+            elif kept == rm and px == y:
+                i += 2
+        else:
+            val, px = valid[-1]
+            if val != c and px != x:
+                valid.append((c, x))
+            i += 1    
+        try:
+            a, b = valid[-2][0], valid[-1][0]
+            c, d = PV[i], PV[i + 1]
+            d1 = abs(close[b] - close[a])
+            d2 = abs(close[c] - close[b])
+        except:
+            try:
+                a, b, c = valid[-2][0], valid[-1][0], PV[i]
+                d1 = abs(close[b] - close[a])
+                d2 = abs(close[c] - close[b])
+                r = d2 / d1
+                if r >= retracement:
+                    valid.append((c,y))
+            except:
+                pass
+        
+    P = []
+    V = []
+
+    for val, x in sorted(set(valid)):
+        lst = P if x == 'P' else V
+        lst.append(val)
+
+    return P, V
+
+
+@st.cache
 def trend_changepoints(df):
     close = df.Close
-    P = argrelextrema(close.to_numpy(), np.greater)[0].tolist() # peaks
-    V = argrelextrema(close.to_numpy(), np.less)[0].tolist() # valleys
     chg = {k: {'start': [], 'end': []} for k in ['up', 'down', 'ranging']} # trend changepoints
     t = None # trend
-    x, _, pv = min((P[-1], len(P), 'P'), (V[-1], len(V), 'V'), key=itemgetter(1))
-    first = 'P' if sorted([P[0], V[0]])[0] == P[0] else 'V'
-    
-    # Remove consecutive peaks/valleys
-    for i, (p, v) in enumerate(zip_longest(P, V, fillvalue=x)):
-        if i < max(len(P), len(V)) - 1: 
-            if first == 'P':
-                if P[i + 1] < v:
-                    val = min((p, close[p]), (P[i + 1], close[P[i + 1]]), key=itemgetter(0))[0]
-                    P.remove(val)
-            elif V[i + 1] < p:
-                val = max((v, close[v]), (V[i + 1], close[V[i + 1]]), key=itemgetter(0))[0]
-                V.remove(val)
-
+    P, V = valid_peaks_valleys(df)
+    x, _ = min((P[-1], len(P)), (V[-1], len(V)), key=itemgetter(1))
+    pv = 'P' if P[0] < V[0] else 'V'
     lst = P if pv == 'P' else V
+    up, down, ranging = [], [], []
     
     # Identify intermediate trend changepoints comprising 5 moves,
-    # i.e., 3 trending, 2 retracements
-    for p, v in zip_longest(P[2::2], V[2::2], fillvalue=x):
+    # i.e., 3 trending, 2 retracements 
+    for p, v in zip(P[2:], V[2:]):
         ix = p if pv == 'P' else v
         i = lst.index(ix)
         g, h = i - 2, i - 1
         a, b, c = P[g], P[h], p
         d, e, f = V[g], V[h], v
         p0, p1, p2, v0, v1, v2 = close[[a,b,c,d,e,f]]
-        if p2 > p1 > p0 and v2 > v1 > v0: # Uptrend
+        if p2 > p1 > p0 and v1 > v0: # Uptrend
             if t and t != 'up':
                 chg[t]['end'].append(d)
                 chg['up']['start'].append(d)
+                up.append(d)
             t = 'up'
-        elif v2 < v1 < v0 and p2 < p1 < p0: # Downtrend
+        elif v2 < v1 < v0 and p1 < p0: # Downtrend
             if t and t != 'down':
                 chg[t]['end'].append(a)
                 chg['down']['start'].append(a)
+                down.append(a)
             t = 'down'
         else:
             if t in ('up', 'down'): # Ranging
@@ -702,16 +797,29 @@ def trend_changepoints(df):
                 ix = ix[0] if pv == 'P' else ix[1]
                 chg[t]['end'].append(ix)
                 chg['ranging']['start'].append(ix)
+                ranging.append(ix)
             t = 'ranging'
-        
+    
+    d = chg['ranging']
+    if d['end'] and d['start'][0] > d['end'][0]:
+        d['end'].pop(0)
+    
+    try:
+        x = sorted(up + down + ranging)[-1]
+        for k, v in chg.items():
+            for k1, v1 in v.items():
+                if k1 == 'start' and x in v1:
+                    chg[k]['end'].append(df.shape[0] - 1)
+    except: pass
+
     return chg, P, V
 
 
 @st.cache(allow_output_mutation=True)
 def plot_signals(graph, ticker, start, end, period, plot_data,
-                show_vol, show_rsi, show_macd, show_sr, show_fr, 
-                show_bb, show_MAs, show_adv_MAs, show_trend_analysis, show_trendlines_c, 
-                show_trendlines_hl):
+                 show_vol, show_rsi, show_macd, show_sr, show_fr, 
+                 show_bb, show_MAs, show_adv_MAs, show_trend_analysis, 
+                 show_trendlines_c, show_trendlines_hl):
     '''
     Returns plot figure
 
@@ -842,42 +950,83 @@ def plot_signals(graph, ticker, start, end, period, plot_data,
     if show_trend_analysis:
         fig.update_xaxes(showgrid=False)
         fig.update_yaxes(showgrid=False)
-        chg_points, peaks, valleys = trend_changepoints(df)
-        pv_d = {'Peaks': {'color': 'gold', 'vals': peaks},
-                'Valleys': {'color': 'red', 'vals': valleys}}
-    
+        P, V, r_PV = order_peaks_valleys(df)
+        # keys = ['peaks', 'valleys', 'removed peaks/valleys']
+        # colors = ['orange', 'red', 'red']
+        # symbols = ['x', 'x', 'circle-x']
+        # lws = [0.2, 0.2, 2]
+        # size = [5, 5, 10]
+        # pv_d = 
+        pv_d = {'peaks': {'color': 'orange', 
+                          'vals': P, 
+                          'sy': 'x', 
+                          'lw': 0.2, 
+                          'size': 7},
+                'valleys': {'color': 'red', 
+                            'vals': V, 
+                            'sy': 'x', 
+                            'lw': 0.2, 
+                            'size': 7},
+                'removed peaks/valleys': {'color': 'red', 
+                                          'vals': r_PV, 
+                                          'sy': 'circle-x', 
+                                          'lw': 2.5, 
+                                          'size': 10}
+                }
+
+        # show all peaks/valleys & removed peaks/valleys    
         for k, v in pv_d.items():
             X = v['vals']
             fig.add_scatter(x=df.Close[X].index,
                             y=df.Close[X],
                             name=k,
                             mode='markers',
-                            marker=dict(symbol='x', color=v['color']), 
-                            opacity=0.5,
-                            showlegend=False)
-                  
-        for k, v in chg_points.items():
-            for k1, v1 in v.items():
-                if k1 == 'start':
-                    line_dash = 'dashdot'
-                    lw = 1
-                else:
-                    line_dash = 'solid'
-                    lw = 0.75
-                for x in v1:
-                    if k != 'ranging':
-                        color = 'gold' if k == 'up' else 'red'
-                        fig.add_vline(x=df.index[x], 
-                                      line_color=color, 
-                                      line_width=lw, 
-                                      line_dash=line_dash)
-                    elif k1 != 'end':
+                            marker=dict(symbol=v['sy'], 
+                                        line=dict(color=v['color'],
+                                                  width=v['lw']),
+                                        color=v['color'],
+                                        size=v['size']), 
+                            opacity=0.5)
+        
+        chg, peaks, valleys = trend_changepoints(df)
+        X = sorted(peaks + valleys)
+
+        # show valid peaks & valleys
+        fig.add_scatter(x=df.Close[X].index,
+                        y=df.Close[X],
+                        name='valid peaks/valleys',
+                        mode='markers',
+                        marker=dict(symbol='circle-open', 
+                                color='limegreen', 
+                                size=12, 
+                                line_width=2.5), 
+                     
+                        opacity=0.5,
+                        showlegend=False)
+        
+        # show trend changepoints
+        for k, v in chg.items():
+            try:
+                x = max(v['start'], v['end'])[-1]
+                for x0, x1 in zip_longest(v['start'], v['end'], fillvalue=x):
+                    if k == 'up':
+                        txt = 'U'
+                        color = 'green'
+                    elif k == 'down':
+                        txt = 'D'
+                        color = 'red'
+                    else:
+                        txt = 'R'
                         color = 'violet'
-                        line_dash = 'solid'
-                        fig.add_vline(x=df.index[x], 
-                                      line_color=color, 
-                                      line_width=lw, 
-                                      line_dash=line_dash)
+                    fig.add_vrect(x0=df.index[x0], x1=df.index[x1], 
+                                  line_width=0, 
+                                  fillcolor=color, 
+                                  opacity=0.2,
+                                  annotation_text=txt, 
+                                  annotation_position="top left")
+            except:
+                pass
+                
 
     # Trendlines
     if show_trendlines_c or show_trendlines_hl:
