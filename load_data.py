@@ -87,6 +87,15 @@ def resample_data(ticker, timeframe):
     return df
 
 
+def make_dataframe(ticker, period='D1'):
+    if period == 'D1':
+        df = get_ticker_data(ticker).copy()
+    else:
+        df = resample_data(ticker, period)
+
+    return df
+
+
 def get_financial_statements():
     '''Load dict of available financial statements of S&P 500 stocks'''
 

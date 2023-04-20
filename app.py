@@ -163,14 +163,14 @@ if option == 'Sector Analysis':
         missing_data, rpt1, rpt2, rpt3 = find_stocks_missing_data(start, end)
 
         # Provide information on data that is available between chosen dates
-        if rpt1 != '':
-            st.error(rpt1)
-        if rpt2 != '':
-            st.error(rpt2)
-        if len(missing_data) > 0:
-            with st.expander("Stocks Missing Data"):
-                st.warning(rpt3)
-                st.write(missing_data)
+        for i, rpt in enumerate((rpt1, rpt2, rpt3)):
+            if rpt != '':
+                if i < 2:
+                    st.error(rpt)
+                else:
+                    with st.expander("Stocks Missing Data"):
+                        st.warning(rpt3)
+                        st.write(missing_data)
 
         fig = plot_sector_metric(sectors_df, SPY_metrics, metric)
         st.plotly_chart(fig)
@@ -366,100 +366,61 @@ if option == 'News':
 
 if option == 'Technical Analysis':
     st.subheader('Data Selection')
-    c1, c2 = st.columns(2)
-    setup = c1.selectbox('Trader Setup', ('Investor', 'Swing Trader', 'Day Trader'))
-    data = c2.radio('Stocks', ('All', 'Trend-Aligned', 'Trending'), horizontal=True)
-    
-    if setup == 'Investor':
-        periods = ['W1', 'D1', '30m']
-    elif setup == 'Swing Trader':
-        periods = ['D1', '30m', '10m']
-    else:
-        periods = ['30m', '10m', '5m', '1m']
 
-    period = periods[0]
-    period_d = TA_PERIODS[period]
-    MAs = period_d['MA']
-    days = period_d['days']
-    end = last_date
-    start = last_date - timedelta(days)
-
-    # with st.expander('Options'):
-    if data != 'All':
+    with st.expander('Options'):
         c1, c2 = st.columns(2)
-
-        if data == 'Trending':
-            if setup == 'Investor':
-                periods.insert(0, 'M1')
-            period = c1.radio('Timeframe', periods, horizontal=True, key='period1')
-            up_tickers, down_tickers = get_trending_stocks(start, end, period, MAs)
+        setup = c1.selectbox('Trader Setup', ('Investor', 'Swing Trader', 'Day Trader'))
+        data = c2.radio('Stocks', ('All', 'Trend-Aligned', 'Trending'), horizontal=True)
+        
+        if setup == 'Investor':
+            index = 1
+            periods = ['W1', 'D1', '30m']
+        elif setup == 'Swing Trader':
+            index = 2
+            periods = ['D1', '30m', '10m']
         else:
-            end = c1.date_input('End Date', value=last_date, min_value=first_date, 
-                                max_value=last_date, key='end_date1')
-            up_tickers, down_tickers = get_trend_aligned_stocks(TA_PERIODS, periods, end)
-        
-        n = max(up_tickers, down_tickers, key=len)
-        index = 1 if len(up_tickers) == 0 else 0
+            index = 3
+            periods = ['30m', '10m', '5m', '1m']
 
-        if n:
-            trend = c2.radio('Trend', ('Up', 'Down'), index=index, horizontal=True)
-            tickers = up_tickers if trend == 'Up' else down_tickers
-            if not tickers:
-                c2.warning(f'No stocks {data} {trend}'.upper())
+        period = periods[0]
+        period_d = TA_PERIODS[period]
+        days = period_d['days']
+        MAs = period_d['MA']
+        plot_MAs = MAs[:3]
+        plot_data = {'MAs': plot_MAs,
+                    'Adv MAs': [int(ma**(1/2)) for ma in plot_MAs]}
+        end = last_date
+        start = last_date - timedelta(days)
+
+        if data != 'All':
+            c1, c2 = st.columns(2)
+
+            if data == 'Trending':
+                if setup == 'Investor':
+                    periods.insert(0, 'M1')
+                period = c1.radio('Timeframe', periods, horizontal=True, key='period1')
+                up_tickers, down_tickers = get_trending_stocks(start, end, period, MAs)
+            else:
+                end = c1.date_input('End Date', value=last_date, min_value=first_date, 
+                                    max_value=last_date, key='end_date1')
+                up_tickers, down_tickers = get_trend_aligned_stocks(TA_PERIODS, periods, end)
+            
+            n = max(up_tickers, down_tickers, key=len)
+            index = 1 if len(up_tickers) == 0 else 0
+
+            if n:
+                trend = c2.radio('Trend', ('Up', 'Down'), index=index, horizontal=True)
+                tickers = up_tickers if trend == 'Up' else down_tickers
+                if not tickers:
+                    c2.warning(f'No stocks {data} {trend}'.upper())
+            else:
+                c2.warning(f'No stocks {data}'.upper())
+                tickers = None        
+                    
         else:
-            c2.warning(f'No stocks {data}'.upper())
-            tickers = None        
-                
-    else:
-        tickers = ticker_list
-    
-    if tickers:
-        st.subheader('Chart')
-
-        with st.expander('Setup Options'):
-            tab1, tab2, tab3 = st.tabs(('Signals', 'Period', 'Subplots'))
-
-        with tab1:
-            c1, c2 = st.columns(2)
-            show_sr = c1.checkbox('Support / Resistance (SR)', True)
-            show_fr = c1.checkbox('Fibonacci Retracements (FR)')
-            show_bb = c1.checkbox('Bollinger Bands (BB)')
-            show_trends_c = c1.checkbox('Trendlines (Close)')
-            show_trends_hl = c1.checkbox('Trendlines (High-Low)')
-            show_MAs = c2.checkbox('Moving Averages (MA)')
-            show_adv_MAs = c2.checkbox('Advanced MAs')
-            placeholder = c2.empty()
-
-            if show_MAs or show_adv_MAs:
-                adjust_MAs = placeholder.checkbox('Adjust MA Windows')
-                c1, c2, c3 = st.columns(3)
-                if adjust_MAs:
-                    if show_MAs:
-                        minor_ma = c1.number_input('Minor MA', value=MAs[0])
-                        secondary_ma  = c2.number_input('Secondary MA', value=MAs[1])
-                        primary_ma  = c3.number_input('Primary MA', value=MAs[2])
-                        plot_MAs = [minor_ma, secondary_ma, primary_ma]
-                        plot_data['MAs'] = plot_MAs
-                    if show_adv_MAs:
-                        advanced_MAs = plot_data['Adv MAs']
-                        minor_adv_ma = c1.number_input(f'Advance MA{minor_ma}', value=advanced_MAs[0])
-                        secondary_adv_ma = c2.number_input(f'Advance MA{secondary_ma}', value=advanced_MAs[1])
-                        primary_adv_ma = c3.number_input(f'Advance MA{primary_ma}', value=advanced_MAs[2])
-                        plot_adv_MAs = [minor_adv_ma, secondary_adv_ma, primary_adv_ma]
-                        plot_data['Adv MAs'] = plot_adv_MAs
+            tickers = ticker_list
         
-        with tab2:
-            c1, c2 = st.columns(2)
-            start = c1.date_input('Start Date', value=start, min_value=first_date, max_value=last_date)
-            end = c2.date_input('End Date', value=last_date, min_value=first_date, max_value=last_date,
-                                key='end_date2')
-        
-        with tab3:
-            show_vol = st.checkbox('Volume', True)
-            show_rsi = st.checkbox('Relative Strength Index (RSI)')
-            show_macd = st.checkbox('Moving Average Convergence / Divergence (MACD)')
-
-        c1, c2, c3 = st.columns(3)
+        c1, c2 = st.columns(2)
         sectors = ['-' * 30]
         sectors += SPY_info_df.loc[tickers, 'Sector'].unique().tolist()
         sector = c1.selectbox('Sector', sorted(sectors))
@@ -484,19 +445,15 @@ if option == 'Technical Analysis':
         ticker_lbl = 'Ticker - Security' 
         names = SPY_info_df.loc[tickers, 'Security'].to_list()
         tickers = sorted([f'{ticker} - {name}' for ticker, name in zip(tickers, names)])
-        ticker = c3.selectbox(ticker_lbl, tickers, help=text)
+    
+    # Chart Display
+    if tickers:
+        st.subheader('Chart')
+
         periods = ['M1', 'W1', 'D1', '30m', '10m', '5m', '1m']
-
-        if setup == 'Investor':
-            index = 1
-        elif setup == 'Swing Trader':
-            index = 2
-        else:
-            index = 3
-
-        c1, c2 = st.columns(2)
-        graph = c1.radio('Price Display', ('Candlesticks', 'Line'))
-        period = c2.radio('Timeframe', periods, index=index, horizontal=True, key='periods2')
+        
+        graph = st.radio('Type', ('Candlesticks', 'Line'), horizontal=True)
+        period = st.radio('Timeframe', periods, index=index, horizontal=True, key='periods2')
         period_d = TA_PERIODS[period]
         MAs = period_d['MA']
         days = period_d['days']
@@ -504,11 +461,57 @@ if option == 'Technical Analysis':
         minor_ma, secondary_ma, primary_ma, *_ = MAs
         plot_MAs = [minor_ma, secondary_ma, primary_ma]
         plot_data = {'MAs': plot_MAs,
-                    'Adv MAs': [int(ma**(1/2)) for ma in plot_MAs]}
+                     'Adv MAs': [int(ma**(1/2)) for ma in plot_MAs]}
         
-        fig = plot_trends(graph, ticker, start, end, period, plot_data,
-                            show_vol, show_rsi, show_macd, show_sr, show_fr, show_bb,
-                            show_MAs, show_adv_MAs, show_trends_c, show_trends_hl)
+        with st.expander('Signal Settings'):
+            tab1, tab2, tab3 = st.tabs(('Signals', 'Period', 'Subplots'))
+
+        with tab1:
+            c1, c2 = st.columns(2)
+            show_sr = c1.checkbox('Support / Resistance (SR)', True)
+            show_fr = c1.checkbox('Fibonacci Retracements (FR)')
+            show_bb = c1.checkbox('Bollinger Bands (BB)')
+            show_MAs = c1.checkbox('Moving Averages (MA)')
+            show_adv_MAs = c1.checkbox('Advanced MAs')
+            placeholder = c1.empty()
+            show_trend_analysis = c2.checkbox('Trend Analysis') 
+            show_trendlines_c = c2.checkbox('Trendlines (Close)')
+            show_trendlines_hl = c2.checkbox('Trendlines (High-Low)')
+            
+            if show_MAs or show_adv_MAs:
+                adjust_MAs = placeholder.checkbox('Adjust MA Windows')
+                c1, c2, c3 = st.columns(3)
+                if adjust_MAs:
+                    if show_MAs:
+                        minor_ma = c1.number_input('Minor MA', value=MAs[0])
+                        secondary_ma  = c2.number_input('Secondary MA', value=MAs[1])
+                        primary_ma  = c3.number_input('Primary MA', value=MAs[2])
+                        plot_MAs = [minor_ma, secondary_ma, primary_ma]
+                        plot_data['MAs'] = plot_MAs
+                    if show_adv_MAs:
+                        advanced_MAs = [int(ma**(1/2)) for ma in plot_MAs]
+                        minor_adv_ma = c1.number_input(f'Advance MA{minor_ma}', value=advanced_MAs[0])
+                        secondary_adv_ma = c2.number_input(f'Advance MA{secondary_ma}', value=advanced_MAs[1])
+                        primary_adv_ma = c3.number_input(f'Advance MA{primary_ma}', value=advanced_MAs[2])
+                        plot_adv_MAs = [minor_adv_ma, secondary_adv_ma, primary_adv_ma]
+                        plot_data['Adv MAs'] = plot_adv_MAs
+        
+        with tab2:
+            c1, c2 = st.columns(2)
+            start = c1.date_input('Start Date', value=start, min_value=first_date, max_value=last_date)
+            end = c2.date_input('End Date', value=last_date, min_value=first_date, max_value=last_date,
+                                key='end_date2')
+        
+        with tab3:
+            show_vol = st.checkbox('Volume', True)
+            show_rsi = st.checkbox('Relative Strength Index (RSI)')
+            show_macd = st.checkbox('Moving Average Convergence / Divergence (MACD)')
+
+        ticker = st.selectbox(ticker_lbl, tickers, help=text)
+        
+        fig = plot_signals(graph, ticker, start, end, period, plot_data,
+                           show_vol, show_rsi, show_macd, show_sr, show_fr, show_bb,
+                           show_MAs, show_adv_MAs, show_trend_analysis, show_trendlines_c, show_trendlines_hl)
         st.plotly_chart(fig)
 
         # file = 'watchlist.pickle'

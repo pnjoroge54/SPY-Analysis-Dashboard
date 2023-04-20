@@ -145,9 +145,9 @@ def find_stocks_missing_data(start_date, end_date):
     first_date = first_dates[0][1]
     
     if start_date < first_date:
-        s1 += f"**The first date for which there is data is {first_date.strftime('%B %d, %Y')}**"
+        s1 = f"**The first date for which there is data is {first_date.strftime('%B %d, %Y')}**"
     if end_date > last_date:
-        s2 += f"**The last date for which there is data is {last_date.strftime('%B %d, %Y')}**"
+        s2 = f"**The last date for which there is data is {last_date.strftime('%B %d, %Y')}**"
     
     missing = filter(lambda x: x[1] > start_date, first_dates)
     missing = [x[0] for x in missing]
@@ -161,7 +161,7 @@ def find_stocks_missing_data(start_date, end_date):
         d[sector].setdefault(subIndustry, []).append(ticker)
 
     if len(missing) > 0:
-        s3 += f'''{len(missing)}/{len(ticker_list)} stocks have data that begins after 
+        s3 = f'''{len(missing)}/{len(ticker_list)} stocks have data that begins after 
                   {start_date.strftime('%B %d, %Y')}, which affects the accuracy of 
                   results displayed below.'''
 

@@ -3,6 +3,7 @@ import numpy as np
 import time
 from datetime import datetime as dt
 from datetime import timedelta
+from pprint import pprint
 from itertools import zip_longest
 import math
 
@@ -607,7 +608,7 @@ def peaks_valleys_trendlines(df):
 
 
 @st.cache
-def make_dataframe(ticker, period, MAs):
+def make_dataframe(ticker, period):
     if period == 'D1':
         df = get_ticker_data(ticker).copy()
     else:
@@ -624,7 +625,7 @@ def get_trending_stocks(start, end, period, MAs):
     
     for ticker in ticker_list:
         try:
-            df = make_dataframe(ticker, period, MAs)[start:end]
+            df = make_dataframe(ticker, period)[start:end]
             all_MAs = [df['Close'].rolling(ma).mean()[-1] for ma in MAs] # moving averages
             minor_ma, secondary_ma, primary_ma, *_ = all_MAs
             if primary_ma > secondary_ma > minor_ma:
@@ -653,12 +654,64 @@ def get_trend_aligned_stocks(periods_data, periods, end):
 
     return list(up_aligned), list(down_aligned)
 
+@st.cache
+def trend_changepoints(df):
+    close = df.Close
+    P = argrelextrema(close.to_numpy(), np.greater)[0].tolist() # peaks
+    V = argrelextrema(close.to_numpy(), np.less)[0].tolist() # valleys
+    chg = {k: {'start': [], 'end': []} for k in ['up', 'down', 'ranging']} # trend changepoints
+    t = None # trend
+    x, _, pv = min((P[-1], len(P), 'P'), (V[-1], len(V), 'V'), key=itemgetter(1))
+    first = 'P' if sorted([P[0], V[0]])[0] == P[0] else 'V'
+    
+    # Remove consecutive peaks/valleys
+    for i, (p, v) in enumerate(zip_longest(P, V, fillvalue=x)):
+        if i < max(len(P), len(V)) - 1: 
+            if first == 'P':
+                if P[i + 1] < v:
+                    val = min((p, close[p]), (P[i + 1], close[P[i + 1]]), key=itemgetter(0))[0]
+                    P.remove(val)
+            elif V[i + 1] < p:
+                val = max((v, close[v]), (V[i + 1], close[V[i + 1]]), key=itemgetter(0))[0]
+                V.remove(val)
+
+    lst = P if pv == 'P' else V
+    
+    # Identify intermediate trend changepoints comprising 5 moves,
+    # i.e., 3 trending, 2 retracements
+    for p, v in zip_longest(P[2::2], V[2::2], fillvalue=x):
+        ix = p if pv == 'P' else v
+        i = lst.index(ix)
+        g, h = i - 2, i - 1
+        a, b, c = P[g], P[h], p
+        d, e, f = V[g], V[h], v
+        p0, p1, p2, v0, v1, v2 = close[[a,b,c,d,e,f]]
+        if p2 > p1 > p0 and v2 > v1 > v0: # Uptrend
+            if t and t != 'up':
+                chg[t]['end'].append(d)
+                chg['up']['start'].append(d)
+            t = 'up'
+        elif v2 < v1 < v0 and p2 < p1 < p0: # Downtrend
+            if t and t != 'down':
+                chg[t]['end'].append(a)
+                chg['down']['start'].append(a)
+            t = 'down'
+        else:
+            if t in ('up', 'down'): # Ranging
+                ix = [a, b] if t == 'up' else [e, d]
+                ix = ix[0] if pv == 'P' else ix[1]
+                chg[t]['end'].append(ix)
+                chg['ranging']['start'].append(ix)
+            t = 'ranging'
+        
+    return chg, P, V
+
 
 @st.cache(allow_output_mutation=True)
-def plot_trends(graph, ticker, start, end, period, plot_data,
+def plot_signals(graph, ticker, start, end, period, plot_data,
                 show_vol, show_rsi, show_macd, show_sr, show_fr, 
-                show_bb, show_MAs, show_adv_MAs, show_trends_c, 
-                show_trends_hl):
+                show_bb, show_MAs, show_adv_MAs, show_trend_analysis, show_trendlines_c, 
+                show_trendlines_hl):
     '''
     Returns plot figure
 
@@ -675,15 +728,17 @@ def plot_trends(graph, ticker, start, end, period, plot_data,
     '''
 
     ticker = ticker.split(' - ')[0]
+    end = end + timedelta(1) if period.endswith('m') else end
+    print(start, end)
+    df = make_dataframe(ticker, period)[start:end]
     MAs = plot_data['MAs']
-    end += timedelta(1)
-    df = make_dataframe(ticker, period, MAs)[start:end]
     nrows = 1 + show_vol + show_rsi + show_macd
     r1 = 1 - 0.1 * nrows
     r2 = (1 - r1) / (nrows - 1)
     row_heights = [r1] + [r2] * (nrows - 1)
     fig_row = 2
     data = []
+    name = ticker
 
     fig = make_subplots(rows=nrows, cols=1,
                         shared_xaxes=True, 
@@ -693,13 +748,13 @@ def plot_trends(graph, ticker, start, end, period, plot_data,
     fig.update_xaxes(showgrid=True)          
     fig.update_yaxes(showgrid=False, type='log')
 
-    if graph == 'Candlesticks':
+    if graph == 'Candlesticks' and not show_trend_analysis and not show_trendlines_c:
         cs = go.Candlestick(x=df.index, 
                             open=df['Open'], 
                             high=df['High'],
                             low=df['Low'], 
                             close=df['Close'],
-                            name=ticker)  
+                            name=name)  
         cs.increasing.fillcolor = 'green'
         cs.increasing.line.color = 'darkgreen'
         cs.decreasing.fillcolor = 'red'
@@ -708,11 +763,12 @@ def plot_trends(graph, ticker, start, end, period, plot_data,
     else:
         xy = go.Scatter(x=df.index,
                         y=df['Close'],
-                        name='Close',
+                        name=name,
                         line_width=1.5,
                         connectgaps=True)
         data.append(xy)
 
+    # Plot MAs & advanced MAs
     if show_MAs or show_adv_MAs:
         adv_MAs = plot_data['Adv MAs']
         colors = ['red', 'cyan', 'gold']
@@ -756,7 +812,6 @@ def plot_trends(graph, ticker, start, end, period, plot_data,
                             connectgaps=True)   
 
     # Fibonacci retracements
-    ## PUT SECONDARY Y-AXIS OF FR LEVELS
     if show_fr:
         colors = ["darkgray", "indianred", "green", "blue", "cyan", "magenta", "gold"]
         ratios, levels = fibonacci_retracements(df)
@@ -782,9 +837,50 @@ def plot_trends(graph, ticker, start, end, period, plot_data,
                             line_dash=dash,
                             mode='lines',
                             connectgaps=True)
-            
+
+    # Trend Analysis
+    if show_trend_analysis:
+        fig.update_xaxes(showgrid=False)
+        fig.update_yaxes(showgrid=False)
+        chg_points, peaks, valleys = trend_changepoints(df)
+        pv_d = {'Peaks': {'color': 'gold', 'vals': peaks},
+                'Valleys': {'color': 'red', 'vals': valleys}}
+    
+        for k, v in pv_d.items():
+            X = v['vals']
+            fig.add_scatter(x=df.Close[X].index,
+                            y=df.Close[X],
+                            name=k,
+                            mode='markers',
+                            marker=dict(symbol='x', color=v['color']), 
+                            opacity=0.5,
+                            showlegend=False)
+                  
+        for k, v in chg_points.items():
+            for k1, v1 in v.items():
+                if k1 == 'start':
+                    line_dash = 'dashdot'
+                    lw = 1
+                else:
+                    line_dash = 'solid'
+                    lw = 0.75
+                for x in v1:
+                    if k != 'ranging':
+                        color = 'gold' if k == 'up' else 'red'
+                        fig.add_vline(x=df.index[x], 
+                                      line_color=color, 
+                                      line_width=lw, 
+                                      line_dash=line_dash)
+                    elif k1 != 'end':
+                        color = 'violet'
+                        line_dash = 'solid'
+                        fig.add_vline(x=df.index[x], 
+                                      line_color=color, 
+                                      line_width=lw, 
+                                      line_dash=line_dash)
+
     # Trendlines
-    if show_trends_c or show_trends_hl:
+    if show_trendlines_c or show_trendlines_hl:
         pv_df, peaks, valleys, PV, trendlines_c, trendlines_hl = peaks_valleys_trendlines(df)
         fig.add_scatter(x=df.Close[peaks].index,
                         y=df.Close[peaks],
@@ -801,7 +897,7 @@ def plot_trends(graph, ticker, start, end, period, plot_data,
                         name='Valid Peaks / Valleys',
                         mode='markers',
                         marker=dict(symbol='circle-open', color='limegreen', size=8))
-        if show_trends_c:      
+        if show_trendlines_c:      
             for x, y in trendlines_c:
                 fig.add_scatter(x=x,
                                 y=y,
@@ -810,7 +906,7 @@ def plot_trends(graph, ticker, start, end, period, plot_data,
                                 line_color='magenta',
                                 opacity=0.5,
                                 showlegend=False)
-        if show_trends_hl:      
+        if show_trendlines_hl:      
             for x, y in trendlines_hl:
                 fig.add_scatter(x=x,
                                 y=y,
@@ -865,26 +961,10 @@ def plot_trends(graph, ticker, start, end, period, plot_data,
         fig.update_layout({f'yaxis{fig_row}': {'type': 'linear', 'title': name}})
     
     us_holidays = pd.to_datetime(list(holidays.US(range(start.year, end.year + 1)).keys()))
+    rangebreaks = []
+    rangeselector = []
 
-    if period == 'D1':
-        period = 'Daily'
-        rangebreaks = [dict(bounds=["sat", "mon"])]
-    elif period.endswith('m'):
-        us_holidays += pd.offsets.Hour(9) + pd.offsets.Minute(30)
-        rangebreaks = [dict(bounds=[16, 9.5], pattern="hour"), 
-                       dict(bounds=["sat", "mon"])]
-        
-    if period == 'W1':
-        period = 'Weekly'
-        rangeselector = dict(buttons=[
-                                dict(count=1, label="YTD", step="year", stepmode="todate"),
-                                dict(count=6, label="6m", step="month", stepmode="backward"),
-                                dict(count=1, label="1y", step="year", stepmode="backward"),
-                                dict(step="all")
-                                ])
-        fig.update_layout(xaxis1=dict(rangeselector=rangeselector))
-    elif period == 'M1':
-        period = 'Monthly'
+    if period == 'M1':
         rangeselector = dict(buttons=[
                                 dict(count=1, label="YTD", step="year", stepmode="todate"),
                                 dict(count=6, label="6m", step="month", stepmode="backward"),
@@ -893,15 +973,32 @@ def plot_trends(graph, ticker, start, end, period, plot_data,
                                 dict(count=3, label="3y", step="year", stepmode="backward"),
                                 dict(step="all")
                                 ])
-        fig.update_layout(xaxis1=dict(rangeselector=rangeselector))
+    elif period == 'W1':
+        rangeselector = dict(buttons=[
+                                dict(count=1, label="YTD", step="year", stepmode="todate"),
+                                dict(count=6, label="6m", step="month", stepmode="backward"),
+                                dict(count=1, label="1y", step="year", stepmode="backward"),
+                                dict(step="all")
+                                ])  
+    elif period == 'D1':
+        rangebreaks = [dict(bounds=["sat", "mon"])]
     else:
+        us_holidays += pd.offsets.Hour(9) + pd.offsets.Minute(30)
+        rangebreaks = [dict(bounds=[16, 9.5], pattern="hour"), 
+                       dict(bounds=["sat", "mon"])]
+
+    if rangebreaks:
+        us_holidays = pd.to_datetime(sorted(list(set(us_holidays) - set(df.index))))
         rangebreaks.append(dict(values=us_holidays))
         fig.update_xaxes(rangebreaks=rangebreaks)
-    
-    cname = SPY_info_df.loc[ticker, 'Security']
-    title = f'{cname} - {period} Chart'
 
-    fig.update_layout(title=dict(text=title, xanchor='left'))
+    if rangeselector:
+        fig.update_layout(xaxis1=dict(rangeselector=rangeselector))
+
+    cname = SPY_info_df.loc[ticker, 'Security']
+    title = f'{cname} ({ticker}) - {period}'
+
+    fig.update_layout(title=dict(text=title, xanchor='center'))
     fig.layout.xaxis.rangeslider.visible = False
 
     return fig
