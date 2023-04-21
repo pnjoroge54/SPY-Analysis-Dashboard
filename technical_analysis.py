@@ -772,6 +772,7 @@ def trend_changepoints(df):
     
     # Identify intermediate trend changepoints comprising 5 moves,
     # i.e., 3 trending, 2 retracements 
+    # for p, v in zip_longest(P[2:], V[2:], fillvalue=x):
     for p, v in zip(P[2:], V[2:]):
         ix = p if pv == 'P' else v
         i = lst.index(ix)
@@ -779,25 +780,28 @@ def trend_changepoints(df):
         a, b, c = P[g], P[h], p
         d, e, f = V[g], V[h], v
         p0, p1, p2, v0, v1, v2 = close[[a,b,c,d,e,f]]
-        if p2 > p1 > p0 and v1 > v0: # Uptrend
+        if p2 > p1 > p0 and v2 > v1 > v0: # Uptrend
             if t and t != 'up':
-                chg[t]['end'].append(d)
+                if chg[t]['start']:
+                    chg[t]['end'].append(d)
                 chg['up']['start'].append(d)
                 up.append(d)
             t = 'up'
-        elif v2 < v1 < v0 and p1 < p0: # Downtrend
+        elif v2 < v1 < v0 and p2 < p1 < p0: # Downtrend
             if t and t != 'down':
-                chg[t]['end'].append(a)
+                if chg[t]['start']:
+                    chg[t]['end'].append(a)
                 chg['down']['start'].append(a)
                 down.append(a)
             t = 'down'
         else:
-            if t in ('up', 'down'): # Ranging
-                ix = [a, b] if t == 'up' else [e, d]
+            if t and t in ('up', 'down'): # Ranging
+                ix = [a, b] if t == 'up' else [d, e]
                 ix = ix[0] if pv == 'P' else ix[1]
-                chg[t]['end'].append(ix)
-                chg['ranging']['start'].append(ix)
-                ranging.append(ix)
+                if chg[t]['start']:
+                    chg[t]['end'].append(ix)
+                    chg['ranging']['start'].append(ix)
+                    ranging.append(ix)
             t = 'ranging'
     
     d = chg['ranging']
@@ -1017,16 +1021,15 @@ def plot_signals(graph, ticker, start, end, period, plot_data,
                         color = 'red'
                     else:
                         txt = 'R'
-                        color = 'violet'
-                    fig.add_vrect(x0=df.index[x0], x1=df.index[x1], 
+                        color = 'gray'
+                    fig.add_vrect(x0=df.index[x0], 
+                                  x1=df.index[x1], 
                                   line_width=0, 
                                   fillcolor=color, 
                                   opacity=0.2,
                                   annotation_text=txt, 
                                   annotation_position="top left")
-            except:
-                pass
-                
+            except: pass      
 
     # Trendlines
     if show_trendlines_c or show_trendlines_hl:
