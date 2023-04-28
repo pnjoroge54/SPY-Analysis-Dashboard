@@ -62,11 +62,12 @@ def resample_data(ticker, timeframe):
 
     path = 'data/market_data'  
         
-    if timeframe.endswith('m'):
+    if timeframe.endswith('m') or timeframe.startswith('H'):
+        s = [x for x in list(timeframe) if x.isnumeric()]
+        x = int(''.join(s))
+        folder = '1m' if x < 5 and timeframe.endswith('m') else '5m'
+        freq = f'{x}T' if timeframe.endswith('m') else f'{x}H'
         fmt = ':00-0'
-        x = int(timeframe.split('m')[0])
-        folder = '5m' if x >= 5 else '1m'
-        freq = f'{x}T'
         
         if ticker == '^GSPC':
             fpath = os.path.join(path, 'spy_data', folder)

@@ -2,3 +2,7 @@
   in securities in the accumulation stage.
 - Identify seasonality in prices, which can be caused by factors such as 
   "window dressing" by institutions with upcoming earnings reports.
+
+- Need to add ability to switch to any timeframe within the bounds of the data
+- Add an option to enable a slider that allows one to view any points along the dataset
+

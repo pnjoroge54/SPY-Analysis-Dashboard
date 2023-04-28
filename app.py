@@ -519,7 +519,7 @@ if option == 'Technical Analysis':
         minor_ma, secondary_ma, primary_ma, *_ = MAs
         plot_MAs = [minor_ma, secondary_ma, primary_ma]
         plot_data = {'MAs': plot_MAs,
-                    'Adv MAs': [int(ma**(1/2)) for ma in plot_MAs]}
+                     'Adv MAs': [int(ma**(1/2)) for ma in plot_MAs]}
         
         fig = plot_signals(graph, ticker, start, end, period, plot_data,
                            show_vol, show_rsi, show_macd, show_sr, show_fr, show_bb,
