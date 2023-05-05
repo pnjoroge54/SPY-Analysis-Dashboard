@@ -388,7 +388,7 @@ if option == 'Technical Analysis':
         MAs = period_d['MA']
         plot_MAs = MAs[:3]
         plot_data = {'MAs': plot_MAs,
-                    'Adv MAs': [int(ma**(1/2)) for ma in plot_MAs]}
+                     'Adv MAs': [int(ma**(1/2)) for ma in plot_MAs]}
         end = last_date
         start = last_date - timedelta(days)
 
@@ -449,13 +449,12 @@ if option == 'Technical Analysis':
     # Chart Display
     if tickers:
         st.subheader('Chart')
-
-        periods = ['M1', 'W1', 'D1', '30m', '10m', '5m', '1m']
-        
         graph = st.radio('Type', ('Candlesticks', 'Line'), horizontal=True)
         
+        periods = ['M1', 'W1', 'D1', '30m', '10m', '5m', '1m']
+
         with st.expander('Signal Settings'):
-            tab1, tab2, tab3 = st.tabs(('Signals', 'Period', 'Subplots'))
+            tab1, tab2 = st.tabs(('Signals', 'Subplots'))
 
         with tab1:
             c1, c2 = st.columns(2)
@@ -465,24 +464,22 @@ if option == 'Technical Analysis':
             show_MAs = c1.checkbox('Moving Averages (MA)')
             show_adv_MAs = c1.checkbox('Advanced MAs')
             placeholder1 = c1.empty()
-            placeholder2 = c1.empty()
             show_trend_analysis = c2.checkbox('Trend Analysis') 
             show_trendlines_c = c2.checkbox('Trendlines (Close)')
             show_trendlines_hl = c2.checkbox('Trendlines (High-Low)')
             
             if show_MAs or show_adv_MAs:
-                period = placeholder1.radio('MA Timeframe', periods, index=index, horizontal=True, key='periods2')
                 period_d = TA_PERIODS[period]
                 MAs = period_d['MA']
                 days = period_d['days']
-                start = last_date - timedelta(days)
                 minor_ma, secondary_ma, primary_ma, *_ = MAs
                 plot_MAs = [minor_ma, secondary_ma, primary_ma]
                 plot_data = {'MAs': plot_MAs,
                             'Adv MAs': [int(ma**(1/2)) for ma in plot_MAs]}
                 
-                adjust_MAs = placeholder2.checkbox('Adjust MA Windows')
+                adjust_MAs = placeholder1.checkbox('Adjust MA Windows')
                 c1, c2, c3 = st.columns(3)
+
                 if adjust_MAs:
                     if show_MAs:
                         minor_ma = c1.number_input('Minor MA', value=MAs[0])
@@ -492,19 +489,16 @@ if option == 'Technical Analysis':
                         plot_data['MAs'] = plot_MAs
                     if show_adv_MAs:
                         advanced_MAs = [int(ma**(1/2)) for ma in plot_MAs]
-                        minor_adv_ma = c1.number_input(f'Advance MA{minor_ma}', value=advanced_MAs[0])
-                        secondary_adv_ma = c2.number_input(f'Advance MA{secondary_ma}', value=advanced_MAs[1])
-                        primary_adv_ma = c3.number_input(f'Advance MA{primary_ma}', value=advanced_MAs[2])
+                        minor_adv_ma = c1.number_input(f'Advance MA{minor_ma}', 
+                                                       value=advanced_MAs[0])
+                        secondary_adv_ma = c2.number_input(f'Advance MA{secondary_ma}', 
+                                                           value=advanced_MAs[1])
+                        primary_adv_ma = c3.number_input(f'Advance MA{primary_ma}', 
+                                                         value=advanced_MAs[2])
                         plot_adv_MAs = [minor_adv_ma, secondary_adv_ma, primary_adv_ma]
                         plot_data['Adv MAs'] = plot_adv_MAs
         
         with tab2:
-            c1, c2 = st.columns(2)
-            start = c1.date_input('Start Date', value=start, min_value=first_date, max_value=last_date)
-            end = c2.date_input('End Date', value=last_date, min_value=first_date, max_value=last_date,
-                                key='end_date2')
-        
-        with tab3:
             show_vol = st.checkbox('Volume', True)
             show_rsi = st.checkbox('Relative Strength Index (RSI)')
             show_macd = st.checkbox('Moving Average Convergence / Divergence (MACD)')
@@ -512,18 +506,21 @@ if option == 'Technical Analysis':
         c1, c2 = st.columns(2)
         ticker = c1.selectbox(ticker_lbl, tickers, help=text)
         period = c2.radio('Timeframe', periods, index=index, horizontal=True, key='periods3')
+        rangeslider = st.checkbox('Date Range Slider')
+
         period_d = TA_PERIODS[period]
         MAs = period_d['MA']
         days = period_d['days']
-        start = last_date - timedelta(days)
+        start = None if rangeslider else start - timedelta(days)
         minor_ma, secondary_ma, primary_ma, *_ = MAs
         plot_MAs = [minor_ma, secondary_ma, primary_ma]
         plot_data = {'MAs': plot_MAs,
                      'Adv MAs': [int(ma**(1/2)) for ma in plot_MAs]}
         
-        fig = plot_signals(graph, ticker, start, end, period, plot_data,
+        fig = plot_signals(graph, rangeslider, ticker, start, end, period, plot_data,
                            show_vol, show_rsi, show_macd, show_sr, show_fr, show_bb,
-                           show_MAs, show_adv_MAs, show_trend_analysis, show_trendlines_c, show_trendlines_hl)
+                           show_MAs, show_adv_MAs, show_trend_analysis, show_trendlines_c, 
+                           show_trendlines_hl)
         st.plotly_chart(fig)
 
         # file = 'watchlist.pickle'

@@ -95,13 +95,15 @@ def get_SPY_weights():
 def get_interval_market_data(intervals=['1d', '1m', '5m'], path=r'data\market_data'):
     t_start = time.time()
     tickers = get_tickers()
-    end = dt.now()
+    eastern_tz = timezone('EST')
+    end = dt.now().astimezone(eastern_tz)
     weekday = end.weekday()
-    days = 0
+    hr_bool = end.hour >= 9 and end.hour < 16
+    days = 0 if hr_bool else 1
 
     if weekday >= 5:
         days += weekday - 5
-    elif weekday == 0 and end.hour < 24:
+    elif weekday == 0 and hr_bool:
         days += 2
     
     end -= timedelta(days)
@@ -128,9 +130,9 @@ def get_interval_market_data(intervals=['1d', '1m', '5m'], path=r'data\market_da
             try:
                 fname = os.path.join(t_path, f'{ticker}.csv')
                 if interval == '1d':
-                    df = si.get_data(ticker, end_date=f_end)
+                    df = si.get_data(ticker, end_date=end)
                 else:
-                    df = yf.download(ticker, start=start, end=end, interval=interval, progress=False)
+                    df = yf.download(ticker, start=start, end=f_end, interval=interval, progress=False)
                 if not df.empty:
                     df.to_csv(fname)
                 t_end = time.time()
@@ -433,14 +435,16 @@ def get_financial_statements():
 
 def redownload_market_data(path=r'data\market_data'):
     t_start = time.time()
-    end = dt.now()
+    eastern_tz = timezone('EST')
+    end = dt.now().astimezone(eastern_tz)
     weekday = end.weekday() 
     tickers = get_tickers()
-    days = 0
+    hr_bool = end.hour >= 9 and end.hour < 16
+    days = 0 if hr_bool else 1
 
     if weekday >= 5:
         days += weekday - 5
-    elif weekday == 0 and end.hour < 24:
+    elif weekday == 0 and hr_bool:
         days += 2
     
     for f in os.listdir(path):
@@ -525,15 +529,15 @@ def redownload_market_data(path=r'data\market_data'):
 
 
 if __name__ == "__main__":           
-    # get_SPY_companies()
-    # get_SPY_weights()
-    # get_risk_free_rates()
-    # get_factor_model_data()
+    get_SPY_companies()
+    get_SPY_weights()
+    get_risk_free_rates()
+    get_factor_model_data()
     get_interval_market_data()
-    # save_TTM_financial_ratios()
-    # get_financial_ratios()
-    # get_financial_statements()
-    # get_tickers_info()
+    save_TTM_financial_ratios()
+    get_financial_ratios()
+    get_financial_statements()
+    get_tickers_info()
     redownload_market_data()
     
     f_end = time.time()

@@ -762,7 +762,7 @@ def valid_peaks_valleys(df, column='Close'):
 @st.cache
 def trend_changepoints(df, column='Close'):
     X = df[column]
-    chg = {k: {'start': [], 'end': []} 
+    chg = {k: {'begin': [], 'end': []} 
            for k in ['up', 'down', 'ranging']} # trend changepoints
     t = None # trend
     P, V = valid_peaks_valleys(df)
@@ -782,34 +782,35 @@ def trend_changepoints(df, column='Close'):
 
         if p2 > p1 > p0 and v2 > v1 > v0: # Uptrend
             if t and t != 'up':
-                if chg[t]['start']:
+                if chg[t]['begin']:
                     chg[t]['end'].append(d)
-                chg['up']['start'].append(d)
+                chg['up']['begin'].append(d)
                 up.append(d)
             if not t:
-                chg['up']['start'].append(d)
+                chg['up']['begin'].append(d)
                 up.append(d)
             t = 'up'
         elif v2 < v1 < v0 and p2 < p1 < p0: # Downtrend
             if t and t != 'down':
-                if chg[t]['start']:
+                if chg[t]['begin']:
                     chg[t]['end'].append(a)
-                chg['down']['start'].append(a)
+                chg['down']['begin'].append(a)
                 down.append(a)
             if not t:
-                chg['down']['start'].append(a)
+                chg['down']['begin'].append(a)
                 down.append(a)
             t = 'down'
         else:
+            # NEEDS TO BE FIXED FOR CONSISTENCY
             if t in ('up', 'down'): # Ranging
-                ix = [b, c] if t == 'up' else [e, f]
+                ix = [a, b] if t == 'up' else [d, e]
                 ix = ix[0] if first == 'P' else ix[1]
-                if chg[t]['start']:
+                if chg[t]['begin']:
                     chg[t]['end'].append(ix)
-                chg['ranging']['start'].append(ix)
+                chg['ranging']['begin'].append(ix)
                 ranging.append(ix)
             if not t:
-                chg['ranging']['start'].append(a)
+                chg['ranging']['begin'].append(a)
                 ranging.append(a)
             t = 'ranging'
     
@@ -818,55 +819,22 @@ def trend_changepoints(df, column='Close'):
     dd = chg['down']
     remove = {'up': [], 'down': []}
 
-    if dr['end'] and dr['start'][0] >= dr['end'][0]:
-        dr['start'].pop(0)
+    if dr['end'] and dr['begin'][0] >= dr['end'][0]:
+        dr['begin'].pop(0)
         dr['end'].pop(0)
 
     # Add last value in data to appropriate changepoint
     x = sorted(up + down + ranging)[-1]
     for k, v in chg.items():
-        if x in v['start']:
+        if x in v['begin']:
             chg[k]['end'].append(df.shape[0] - 1)
             break
-        
-    # Fix first value in chg['ranging']
-    try:
-        rs, re = dr['start'][0], dr['end'][0]
-        for d in (du, dd):
-            s = d['start'][0]
-            if re == s:
-                d['start'][0] = rs
-                dr['start'].pop(0)
-                dr['end'].pop(0)
-                break
-    except: pass
-
-    # Find overlapping changepoints if 'up' is broken by ranging 
-    # and followed by 'up' or vice versa
-    for j, d in enumerate((du, dd)):
-        k = 'up' if j == 0 else 'down'
-        try:
-            for i in range(len(dr['start']) - 1):
-                if dr['start'][i] == d['end'][i] and \
-                    dr['end'][i] == d['start'][i + 1]:
-                    remove[k].append([dr['start'][i], dr['end'][i]])
-        except: pass        
-    
-    # Fix changepoints if 'up' is broken by ranging 
-    # and followed by 'up' or vice versa
-    for k, v in remove.items():
-        d = du if k == 'up' else dd
-        for s, e in v:
-            d['start'].remove(e)
-            d['end'].remove(s)
-            dr['start'].remove(s)
-            dr['end'].remove(e)
     
     return chg, P, V
 
 
 @st.cache(allow_output_mutation=True)
-def plot_signals(graph, ticker, start, end, period, plot_data,
+def plot_signals(graph, rangeslider, ticker, start, end, period, plot_data,
                  show_vol, show_rsi, show_macd, show_sr, show_fr, 
                  show_bb, show_MAs, show_adv_MAs, show_trend_analysis, 
                  show_trendlines_c, show_trendlines_hl):
@@ -887,7 +855,9 @@ def plot_signals(graph, ticker, start, end, period, plot_data,
 
     ticker = ticker.split(' - ')[0]
     end = end + timedelta(1) if period.endswith('m') else end
-    df = make_dataframe(ticker, period)[start:end]
+    df = make_dataframe(ticker, period)
+    start = df.index[0]  if start == None else start
+    df = df[start:end]
     MAs = plot_data['MAs']
     nrows = 1 + show_vol + show_rsi + show_macd
     r1 = 1 - 0.1 * nrows
@@ -1028,7 +998,6 @@ def plot_signals(graph, ticker, start, end, period, plot_data,
 
         # show valid peaks & valleys        
         chg, peaks, valleys = trend_changepoints(df)
-        pprint(chg)
         X = sorted(peaks + valleys)
 
         fig.add_scatter(x=df.Close[X].index,
@@ -1045,8 +1014,8 @@ def plot_signals(graph, ticker, start, end, period, plot_data,
         # show trend changepoints
         for k, v in chg.items():
             try:
-                x = max(v['start'], v['end'])[-1]
-                for x0, x1 in zip_longest(v['start'], v['end'], fillvalue=x):
+                x = max(v['begin'], v['end'])[-1]
+                for x0, x1 in zip_longest(v['begin'], v['end'], fillvalue=x):
                     if k == 'up':
                         txt = 'U'
                         color = 'green'
@@ -1185,6 +1154,6 @@ def plot_signals(graph, ticker, start, end, period, plot_data,
     title = f'{cname} ({ticker}) - {period}'
 
     fig.update_layout(title=dict(text=title, xanchor='center'))
-    fig.layout.xaxis.rangeslider.visible = False
+    fig.layout.xaxis.rangeslider.visible = rangeslider
 
     return fig

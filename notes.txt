@@ -4,5 +4,8 @@
   "window dressing" by institutions with upcoming earnings reports.
 
 - Need to add ability to switch to any timeframe within the bounds of the data
-- Add an option to enable a slider that allows one to view any points along the dataset
+- Add an option to enable a slider that allows one to view any points along the dataset - DONE
+
+- Get CRB Spot Index Data
+- Create option to view Business Cycle in Technical Analysis
 
