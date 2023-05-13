@@ -189,7 +189,7 @@ def convert_to_timestamp(x):
     return time.mktime(x.timetuple())
 
 
-@st.cache
+st.cache_data
 def sr_levels(df):
     '''Returns key support/resistance levels for a security'''
 
@@ -381,7 +381,7 @@ def sr_levels(df):
     return levels, df
 
 
-@st.cache
+st.cache_data
 def fibonacci_retracements(df):
     highest_swing = -1
     lowest_swing = -1
@@ -417,7 +417,7 @@ def fibonacci_retracements(df):
     return ratios, levels
 
 
-@st.cache
+st.cache_data
 def peaks_valleys_trendlines(df):
     '''
     df: DataFrame
@@ -607,7 +607,7 @@ def peaks_valleys_trendlines(df):
     return df, peaks, valleys, valid_PV, trendlines_c, trendlines_hl
 
 
-@st.cache
+st.cache_data
 def make_dataframe(ticker, period):
     ticker = ticker.upper()
     
@@ -619,7 +619,7 @@ def make_dataframe(ticker, period):
     return df
 
 
-@st.cache
+st.cache_data
 def get_trending_stocks(start, end, period, MAs):
     up = []
     down = []
@@ -640,7 +640,7 @@ def get_trending_stocks(start, end, period, MAs):
     return up, down
 
 
-@st.cache
+st.cache_data
 def get_trend_aligned_stocks(periods_data, periods, end):
     for i, period in enumerate(periods):
         days = periods_data[period]['days']
@@ -656,7 +656,7 @@ def get_trend_aligned_stocks(periods_data, periods, end):
 
     return list(up_aligned), list(down_aligned)
 
-@st.cache
+st.cache_data
 def order_peaks_valleys(df, column='Close'):
     '''Remove smallest peak if peaks not followed by valleys & vice versa'''
     
@@ -681,7 +681,7 @@ def order_peaks_valleys(df, column='Close'):
     return P, V, removed_vals
 
 
-@st.cache
+st.cache_data
 def valid_peaks_valleys(df, column='Close'):
     '''
     Remove peaks/valleys with retracement < 1/3
@@ -759,59 +759,67 @@ def valid_peaks_valleys(df, column='Close'):
 
     return P, V
 
-@st.cache
-def trend_changepoints(df, column='Close'):
+st.cache_data
+def trend_changepoints(P, V, df, column='Close'):
     X = df[column]
     chg = {k: {'begin': [], 'end': []} 
            for k in ['up', 'down', 'ranging']} # trend changepoints
     t = None # trend
-    P, V = valid_peaks_valleys(df)
     first = 'P' if P[0] < V[0] else 'V'
     lst = P if first == 'P' else V
     up, down, ranging = [], [], []
     
     # Identify intermediate trend changepoints comprising 5 moves,
     # i.e., 3 trending, 2 retracements 
-    for p, v in zip(P[2:], V[2:]):
-        ix = p if first == 'P' else v
-        i = lst.index(ix)
+    for i, (p, v) in enumerate(zip(P[2:], V[2:]), 2):
         g, h = i - 2, i - 1
         a, b, c = P[g], P[h], p
         d, e, f = V[g], V[h], v
         p0, p1, p2, v0, v1, v2 = X[[a,b,c,d,e,f]]
+        
+        if first == 'P':
+            uptrend = p2 > p1 and v1 > v0
+            downtrend = v1 < v0 and p2 < p1
+        else: 
+            uptrend = p2 > p1 and v2 > v1
+            downtrend = v2 < v1 and p1 < p0
 
-        if p2 > p1 > p0 and v2 > v1 > v0: # Uptrend
-            if t and t != 'up':
-                if chg[t]['begin']:
-                    chg[t]['end'].append(d)
-                chg['up']['begin'].append(d)
-                up.append(d)
+        if uptrend: # Uptrend
             if not t:
                 chg['up']['begin'].append(d)
                 up.append(d)
+            elif t != 'up':
+                ix = d if first == 'P' else e
+                if chg[t]['begin']:
+                    chg[t]['end'].append(ix)
+                chg['up']['begin'].append(ix)
+                up.append(ix)
             t = 'up'
-        elif v2 < v1 < v0 and p2 < p1 < p0: # Downtrend
-            if t and t != 'down':
-                if chg[t]['begin']:
-                    chg[t]['end'].append(a)
-                chg['down']['begin'].append(a)
-                down.append(a)
+        elif downtrend: # Downtrend
             if not t:
                 chg['down']['begin'].append(a)
                 down.append(a)
+            elif t != 'down':
+                ix = a if first == 'V' else b
+                if chg[t]['begin']:
+                    chg[t]['end'].append(ix)
+                chg['down']['begin'].append(ix)
+                down.append(ix)
             t = 'down'
         else:
             # NEEDS TO BE FIXED FOR CONSISTENCY
-            if t in ('up', 'down'): # Ranging
-                ix = [a, b] if t == 'up' else [d, e]
-                ix = ix[0] if first == 'P' else ix[1]
+            if not t:
+                chg['ranging']['begin'].append(a)
+                ranging.append(a)
+            elif t != 'ranging': # Ranging
+                if t == 'up':
+                    ix = b if first == 'P' else c
+                else:
+                    ix = d if first == 'P' else f
                 if chg[t]['begin']:
                     chg[t]['end'].append(ix)
                 chg['ranging']['begin'].append(ix)
                 ranging.append(ix)
-            if not t:
-                chg['ranging']['begin'].append(a)
-                ranging.append(a)
             t = 'ranging'
     
     dr = chg['ranging']
@@ -829,11 +837,11 @@ def trend_changepoints(df, column='Close'):
         if x in v['begin']:
             chg[k]['end'].append(df.shape[0] - 1)
             break
-    
+
     return chg, P, V
 
 
-@st.cache(allow_output_mutation=True)
+st.cache_data()
 def plot_signals(graph, rangeslider, ticker, start, end, period, plot_data,
                  show_vol, show_rsi, show_macd, show_sr, show_fr, 
                  show_bb, show_MAs, show_adv_MAs, show_trend_analysis, 
@@ -1153,7 +1161,7 @@ def plot_signals(graph, rangeslider, ticker, start, end, period, plot_data,
     cname = SPY_info_df.loc[ticker, 'Security']
     title = f'{cname} ({ticker}) - {period}'
 
-    fig.update_layout(title=dict(text=title, xanchor='center'))
+    fig.update_layout(title=dict(text=title))
     fig.layout.xaxis.rangeslider.visible = rangeslider
 
     return fig
