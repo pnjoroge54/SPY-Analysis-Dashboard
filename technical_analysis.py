@@ -658,31 +658,60 @@ def get_trend_aligned_stocks(periods_data, periods, end):
 
 st.cache_data
 def order_peaks_valleys(df, column='Close'):
-    '''Remove smallest peak if peaks not followed by valleys & vice versa'''
+    '''Remove smallest peak if peak not followed by valley & vice versa'''
     
+    df = df.copy()
     X = df[column]
     P = argrelextrema(X.to_numpy(), np.greater)[0].tolist() # peaks
     V = argrelextrema(X.to_numpy(), np.less)[0].tolist() # valleys
     first = 'P' if P[0] < V[0] else 'V'
     lst = P if first == 'P' else V
+    # lowest peak if first extrema is peak & vice versa
     fn = min if first == 'P' else max
-    removed_vals = []
+    removed = []
     
     for i, (p, v) in enumerate(zip(P, V)):
         a = p if first == 'P' else v
         b = v if first == 'P' else p
         if i < len(lst) - 1:
             c = P[i + 1] if first == 'P' else V[i + 1]
+            # if peak follows peak or vice versa
             if c < b:
+                # value of lowest peak or highest valley
                 val = fn((a, X[a]), (c, X[c]), key=itemgetter(1))[0]
                 lst.remove(val)
-                removed_vals.append(val)
+                removed.append(val)
     
-    return P, V, removed_vals
+    return P, V, removed
 
 
 st.cache_data
-def valid_peaks_valleys(df, column='Close'):
+def isConsolidating(X, PV, i, pct=0.05):
+    n = len(PV)
+    x = i
+    y = i + 1
+    vals = []
+    
+    for a in range(i + 2, n, 2):
+        b = a + 1
+        try:
+            # v1 (v2) compares distance between current and next peak (valley)
+            v1 = X[PV[a]] / X[PV[x]] - 1
+            v2 = X[PV[b]] / X[PV[y]] - 1 
+            line = abs(v1) <= pct and abs(v2) <= pct # check if values within trading line
+            if line:
+                vals.extend([PV[x], PV[y]])
+                x, y = a, b
+            else:
+                break
+        except IndexError:
+            break
+
+    return vals
+
+
+st.cache_data
+def valid_peaks_valleys(df, column='Close', r_intvl=0.05):
     '''
     Remove peaks/valleys with retracement < 1/3
 
@@ -705,7 +734,7 @@ def valid_peaks_valleys(df, column='Close'):
     third = first if c in lst else second
     valid = [(a, first), (b, second), (c, third)]
     removed_vals = []
-    retracement = 1 / 3 * 0.95
+    retracement = 1 / 3 * (1 - r_intvl)
     i = 2
     
     while i < n - 1:   
@@ -715,31 +744,44 @@ def valid_peaks_valleys(df, column='Close'):
         td1 = pd.Timedelta(df.index[b] - df.index[a])
         td2 = pd.Timedelta(df.index[c] - df.index[b])
         rtd = td2 / td1
-
+        rm, px = valid[-1]
+        
         if r < retracement and i > 2:
-            removed_vals.append((c, x))
-            rm, px = valid[-1]
-            reverse = True if y == 'V' else False
-            val = sorted([(b, X[b]), (d, X[d])],
-                         key=itemgetter(1), reverse=reverse)
-            removed, kept = val[0][0], val[1][0]
-            removed_vals.append((removed, y))
-            if kept == d:
-                i = PV.index(kept)
-                if len(valid) > 2:
-                    valid.pop()
-                if i == n - 1:
-                    valid.append((kept, y))
-            elif kept == rm and px == y:
-                i += 2
+            ranging = isConsolidating(X, PV, i, r_intvl) if i < n - 4 else False
+            if ranging:
+                z = ranging[-1]
+                td1 = pd.Timedelta(df.index[b] - df.index[a])
+                td2 = pd.Timedelta(df.index[z] - df.index[c])
+                rtd = td2 / td1
+                if rtd >= retracement:
+                    for j, val in enumerate(ranging):
+                        xtrema = x if j % 2 == 0 else y
+                        valid.append((val, xtrema))
+                    i += len(ranging)
+                else:
+                    i += 1
+            else:
+                removed_vals.append((c, x))
+                reverse = True if y == 'V' else False
+                val = sorted([(b, X[b]), (d, X[d])],
+                            key=itemgetter(1), reverse=reverse)
+                removed, kept = val[0][0], val[1][0]
+                removed_vals.append((removed, y))
+                if kept == d:
+                    i = PV.index(kept)
+                    if len(valid) > 2:
+                        valid.pop()
+                    if i == n - 1:
+                        valid.append((kept, y))
+                elif kept == rm and px == y:
+                    i += 2
         else:
-            val, px = valid[-1]
-            if val != c and px != x:
+            if rm != c and px != x:
                 valid.append((c, x))
-            i += 1    
+            i += 1  
+              
         try:
-            a, b = valid[-2][0], valid[-1][0]
-            c, d = PV[i], PV[i + 1]
+            a, b, c, d = valid[-2][0], valid[-1][0], PV[i], PV[i + 1]
             d1 = abs(X[b] - X[a])
             d2 = abs(X[c] - X[b])
         except:
@@ -759,6 +801,7 @@ def valid_peaks_valleys(df, column='Close'):
 
     return P, V
 
+
 st.cache_data
 def trend_changepoints(P, V, df, column='Close'):
     X = df[column]
@@ -769,8 +812,7 @@ def trend_changepoints(P, V, df, column='Close'):
     lst = P if first == 'P' else V
     up, down, ranging = [], [], []
     
-    # Identify intermediate trend changepoints comprising 5 moves,
-    # i.e., 3 trending, 2 retracements 
+    # Identify trend changepoints 
     for i, (p, v) in enumerate(zip(P[2:], V[2:]), 2):
         g, h = i - 2, i - 1
         a, b, c = P[g], P[h], p
@@ -784,8 +826,8 @@ def trend_changepoints(P, V, df, column='Close'):
             uptrend = p2 > p1 and v2 > v1
             downtrend = v2 < v1 and p1 < p0
 
-        if uptrend: # Uptrend
-            if not t:
+        if uptrend:
+            if t is None:
                 chg['up']['begin'].append(d)
                 up.append(d)
             elif t != 'up':
@@ -795,8 +837,8 @@ def trend_changepoints(P, V, df, column='Close'):
                 chg['up']['begin'].append(ix)
                 up.append(ix)
             t = 'up'
-        elif downtrend: # Downtrend
-            if not t:
+        elif downtrend:
+            if t is None:
                 chg['down']['begin'].append(a)
                 down.append(a)
             elif t != 'down':
@@ -807,29 +849,40 @@ def trend_changepoints(P, V, df, column='Close'):
                 down.append(ix)
             t = 'down'
         else:
-            # NEEDS TO BE FIXED FOR CONSISTENCY
-            if not t:
-                chg['ranging']['begin'].append(a)
-                ranging.append(a)
-            elif t != 'ranging': # Ranging
-                if t == 'up':
-                    ix = b if first == 'P' else c
-                else:
-                    ix = d if first == 'P' else f
-                if chg[t]['begin']:
-                    chg[t]['end'].append(ix)
+            if t is None:
+                ix = a if first == 'P' else d
                 chg['ranging']['begin'].append(ix)
                 ranging.append(ix)
-            t = 'ranging'
+                t = 'ranging'
+            elif t != 'ranging': # Ranging
+                if t == 'up':
+                    ix = a if first == 'P' else b
+                    cont = p2 > p1 ##
+                else:
+                    ix = d if first == 'P' else e
+                    cont = v1 < v0 if first == 'P' else v2 < v1 ##
+                if not cont: ##
+                    if chg[t]['begin']:
+                        chg[t]['end'].append(ix)
+                    chg['ranging']['begin'].append(ix)
+                    ranging.append(ix)
+                    t = 'ranging'
+            else:
+                t = 'ranging'
     
     dr = chg['ranging']
     du = chg['up']
     dd = chg['down']
     remove = {'up': [], 'down': []}
 
-    if dr['end'] and dr['begin'][0] >= dr['end'][0]:
-        dr['begin'].pop(0)
-        dr['end'].pop(0)
+    # if dr['end'] and dr['begin'][0] >= dr['end'][0]:
+    #     dr['begin'].pop(0)
+    #     dr['end'].pop(0)
+
+    for i, (x, y) in enumerate(zip(dr['begin'], dr['end'])):
+        if x == y:
+            dr['begin'].pop(i)
+            dr['end'].pop(i)
 
     # Add last value in data to appropriate changepoint
     x = sorted(up + down + ranging)[-1]
@@ -981,7 +1034,7 @@ def plot_signals(graph, rangeslider, ticker, start, end, period, plot_data,
         vals = order_peaks_valleys(df)
         keys = ['peaks', 'valleys', 'removed']
         colors = ['orange', 'red', 'red']
-        symbols = ['x', 'x', 'circle-x']
+        symbols = ['x', 'x', 'circle-open']
         line_widths = [0.2, 0.2, 2.5]
         sizes = [7, 7, 10]
         d = dict(val=vals, color=colors, symbol=symbols, 
@@ -1004,8 +1057,10 @@ def plot_signals(graph, rangeslider, ticker, start, end, period, plot_data,
                             opacity=0.75,
                             )
 
-        # show valid peaks & valleys        
-        chg, peaks, valleys = trend_changepoints(df)
+        # show valid peaks & valleys
+        P, V = valid_peaks_valleys(df)  
+        # P, V, *_ = order_peaks_valleys(df)     
+        chg, peaks, valleys = trend_changepoints(P, V, df)
         X = sorted(peaks + valleys)
 
         fig.add_scatter(x=df.Close[X].index,
