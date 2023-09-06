@@ -13,14 +13,37 @@ import plotly.graph_objects as go
 import streamlit as st
 
 
-@st.cache
+def get_super(x):
+    normal = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-=()"
+    super_s = "ᴬᴮᶜᴰᴱᶠᴳᴴᴵᴶᴷᴸᴹᴺᴼᴾQᴿˢᵀᵁⱽᵂˣʸᶻᵃᵇᶜᵈᵉᶠᵍʰᶦʲᵏˡᵐⁿᵒᵖ۹ʳˢᵗᵘᵛʷˣʸᶻ⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁼⁽⁾"
+    res = x.maketrans(''.join(normal), ''.join(super_s))
+    
+    return x.translate(res)
+
+
+def get_sub(x):
+    normal = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-=()"
+    sub_s = "ₐ₈CDₑբGₕᵢⱼₖₗₘₙₒₚQᵣₛₜᵤᵥwₓᵧZₐ♭꜀ᑯₑբ₉ₕᵢⱼₖₗₘₙₒₚ૧ᵣₛₜᵤᵥwₓᵧ₂₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎"
+    res = x.maketrans(''.join(normal), ''.join(sub_s))
+    
+    return x.translate(res)
+
+
+def weighted_harmonic_mean(array, weights):
+    d = sum([w / x for x, w in zip(array, weights)])
+    n = sum(weights)
+    
+    return n / d
+
+
+st.cache_data
 def get_rf_data():
     '''Returns DataFrame of 90-day T-Bill Rates'''
 
     return pd.read_csv('data/T-Bill Rates.csv', index_col=0, parse_dates=True)
 
 
-@st.cache
+st.cache_data
 def get_SPY_info():
     '''Returns DataFrame of info about S&P 500 companies'''
     
@@ -31,7 +54,7 @@ def get_SPY_info():
     return df
 
 
-@st.cache
+st.cache_data
 def get_SPY_data():
     '''Returns DataFrame of S&P 500 market data'''
 
@@ -42,21 +65,24 @@ def get_SPY_data():
     return df
 
 
-@st.cache
+st.cache_data
 def get_ticker_data(ticker):
     '''Load ticker's market data'''
-    
-    fname = os.path.join('data/market_data/1d', f'{ticker}.csv')
-    df = pd.read_csv(fname, index_col=0, parse_dates=True)
-    df.rename(columns={'adjclose': 'adj close'}, inplace=True)
-    df.drop(columns='ticker', inplace=True)
-    df.index.name = 'Date'
-    df.columns = df.columns.str.title()
+
+    if ticker == 'SPY':
+        df = get_SPY_data()
+    else:
+        fname = os.path.join('data/market_data/1d', f'{ticker}.csv')
+        df = pd.read_csv(fname, index_col=0, parse_dates=True)
+        df.rename(columns={'adjclose': 'adj close'}, inplace=True)
+        df.drop(columns='ticker', inplace=True)
+        df.index.name = 'Date'
+        df.columns = df.columns.str.title()
 
     return df
 
 
-@st.cache
+st.cache_data
 def resample_data(ticker, timeframe):
     '''Resample ticker's market data to timeframe'''
 
@@ -69,7 +95,7 @@ def resample_data(ticker, timeframe):
         freq = f'{x}T' if timeframe.endswith('m') else f'{x}H'
         fmt = ':00-0'
         
-        if ticker == '^GSPC':
+        if ticker == 'SPY':
             fpath = os.path.join(path, 'spy_data', folder)
             fname = os.path.join(fpath, os.listdir(fpath)[-1])
         else:
@@ -83,7 +109,7 @@ def resample_data(ticker, timeframe):
 
     else:
         freq = 'W-FRI' if timeframe == 'W1' else 'BM'
-        if ticker == '^GSPC':
+        if ticker == 'SPY':
             df = get_SPY_data()
         else:
             df = get_ticker_data(ticker)
@@ -95,14 +121,15 @@ def resample_data(ticker, timeframe):
         resampled_df['High'] = df['High'].resample(freq, offset=offset).max()
         resampled_df['Low'] = df['Low'].resample(freq, offset=offset).min()
         resampled_df['Close'] = df['Close'].resample(freq, offset=offset).last()
-        resampled_df['Adj Close'] = df['Adj Close'].resample(freq, offset=offset).last()
+        if ticker != 'SPY':
+            resampled_df['Adj Close'] = df['Adj Close'].resample(freq, offset=offset).last()
         resampled_df['Volume'] = df['Volume'].resample(freq, offset=offset).sum()
         df = resampled_df.dropna()
 
     return df
 
 
-@st.cache
+st.cache_data
 def get_ticker_info():
     fname = 'data/market_data/spy_data/spy_tickers_info.pickle'
 
@@ -122,7 +149,7 @@ def ticker_index(ticker, lst):
     return res
 
 
-@st.cache
+st.cache_data
 def get_first_dates():
     '''Get the first date for which market data is available for each company'''
 
@@ -137,7 +164,7 @@ def get_first_dates():
     return first_dates
 
 
-@st.cache
+st.cache_data
 def find_stocks_missing_data(start_date, end_date):
     '''Identify stocks that lack market data before the start date'''
 
@@ -192,7 +219,7 @@ def load_TTM_ratios():
     return d, s
 
 
-@st.cache
+st.cache_data
 def get_weights():
     '''Assign market cap weights by sector, sub-industry & ticker'''
     
@@ -225,7 +252,7 @@ def set_form_dates():
     return pd.to_datetime(start), pd.to_datetime(end)
 
     
-@st.cache
+st.cache_data
 def plot_returns_histogram(df):
     '''Histogram of daily returns'''
 
@@ -264,7 +291,7 @@ def plot_returns_histogram(df):
     return fig
 
 
-@st.cache
+st.cache_data
 def calculate_beta(ticker, start_date, end_date):
     '''Stock's beta relative to S&P 500'''
     
@@ -284,7 +311,7 @@ def calculate_beta(ticker, start_date, end_date):
     return beta
     
 
-@st.cache
+st.cache_data
 def calculate_metrics(start_date, end_date):
     '''
     Calculate return, volatility, sharpe ratio, and beta
@@ -353,7 +380,7 @@ def calculate_metrics(start_date, end_date):
     return sectors, subIndustries, tickers, SPY, rf
 
 
-@st.cache
+st.cache_data
 def get_TTM_ratios(ratios, ratio):
     '''
     Returns dicts of Trailing Twelve-Month (TTM) financial ratios 
@@ -397,7 +424,7 @@ def get_TTM_ratios(ratios, ratio):
     return sectors, subIndustries, tickers 
 
 
-@st.cache(allow_output_mutation=True)
+st.cache_data()
 def plot_sma_returns(ticker, start_date, end_date, sma):
     '''Returns line charts of simple moving average of returns for ticker and S&P 500'''
 
@@ -437,7 +464,7 @@ def plot_sma_returns(ticker, start_date, end_date, sma):
     return fig
     
 
-@st.cache(allow_output_mutation=True)
+st.cache_data()
 def plot_sector_metric(df1, df2, metric):
     '''
     Returns bar chart of S&P 500 sectors by metric
@@ -482,7 +509,7 @@ def plot_sector_metric(df1, df2, metric):
     return fig
 
 
-@st.cache(allow_output_mutation=True)
+st.cache_data()
 def plot_subIndustry_metric(df1, df2, df3, sector, metric):
     '''
     Returns bar chart of sub-industries in sector by metric
@@ -544,7 +571,7 @@ def plot_subIndustry_metric(df1, df2, df3, sector, metric):
     return fig
 
 
-@st.cache(allow_output_mutation=True)
+st.cache_data()
 def plot_si_tickers_metric(df1, df2, df3, df4, sector, subIndustry, metric, ticker=None):
     '''
     Returns bar chart of sub-industries in sector by metric
@@ -644,7 +671,7 @@ def plot_si_tickers_metric(df1, df2, df3, df4, sector, subIndustry, metric, tick
     return fig
 
 
-@st.cache
+st.cache_data
 def plot_sector_tickers_metric(df1, df2, df3, df4, sector, subIndustry, metric, ticker):
     '''
     Returns bar chart of tickers in sector by metric
@@ -735,7 +762,7 @@ def plot_sector_tickers_metric(df1, df2, df3, df4, sector, subIndustry, metric, 
     return fig
 
 
-@st.cache(allow_output_mutation=True)
+st.cache_data()
 def plot_sector_financial_ratios(df, ratio):
     df.sort_values(by=ratio, ascending=False, inplace=True) 
     fig = px.bar(df, x=df.index, y=ratio, opacity=0.65)
@@ -744,7 +771,7 @@ def plot_sector_financial_ratios(df, ratio):
     return fig
                           
 
-# @st.cache(allow_output_mutation=True)
+# st.cache_data()
 # def plot_si_financial_ratios(df1, df2, ratio, sector):
 #     sector_ratio = df1.loc[sector].item()
 #     df2 = df2[df2['Sector'] == sector].sort_values(by=ratio, ascending=False)

@@ -3,6 +3,7 @@ from datetime import datetime as dt
 import warnings
 
 import cufflinks as cf
+
 import plotly.express as px
 import streamlit as st
 from newspaper import Article
@@ -444,6 +445,8 @@ if option == 'Technical Analysis':
             
         ticker_lbl = 'Ticker - Security' 
         names = SPY_info_df.loc[tickers, 'Security'].to_list()
+        # SPY_ticker = ['SPY - S&P 500']
+        # tickers = SPY_ticker + sorted([f'{ticker} - {name}' for ticker, name in zip(tickers, names)])
         tickers = sorted([f'{ticker} - {name}' for ticker, name in zip(tickers, names)])
     
     # Chart Display
@@ -453,7 +456,7 @@ if option == 'Technical Analysis':
         
         periods = ['M1', 'W1', 'D1', '30m', '10m', '5m', '1m']
 
-        with st.expander('Signal Settings'):
+        with st.expander('Signal Options'):
             tab1, tab2 = st.tabs(('Signals', 'Subplots'))
 
         with tab1:
@@ -511,7 +514,7 @@ if option == 'Technical Analysis':
         period_d = TA_PERIODS[period]
         MAs = period_d['MA']
         days = period_d['days']
-        start = None if rangeslider else start - timedelta(days)
+        start = None if rangeslider else end - timedelta(days)
         minor_ma, secondary_ma, primary_ma, *_ = MAs
         plot_MAs = [minor_ma, secondary_ma, primary_ma]
         plot_data = {'MAs': plot_MAs,
